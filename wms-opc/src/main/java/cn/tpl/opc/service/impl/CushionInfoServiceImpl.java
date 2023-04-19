@@ -1,14 +1,22 @@
 package cn.tpl.opc.service.impl;
 
 import cn.tpl.opc.commons.constant.Constants;
+import cn.tpl.opc.commons.dto.result.CushionInfoDTO;
+import cn.tpl.opc.commons.dto.result.PageData;
+import cn.tpl.opc.commons.scheme.request.QueryCushionInfoPageScheme;
 import cn.tpl.opc.entity.CushionInfoEntity;
 import cn.tpl.opc.mapper.CushionInfoEntityMapper;
 import cn.tpl.opc.service.ICushionInfoService;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
 import java.util.Date;
+import java.util.List;
 
 /**
  * Author: Luo GuoWen
@@ -19,6 +27,23 @@ import java.util.Date;
 public class CushionInfoServiceImpl implements ICushionInfoService {
     @Resource
     private CushionInfoEntityMapper cushionInfoEntityMapper;
+
+    @Override
+    public PageData<CushionInfoDTO> listByPage(QueryCushionInfoPageScheme scheme) {
+        Page<CushionInfoEntity> page = new Page<>(scheme.getCurrentPage(), scheme.getPageSize());
+        IPage<CushionInfoEntity> iPage = cushionInfoEntityMapper.listByPage(page);
+        List<CushionInfoEntity> cushionInfos = iPage.getRecords();
+
+        if (CollectionUtils.isEmpty(cushionInfos)) return null;
+        return PageData.of(iPage, this::cushionInfo2DTO);
+    }
+
+
+    private CushionInfoDTO cushionInfo2DTO(CushionInfoEntity cushionInfo) {
+        CushionInfoDTO cushionInfoDTO = new CushionInfoDTO();
+        BeanUtils.copyProperties(cushionInfo, cushionInfoDTO);
+        return cushionInfoDTO;
+    }
 
     @Override
     public boolean add(String qrCode) {

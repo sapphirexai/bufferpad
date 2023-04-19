@@ -1,6 +1,8 @@
 package cn.tpl.opc.mapper;
 
 import cn.tpl.opc.entity.CushionInfoEntity;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.ibatis.annotations.Mapper;
 
 @Mapper
@@ -56,4 +58,6 @@ public interface CushionInfoEntityMapper {
     CushionInfoEntity findByQrCode(String qrCode);
 
     int modifyUsedCountByQrCode(CushionInfoEntity cushionInfo);
+
+    IPage<CushionInfoEntity> listByPage(Page<CushionInfoEntity> page);
 }

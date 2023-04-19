@@ -1,6 +1,12 @@
 package cn.tpl.opc.service;
 
+import cn.tpl.opc.commons.dto.ResultDTO;
+import cn.tpl.opc.commons.dto.result.CushionInfoDTO;
+import cn.tpl.opc.commons.dto.result.PageData;
+import cn.tpl.opc.commons.scheme.request.QueryCushionInfoPageScheme;
 import cn.tpl.opc.entity.CushionInfoEntity;
+
+import java.util.List;
 
 /**
  * Author: Luo GuoWen
@@ -9,6 +15,9 @@ import cn.tpl.opc.entity.CushionInfoEntity;
  * 缓冲垫信息服务接口
  */
 public interface ICushionInfoService {
+
+    PageData<CushionInfoDTO> listByPage(QueryCushionInfoPageScheme scheme);
+
     /**
      * 新增缓冲垫
      *

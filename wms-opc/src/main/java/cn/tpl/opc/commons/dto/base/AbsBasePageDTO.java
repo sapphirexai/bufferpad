@@ -15,10 +15,15 @@ public abstract class AbsBasePageDTO extends AbsBaseDTO {
     /**
      * 当前页
      */
-    protected int cPage = 1;
+    protected long cPage = 1L;
 
     /**
      * 每页数据量
      */
-    protected int pageSize = 10;
+    protected long pageSize = 10L;
+
+    /**
+     * 总页数
+     */
+    protected long totalPage;
 }
