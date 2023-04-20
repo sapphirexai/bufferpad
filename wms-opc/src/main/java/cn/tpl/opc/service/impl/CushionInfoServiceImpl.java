@@ -3,7 +3,7 @@ package cn.tpl.opc.service.impl;
 import cn.tpl.opc.commons.constant.Constants;
 import cn.tpl.opc.commons.dto.result.CushionInfoDTO;
 import cn.tpl.opc.commons.dto.result.PageData;
-import cn.tpl.opc.commons.scheme.request.QueryCushionInfoPageScheme;
+import cn.tpl.opc.commons.scheme.base.BasePageScheme;
 import cn.tpl.opc.entity.CushionInfoEntity;
 import cn.tpl.opc.mapper.CushionInfoEntityMapper;
 import cn.tpl.opc.service.ICushionInfoService;
@@ -29,7 +29,7 @@ public class CushionInfoServiceImpl implements ICushionInfoService {
     private CushionInfoEntityMapper cushionInfoEntityMapper;
 
     @Override
-    public PageData<CushionInfoDTO> listByPage(QueryCushionInfoPageScheme scheme) {
+    public PageData<CushionInfoDTO> listByPage(BasePageScheme scheme) {
         Page<CushionInfoEntity> page = new Page<>(scheme.getCurrentPage(), scheme.getPageSize());
         IPage<CushionInfoEntity> iPage = cushionInfoEntityMapper.listByPage(page);
         List<CushionInfoEntity> cushionInfos = iPage.getRecords();

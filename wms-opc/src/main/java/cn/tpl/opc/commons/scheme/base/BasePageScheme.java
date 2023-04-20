@@ -14,7 +14,7 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 @Data
 @ToString
-public abstract class AbsBasePageScheme extends AbsBaseScheme {
+public class BasePageScheme extends AbsBaseScheme {
     /**
      * 当前页
      */

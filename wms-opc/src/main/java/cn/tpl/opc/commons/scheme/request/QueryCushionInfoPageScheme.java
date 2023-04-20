@@ -1,6 +1,6 @@
 package cn.tpl.opc.commons.scheme.request;
 
-import cn.tpl.opc.commons.scheme.base.AbsBasePageScheme;
+import cn.tpl.opc.commons.scheme.base.BasePageScheme;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
@@ -10,5 +10,5 @@ import io.swagger.v3.oas.annotations.media.Schema;
  * 分页查询缓冲垫信息协议类
  */
 @Schema(description = "分页查询缓冲垫信息协议类")
-public class QueryCushionInfoPageScheme extends AbsBasePageScheme {
+public class QueryCushionInfoPageScheme extends BasePageScheme {
 }
