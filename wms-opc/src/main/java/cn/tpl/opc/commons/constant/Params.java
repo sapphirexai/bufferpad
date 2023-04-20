@@ -29,12 +29,10 @@ public final class Params {
      * NETTY连接状态名
      * NETTY_CONNECTION_KEY_STATUS_DISCONNECTED 未连接
      * NETTY_CONNECTION_KEY_STATUS_CONNECTED 活跃中
-     * NETTY_CONNECTION_KEY_STATUS_NO_RESPONSE 无响应
      */
     public static final int
             NETTY_CONNECTION_KEY_STATUS_DISCONNECTED = 0,
-            NETTY_CONNECTION_KEY_STATUS_ACTIVE = 1,
-            NETTY_CONNECTION_KEY_STATUS_NO_RESPONSE = 2;
+            NETTY_CONNECTION_KEY_STATUS_ACTIVE = 1;
 
     /**
      * NETTY连接状态值
