@@ -2,6 +2,7 @@ package cn.tpl.opc.commons.dto.result;
 
 import cn.tpl.opc.commons.dto.base.AbsBasePageDTO;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -17,7 +18,9 @@ import java.util.stream.Collectors;
  */
 @EqualsAndHashCode(callSuper = true)
 @Data
+@Schema(description = "分页数据包装类")
 public class PageData<R> extends AbsBasePageDTO {
+    @Schema(description = "具体数据")
     private List<R> data;
 
     public static <T, R> PageData<R> of(IPage<T> iPage, Function<? super T, ? extends R> data2DTO) {
