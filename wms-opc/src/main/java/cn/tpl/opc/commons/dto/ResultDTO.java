@@ -2,6 +2,7 @@ package cn.tpl.opc.commons.dto;
 
 import cn.tpl.opc.commons.dto.base.AbsBaseDTO;
 import cn.tpl.opc.commons.dto.EResultCode;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -16,12 +17,18 @@ import org.apache.commons.lang3.StringUtils;
 @EqualsAndHashCode(callSuper = true)
 @Data
 @ToString
+@Schema(description = "响应结构数据实体类")
 public final class ResultDTO<T> extends AbsBaseDTO {
     private ResultDTO() {
     }
 
+    @Schema(description = "响应码")
     private int code;
+
+    @Schema(description = "响应消息")
     private String msg;
+
+    @Schema(description = "具体数据")
     private T data;
 
     public ResultDTO(T data) {
