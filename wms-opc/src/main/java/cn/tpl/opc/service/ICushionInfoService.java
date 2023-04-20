@@ -13,6 +13,12 @@ import cn.tpl.opc.entity.CushionInfoEntity;
  */
 public interface ICushionInfoService {
 
+    /**
+     * 分页查询
+     *
+     * @param scheme 分页查询参数协议
+     * @return 分页数据
+     */
     PageData<CushionInfoDTO> listByPage(BasePageScheme scheme);
 
     /**
