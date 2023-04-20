@@ -1,5 +1,6 @@
 package cn.tpl.opc.commons.dto.result;
 
+import cn.tpl.opc.commons.constant.Params;
 import cn.tpl.opc.commons.dto.base.AbsBaseDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -22,9 +23,9 @@ public class DeviceInfoDTO extends AbsBaseDTO {
     private Long id;
 
     /**
-     * 设备类型，0: 扫码枪；1: PLC
+     * 设备类型，0: 扫码器；1: PLC
      */
-    @Schema(description = "设备类型，0: 扫码枪；1: PLC")
+    @Schema(description = "设备类型，0: 扫码器；1: PLC")
     private Integer type;
 
     /**
@@ -40,7 +41,10 @@ public class DeviceInfoDTO extends AbsBaseDTO {
     private Integer port;
 
     /**
-     * 设备状态，0：未连接；1：活跃中
+     * 连接状态
+     *
+     * @see Params#NETTY_CONNECTION_KEY_STATUS_DISCONNECTED
+     * @see Params#NETTY_CONNECTION_KEY_STATUS_ACTIVE
      */
     @Schema(description = "设备状态，0：未连接；1：活跃中")
     private Integer status;

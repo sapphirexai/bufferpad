@@ -1,6 +1,7 @@
 package cn.tpl.opc.netty;
 
 import cn.tpl.opc.commons.constant.Params;
+import cn.tpl.opc.commons.dto.result.DeviceInfoDTO;
 import io.netty.channel.ChannelFuture;
 import lombok.Data;
 import lombok.ToString;
@@ -31,9 +32,13 @@ public class Connection {
      *
      * @see Params#NETTY_CONNECTION_KEY_STATUS_DISCONNECTED
      * @see Params#NETTY_CONNECTION_KEY_STATUS_ACTIVE
-     * @see Params#NETTY_CONNECTION_KEY_STATUS_NO_RESPONSE
      */
     private Integer status;
+
+    /**
+     * 设备信息
+     */
+    private DeviceInfoDTO deviceInfo;
 
     /**
      * 连接之后产生的I/O操作通道
