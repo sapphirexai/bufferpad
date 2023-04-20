@@ -30,7 +30,7 @@ public class CushionController {
 
     @Operation(summary = "分页查询缓冲垫列表")
     @GetMapping("/cushionsPage")
-    public ResultDTO<PageData<CushionInfoDTO>> cushionsPage(@Parameter(description = "详情查看<a href=\"#model-BasePageScheme\">BasePageScheme") BasePageScheme scheme) {
+    public ResultDTO<PageData<CushionInfoDTO>> cushionsPage(@Parameter(description = "详情查看<a href=\"#model-BasePageScheme\"> BasePageScheme") BasePageScheme scheme) {
         try {
             log.info("cushionsPage，scheme：{}", scheme);
             return ResultDTO.success(cushionInfoService.listByPage(scheme));

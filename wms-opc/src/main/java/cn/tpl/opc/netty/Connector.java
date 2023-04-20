@@ -18,6 +18,7 @@ import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.CharsetUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
 import java.util.Collection;
@@ -162,8 +163,11 @@ public class Connector {
         scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
-                log.info("重连服务运行中...");
                 ConcurrentHashMap<String, Connection> connections = connectionMgr.getConnections();
+                if (CollectionUtils.isEmpty(connections)) {
+                    log.info("当前Netty连接列表为空，不进行重连操作...");
+                    return;
+                }
                 Collection<Connection> connectionsList = connections.values();
                 for (Connection conn : connectionsList) {
                     if (null == conn) continue;
