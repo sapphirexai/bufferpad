@@ -34,7 +34,7 @@ public class DeviceInfoEntity implements Serializable {
     private Integer port;
 
     /**
-     * 设备端状态
+     * 设备状态，0：未连接；1：活跃中
      */
     private Integer status;
 

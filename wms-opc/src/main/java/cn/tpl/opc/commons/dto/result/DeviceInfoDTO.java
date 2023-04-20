@@ -40,9 +40,9 @@ public class DeviceInfoDTO extends AbsBaseDTO {
     private Integer port;
 
     /**
-     * 设备端状态
+     * 设备状态，0：未连接；1：活跃中
      */
-    @Schema(description = "设备端状态")
+    @Schema(description = "设备状态，0：未连接；1：活跃中")
     private Integer status;
 
     /**
