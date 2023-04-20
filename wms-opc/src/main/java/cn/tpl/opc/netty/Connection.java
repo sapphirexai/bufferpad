@@ -1,8 +1,8 @@
 package cn.tpl.opc.netty;
 
 import cn.tpl.opc.commons.constant.Params;
-import cn.tpl.opc.commons.dto.result.DeviceInfoDTO;
 import io.netty.channel.ChannelFuture;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +17,16 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @ToString
 public class Connection {
+    /**
+     * 主键ID
+     */
+    private Long id;
+
+    /**
+     * 设备类型，0: 扫码器；1: PLC
+     */
+    private Integer type;
+
     /**
      * IP地址
      */
@@ -33,23 +43,19 @@ public class Connection {
      * @see Params#NETTY_CONNECTION_KEY_STATUS_DISCONNECTED
      * @see Params#NETTY_CONNECTION_KEY_STATUS_ACTIVE
      */
-    private Integer status;
+    private Integer status = Params.NETTY_CONNECTION_KEY_STATUS_DISCONNECTED;
 
     /**
-     * 设备信息
+     * 设备名字
      */
-    private DeviceInfoDTO deviceInfo;
+    private String name;
 
     /**
      * 连接之后产生的I/O操作通道
      */
     private ChannelFuture channelFuture;
 
-    public Connection(String ip, Integer port, Integer status, ChannelFuture channelFuture) {
-        this.ip = ip;
-        this.port = port;
-        this.status = status;
-        this.channelFuture = channelFuture;
+    public Connection() {
     }
 
     /**

@@ -44,8 +44,4 @@ public class TestController {
         return nettyService.sendMsg(ip, port, msg);
     }
 
-    @GetMapping("/scannerConnections")
-    public ResultDTO<Boolean> scannerConnections() {
-        return nettyService.connectScanner();
-    }
 }

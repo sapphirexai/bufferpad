@@ -135,23 +135,29 @@ public class Connector {
     /**
      * 连接
      *
-     * @param ip   目标IP地址
-     * @param port 目标端口
+     * @param connection 连接对象
      * @return 连接结果
      */
-    public boolean connect(String ip, int port) {
+    public boolean connect(Connection connection) {
+        String ip = connection.getIp();
+        int port = connection.getPort();
         // 创建一个客户端）
         Bootstrap client = fastBuildClient(ip, port);
         // 与指定的地址建立连接
         try {
             Connection cConn = connectionMgr.getConnection(ip, port);
-            if (null != cConn && cConn.isActive()) return true;
 
-            ChannelFuture cf = client.connect(ip, port).sync();
-            Connection nConn = new Connection(ip, port, Params.NETTY_CONNECTION_KEY_STATUS_ACTIVE, cf);
+            if (null == cConn) {
+                cConn = connectionMgr.saveConnection(ip, port, connection);
+            }
+
+            if (cConn.isActive()) return true;
 
             // 保存连接信息到列表
-            connectionMgr.saveConnection(ip, port, nConn);
+            // 发起连接
+            ChannelFuture cf = client.connect(ip, port).sync();
+            connection.setChannelFuture(cf);
+            connection.setStatus(Params.NETTY_CONNECTION_KEY_STATUS_ACTIVE);
         } catch (Exception e) {
             log.error("Netty连接异常", e);
             return false;

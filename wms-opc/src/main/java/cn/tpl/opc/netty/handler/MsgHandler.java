@@ -30,7 +30,7 @@ public class MsgHandler extends ChannelInboundHandlerAdapter {
                 log.info("channelRead，收到原始数据：{}", oMsg);
                 // 如果是心跳包，则不做操作
                 if (oMsg.contains(Constants.SCANNER_MSG_HEART_BEAT)) {
-                    log.info("channelRead，来自扫码器心跳包，不操作。");
+                    onHearBeat();
                     return;
                 }
 
@@ -60,5 +60,13 @@ public class MsgHandler extends ChannelInboundHandlerAdapter {
      */
     protected void onScannerMsgReceived(String fMsg) {
         log.info("onScannerMsgReceived, msg: [{}]", fMsg);
+    }
+
+    /**
+     * 收到心跳时
+     */
+    protected void onHearBeat() {
+        log.debug("onHearBeat，来自扫码器的心跳");
+        // TODO: 2023/4/20 重置连接状态计时
     }
 }

@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
+import java.util.List;
 
 /**
  * Author: Luo GuoWen
@@ -32,7 +33,7 @@ public class DeviceController {
     @Resource
     private IDeviceInfoService deviceInfoService;
 
-    @Operation(summary = "分页查询设备列表")
+    @Operation(summary = "分页查询设备列表", description = "用于设备配置相关")
     @GetMapping("/devicesPage")
     public ResultDTO<PageData<DeviceInfoDTO>> devicesPage(@Parameter(description = "详情查看<a href=\"#model-BasePageScheme\"> BasePageScheme") BasePageScheme scheme) {
         try {
@@ -43,4 +44,23 @@ public class DeviceController {
         }
     }
 
+    @Operation(summary = "连接所有扫码器，并返回当前所有扫码器状态信息")
+    @GetMapping("/scannerConnections")
+    public ResultDTO<List<DeviceInfoDTO>> scannerConnections() {
+        try {
+            return nettyService.connectScanners();
+        } catch (Exception e) {
+            return ResultDTO.exception(e);
+        }
+    }
+
+    @Operation(summary = "获取当前所有扫码器状态信息")
+    @GetMapping("/scannerStatus")
+    public ResultDTO<List<DeviceInfoDTO>> scannerStatus() {
+        try {
+            return ResultDTO.success(nettyService.getScannersStatus());
+        } catch (Exception e) {
+            return ResultDTO.exception(e);
+        }
+    }
 }

@@ -17,12 +17,12 @@ import javax.annotation.Resource;
 public class MsgBus {
     @Resource
     private ConnectionMgr connectionMgr;
-    @Resource
-    private Connector connector;
 
     public void sendMsg(String ip, int port, String msg) {
-        boolean isConnected = connector.connect(ip, port);
-        if (isConnected) {
+        Connection connection = connectionMgr.getConnection(ip, port);
+        if (null == connection) return;
+        boolean isActive = connection.isActive();
+        if (isActive) {
             log.info("sendMsg, target: [{}], msg: [{}]", ip + ":" + port, msg);
             ChannelFuture cf = connectionMgr.getConnection(ip, port).getChannelFuture();
             cf.channel().writeAndFlush(msg);

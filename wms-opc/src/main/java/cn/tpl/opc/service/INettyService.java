@@ -1,6 +1,9 @@
 package cn.tpl.opc.service;
 
 import cn.tpl.opc.commons.dto.ResultDTO;
+import cn.tpl.opc.commons.dto.result.DeviceInfoDTO;
+
+import java.util.List;
 
 /**
  * Author: Luo GuoWen
@@ -12,9 +15,16 @@ public interface INettyService {
     ResultDTO<Boolean> sendMsg(String ip, Integer port, String msg);
 
     /**
-     * 连接扫码器
+     * 连接所有扫码器，并返回当前所有扫码器状态信息
      *
-     * @return 操作结果
+     * @return 所有扫码器状态信息
      */
-    ResultDTO<Boolean> connectScanner();
+    ResultDTO<List<DeviceInfoDTO>> connectScanners();
+
+    /**
+     * 获取当前所有扫码器状态信息
+     *
+     * @return 所有扫码器状态信息
+     */
+    List<DeviceInfoDTO> getScannersStatus();
 }
