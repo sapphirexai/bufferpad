@@ -41,6 +41,13 @@
         from device_info
         where type = #{type}
     </select>
+
+    <select id="listByPage" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from device_info
+    </select>
+
     <delete id="deleteByPrimaryKey" parameterType="java.lang.Long">
         <!--
           WARNING - @mbg.generated

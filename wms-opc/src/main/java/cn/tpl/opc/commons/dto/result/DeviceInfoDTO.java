@@ -1,0 +1,54 @@
+package cn.tpl.opc.commons.dto.result;
+
+import cn.tpl.opc.commons.dto.base.AbsBaseDTO;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+
+/**
+ * Author: Luo GuoWen
+ * Email: luoguowen123@qq.com
+ * Time: 2023/4/20
+ * 设备信息
+ */
+@EqualsAndHashCode(callSuper = true)
+@Data
+@Schema(description = "设备信息实体类")
+public class DeviceInfoDTO extends AbsBaseDTO {
+    /**
+     * 主键ID
+     */
+    @Schema(description = "主键ID")
+    private Long id;
+
+    /**
+     * 设备类型，0: 扫码枪；1: PLC
+     */
+    @Schema(description = "设备类型，0: 扫码枪；1: PLC")
+    private Integer type;
+
+    /**
+     * 设备IP
+     */
+    @Schema(description = "设备IP")
+    private String ip;
+
+    /**
+     * 设备端口号
+     */
+    @Schema(description = "设备端口号")
+    private Integer port;
+
+    /**
+     * 设备端状态
+     */
+    @Schema(description = "设备端状态")
+    private Integer status;
+
+    /**
+     * 设备名字
+     */
+    @Schema(description = "设备名字")
+    private String name;
+
+}

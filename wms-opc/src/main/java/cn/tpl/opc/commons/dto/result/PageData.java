@@ -1,7 +1,6 @@
 package cn.tpl.opc.commons.dto.result;
 
 import cn.tpl.opc.commons.dto.base.AbsBasePageDTO;
-import cn.tpl.opc.entity.CushionInfoEntity;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -23,7 +22,7 @@ public class PageData<R> extends AbsBasePageDTO {
 
     public static <T, R> PageData<R> of(IPage<T> iPage, Function<? super T, ? extends R> data2DTO) {
         PageData<R> pageData = new PageData<>();
-        pageData.setCPage(iPage.getCurrent());
+        pageData.setCurrentPage(iPage.getCurrent());
         pageData.setTotalPage(iPage.getTotal());
         pageData.setData(iPage.getRecords().stream().map(data2DTO).collect(Collectors.toList()));
         return pageData;

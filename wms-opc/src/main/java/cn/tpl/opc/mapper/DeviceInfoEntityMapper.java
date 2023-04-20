@@ -2,6 +2,8 @@ package cn.tpl.opc.mapper;
 
 import cn.tpl.opc.entity.DeviceInfoEntity;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
@@ -57,4 +59,6 @@ public interface DeviceInfoEntityMapper extends BaseMapper<DeviceInfoEntity> {
     int updateByPrimaryKey(DeviceInfoEntity record);
 
     List<DeviceInfoEntity> listDeviceInfoByType(Integer type);
+
+    IPage<DeviceInfoEntity> listByPage(Page<DeviceInfoEntity> page);
 }

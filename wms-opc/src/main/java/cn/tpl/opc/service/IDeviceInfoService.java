@@ -1,5 +1,8 @@
 package cn.tpl.opc.service;
 
+import cn.tpl.opc.commons.dto.result.DeviceInfoDTO;
+import cn.tpl.opc.commons.dto.result.PageData;
+import cn.tpl.opc.commons.scheme.base.BasePageScheme;
 import cn.tpl.opc.entity.DeviceInfoEntity;
 
 import java.util.List;
@@ -18,4 +21,12 @@ public interface IDeviceInfoService {
      * @return 设备信息列表
      */
     List<DeviceInfoEntity> listDeviceInfoByType(Integer type);
+
+    /**
+     * 分页查询
+     *
+     * @param scheme 分页查询参数协议
+     * @return 分页数据
+     */
+    PageData<DeviceInfoDTO> listByPage(BasePageScheme scheme);
 }
