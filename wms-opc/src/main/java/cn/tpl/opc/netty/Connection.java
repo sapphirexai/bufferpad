@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Author: Luo GuoWen
@@ -48,7 +49,7 @@ public class Connection {
      * @see Params#NETTY_CONNECTION_KEY_STATUS_DISCONNECTED
      * @see Params#NETTY_CONNECTION_KEY_STATUS_ACTIVE
      */
-    private Integer status = Params.NETTY_CONNECTION_KEY_STATUS_DISCONNECTED;
+    private volatile Integer status = Params.NETTY_CONNECTION_KEY_STATUS_DISCONNECTED;
 
     /**
      * 设备名字
@@ -58,7 +59,7 @@ public class Connection {
     /**
      * Netty连接之后产生的I/O操作通道
      */
-    private ChannelFuture channelFuture;
+    private volatile ChannelFuture channelFuture;
 
     /**
      * Netty客户端对象
@@ -68,7 +69,7 @@ public class Connection {
     /**
      * Netty连接重置间隔时间
      */
-    private long connectionResetInterval = Constants.NETTY_CONNECTION_RESET_INTERVAL_SEC;
+    private final AtomicLong connectionResetInterval = new AtomicLong(Constants.NETTY_CONNECTION_RESET_INTERVAL_SEC);
 
     /**
      * 定时执行器
@@ -82,9 +83,9 @@ public class Connection {
         @Override
         public void run() {
             if (isActive()) {
-                connectionResetInterval--;
-                log.info("connectionResetInterval：" + connectionResetInterval);
-                if (0 > connectionResetInterval) nowDead();
+                long resetInterval = connectionResetInterval.decrementAndGet();
+                log.info("connectionResetInterval：" + resetInterval);
+                if (0 > resetInterval) nowDead();
             }
         }
     };
@@ -112,7 +113,7 @@ public class Connection {
      * 重置连接重置间隔时间
      */
     public void resetConnectionResetInterval() {
-        connectionResetInterval = Constants.NETTY_CONNECTION_RESET_INTERVAL_SEC;
+        connectionResetInterval.set(Constants.NETTY_CONNECTION_RESET_INTERVAL_SEC);
     }
 
     /**
@@ -120,19 +121,33 @@ public class Connection {
      *
      * @param cf 通道
      */
-    public void nowActive(ChannelFuture cf) {
+    public synchronized void nowActive(ChannelFuture cf) {
+        if (isActive()) {
+            log.info("nowActive，连接已活不做操作");
+            return;
+        }
+
         status = Params.NETTY_CONNECTION_KEY_STATUS_ACTIVE;
         setChannelFuture(cf);
-        connectionCheckService.scheduleAtFixedRate(connectionCheckTask, 0, 1, TimeUnit.SECONDS);
+        if (connectionCheckService.isShutdown())
+            connectionCheckService.scheduleAtFixedRate(connectionCheckTask, 0, 1, TimeUnit.SECONDS);
     }
 
     /**
      * 改变连接状态为断开
      */
-    public void nowDead() {
+    public synchronized void nowDead() {
+        if (isDead()) {
+            log.info("nowDead，连接已死不做操作");
+            return;
+        }
+
         status = Params.NETTY_CONNECTION_KEY_STATUS_DISCONNECTED;
         connectionCheckService.shutdown();
-        channelFuture.channel().close();
-        channelFuture = null;
+        if (null != channelFuture) {
+            channelFuture.channel().close();
+            channelFuture = null;
+        }
+
     }
 }
