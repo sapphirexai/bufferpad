@@ -129,8 +129,7 @@ public class Connection {
 
         status = Params.NETTY_CONNECTION_KEY_STATUS_ACTIVE;
         setChannelFuture(cf);
-        if (connectionCheckService.isShutdown())
-            connectionCheckService.scheduleAtFixedRate(connectionCheckTask, 0, 1, TimeUnit.SECONDS);
+        connectionCheckService.scheduleAtFixedRate(connectionCheckTask, 0, 1, TimeUnit.SECONDS);
     }
 
     /**
