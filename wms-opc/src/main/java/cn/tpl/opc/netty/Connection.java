@@ -73,7 +73,7 @@ public class Connection {
     /**
      * 定时执行器
      */
-    private final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
+    private final ScheduledExecutorService connectionCheckService = Executors.newScheduledThreadPool(1);
 
     /**
      * 连接检查任务
@@ -83,15 +83,12 @@ public class Connection {
         public void run() {
             if (isActive()) {
                 connectionResetInterval--;
+                log.info("connectionCheckTask，connectionResetInterval：" + connectionResetInterval);
                 if (0 > connectionResetInterval) nowDead();
             }
         }
     };
 
-    public Connection() {
-        // 每秒执行一次
-        scheduledExecutorService.scheduleAtFixedRate(connectionCheckTask, 0, 1, TimeUnit.SECONDS);
-    }
 
     /**
      * 判断连接是否处于活跃状态
@@ -123,6 +120,7 @@ public class Connection {
      */
     public void nowActive() {
         status = Params.NETTY_CONNECTION_KEY_STATUS_ACTIVE;
+        connectionCheckService.scheduleAtFixedRate(connectionCheckTask, 0, 1, TimeUnit.SECONDS);
     }
 
     /**
@@ -130,5 +128,6 @@ public class Connection {
      */
     public void nowDead() {
         status = Params.NETTY_CONNECTION_KEY_STATUS_DISCONNECTED;
+        connectionCheckService.shutdown();
     }
 }

@@ -146,27 +146,27 @@ public class Connector {
      * @param connection 连接对象
      * @return 连接结果
      */
-    public boolean connect(Connection connection) {
-        String ip = connection.getIp();
-        int port = connection.getPort();
-        // 创建一个客户端）
-        Bootstrap client = fastBuildClient(connection);
-        connection.setClient(client);
-        // 与指定的地址建立连接
+    public boolean connect(Connection conn) {
+        String ip = conn.getIp();
+        int port = conn.getPort();
         try {
-            Connection cConn = connectionMgr.getConnection(ip, port);
+            // 若连接已存在就返回成功
+            if (connectionExists(ip, port)) return true;
+            synchronized (this) {
+                // 获取锁后进行二次判断
+                if (connectionExists(ip, port)) return true;
 
-            if (null == cConn) {
-                cConn = connectionMgr.saveConnection(ip, port, connection);
+                // 保存连接信息到列表
+                connectionMgr.saveConnection(ip, port, conn);
+                // 创建一个客户端）
+                Bootstrap client = fastBuildClient(conn);
+                conn.setClient(client);
+
+                // 发起连接
+                ChannelFuture cf = client.connect(ip, port).sync();
+                conn.setChannelFuture(cf);
+                conn.nowActive();
             }
-
-            if (cConn.isActive()) return true;
-
-            // 保存连接信息到列表
-            // 发起连接
-            ChannelFuture cf = client.connect(ip, port).sync();
-            connection.setChannelFuture(cf);
-            connection.nowActive();
         } catch (Exception e) {
             log.error("Netty连接异常", e);
             return false;
@@ -186,8 +186,8 @@ public class Connector {
                 Collection<Connection> connectionsList = connections.values();
                 for (Connection conn : connectionsList) {
                     if (null == conn) continue;
-                    // 判断连接是否断开
-                    if (!conn.isDead()) continue;
+                    // 连接状态若处于活跃则不操作
+                    if (conn.isActive()) continue;
 
                     reconnectExecutorService.execute(new Runnable() {
                         @Override
@@ -199,6 +199,7 @@ public class Connector {
                                 Bootstrap client = conn.getClient();
                                 ChannelFuture cf = client.connect(ip, port).sync();
                                 conn.setChannelFuture(cf);
+                                conn.nowActive();
                             } catch (Exception e) {
                                 log.error("Netty连接异常", e);
                             }
@@ -236,5 +237,16 @@ public class Connector {
 
         conn.nowDead();
         conn.getChannelFuture().channel().close();
+    }
+
+    /**
+     * 判断指定IP和端口的连接是否已存在
+     *
+     * @param ip   IP地址
+     * @param port 端口号
+     * @return true 已存在，false 不存在
+     */
+    private boolean connectionExists(String ip, int port) {
+        return null != connectionMgr.getConnection(ip, port);
     }
 }

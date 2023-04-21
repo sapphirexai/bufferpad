@@ -44,9 +44,8 @@ public class ConnectionMgr {
         return CONNECTIONS.get(key);
     }
 
-    public Connection saveConnection(String ip, int port, Connection connection) {
+    public void saveConnection(String ip, int port, Connection connection) {
         CONNECTIONS.put(targetKey(ip, port), connection);
-        return connection;
     }
 
     public EventLoopGroup getWorker() {
