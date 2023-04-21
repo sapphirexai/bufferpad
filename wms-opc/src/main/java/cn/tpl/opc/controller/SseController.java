@@ -29,6 +29,7 @@ public class SseController {
     @GetMapping("/devicesStatus/{clientId}")
     public ResultDTO<Boolean> devicesStatus(@PathVariable("clientId") String clientId) {
         try {
+            log.info("sse设备状态订阅，clientId：{}", clientId);
             return ResultDTO.success(sseService.subscribeDevicesStatus(clientId));
         } catch (Exception e) {
             return ResultDTO.exception(e);
