@@ -81,11 +81,10 @@ public class Connection {
     private final Runnable connectionCheckTask = new Runnable() {
         @Override
         public void run() {
-            if (isActive())
+            if (isActive()) {
                 connectionResetInterval--;
-
-            if (0 > connectionResetInterval)
-                nowDead();
+                if (0 > connectionResetInterval) nowDead();
+            }
         }
     };
 
