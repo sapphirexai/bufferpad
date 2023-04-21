@@ -1,10 +1,13 @@
 package cn.tpl.opc.netty;
 
 import cn.tpl.opc.commons.constant.Constants;
+import cn.tpl.opc.commons.dto.result.DeviceInfoDTO;
+import cn.tpl.opc.commons.dto.result.SseMsgDTO;
 import cn.tpl.opc.entity.CushionInfoEntity;
 import cn.tpl.opc.netty.handler.HeartbeatHandler;
 import cn.tpl.opc.netty.handler.MsgHandler;
 import cn.tpl.opc.service.ICushionInfoService;
+import cn.tpl.opc.service.ISseService;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
@@ -16,6 +19,7 @@ import io.netty.handler.codec.string.StringEncoder;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.CharsetUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
@@ -37,6 +41,8 @@ public class Connector {
     private ConnectionMgr connectionMgr;
     @Resource
     private ICushionInfoService cushionInfoService;
+    @Resource
+    private ISseService sseService;
 
     /**
      * 重连线程池
@@ -47,7 +53,6 @@ public class Connector {
      * 定时执行器
      */
     private final ScheduledExecutorService scheduledExecutorService;
-
 
     {
         reconnectExecutorService = new ThreadPoolExecutor(
@@ -154,6 +159,23 @@ public class Connector {
             synchronized (this) {
                 // 获取锁后进行二次判断
                 if (connectionExists(ip, port)) return true;
+
+                // 设置状态监听器
+                conn.setOnStatusChangeListener(new Connection.OnStatusChangeListener() {
+                    @Override
+                    public void onActive(Connection conn) {
+                        DeviceInfoDTO deviceInfo = new DeviceInfoDTO();
+                        BeanUtils.copyProperties(conn, deviceInfo);
+                        sseService.sendDeviceMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_DEVICE_STATUS, deviceInfo));
+                    }
+
+                    @Override
+                    public void onDead(Connection conn) {
+                        DeviceInfoDTO deviceInfo = new DeviceInfoDTO();
+                        BeanUtils.copyProperties(conn, deviceInfo);
+                        sseService.sendDeviceMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_DEVICE_STATUS, deviceInfo));
+                    }
+                });
 
                 // 保存连接信息到列表
                 connectionMgr.saveConnection(ip, port, conn);

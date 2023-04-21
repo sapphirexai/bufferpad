@@ -66,6 +66,8 @@ public class Connection {
      */
     private Bootstrap client;
 
+    private OnStatusChangeListener onStatusChangeListener;
+
     /**
      * Netty连接重置间隔时间
      */
@@ -133,6 +135,9 @@ public class Connection {
         status = Params.NETTY_CONNECTION_KEY_STATUS_ACTIVE;
         resetConnectionResetInterval();
         setChannelFuture(cf);
+
+        if (null != onStatusChangeListener)
+            onStatusChangeListener.onActive(this);
     }
 
     /**
@@ -150,5 +155,13 @@ public class Connection {
             channelFuture = null;
         }
 
+        if (null != onStatusChangeListener)
+            onStatusChangeListener.onDead(this);
+    }
+
+    public interface OnStatusChangeListener {
+        void onActive(Connection conn);
+
+        void onDead(Connection conn);
     }
 }

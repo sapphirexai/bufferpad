@@ -48,4 +48,9 @@ public final class Constants {
      */
     public static final long NETTY_CONNECTION_RESET_INTERVAL_SEC = 180L;
 
+    /**
+     * Sse消息主题
+     * SSE_MSG_TOPIC_DEVICE_STATUS 设备状态
+     */
+    public static final String SSE_MSG_TOPIC_DEVICE_STATUS = "deviceStatus";
 }

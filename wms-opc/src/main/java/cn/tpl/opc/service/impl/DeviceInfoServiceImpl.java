@@ -1,10 +1,8 @@
 package cn.tpl.opc.service.impl;
 
-import cn.tpl.opc.commons.dto.result.CushionInfoDTO;
 import cn.tpl.opc.commons.dto.result.DeviceInfoDTO;
 import cn.tpl.opc.commons.dto.result.PageData;
 import cn.tpl.opc.commons.scheme.base.BasePageScheme;
-import cn.tpl.opc.entity.CushionInfoEntity;
 import cn.tpl.opc.entity.DeviceInfoEntity;
 import cn.tpl.opc.mapper.DeviceInfoEntityMapper;
 import cn.tpl.opc.service.IDeviceInfoService;
