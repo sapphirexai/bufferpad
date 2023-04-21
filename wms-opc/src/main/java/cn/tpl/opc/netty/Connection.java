@@ -1,11 +1,16 @@
 package cn.tpl.opc.netty;
 
+import cn.tpl.opc.commons.constant.Constants;
 import cn.tpl.opc.commons.constant.Params;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import lombok.Data;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Author: Luo GuoWen
@@ -60,7 +65,33 @@ public class Connection {
      */
     private Bootstrap client;
 
+    /**
+     * Netty连接重置间隔时间
+     */
+    private long connectionResetInterval = Constants.NETTY_CONNECTION_RESET_INTERVAL_SEC;
+
+    /**
+     * 定时执行器
+     */
+    private final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
+
+    /**
+     * 连接检查任务
+     */
+    private final Runnable connectionCheckTask = new Runnable() {
+        @Override
+        public void run() {
+            if (isActive())
+                connectionResetInterval--;
+
+            if (0 > connectionResetInterval)
+                nowDead();
+        }
+    };
+
     public Connection() {
+        // 每秒执行一次
+        scheduledExecutorService.scheduleAtFixedRate(connectionCheckTask, 0, 1, TimeUnit.SECONDS);
     }
 
     /**
@@ -79,5 +110,26 @@ public class Connection {
      */
     public boolean isDead() {
         return Params.NETTY_CONNECTION_KEY_STATUS_DISCONNECTED == status;
+    }
+
+    /**
+     * 重置连接重置间隔时间
+     */
+    public void resetConnectionResetInterval() {
+        connectionResetInterval = Constants.NETTY_CONNECTION_RESET_INTERVAL_SEC;
+    }
+
+    /**
+     * 改变连接状态为活跃
+     */
+    public void nowActive() {
+        status = Params.NETTY_CONNECTION_KEY_STATUS_ACTIVE;
+    }
+
+    /**
+     * 改变连接状态为断开
+     */
+    public void nowDead() {
+        status = Params.NETTY_CONNECTION_KEY_STATUS_DISCONNECTED;
     }
 }

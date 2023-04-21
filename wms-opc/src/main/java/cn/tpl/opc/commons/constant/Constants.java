@@ -43,4 +43,9 @@ public final class Constants {
             SCANNER_MSG_HEART_BEAT = "HeartBeat",
             SCANNER_MSG_NO_READ = "NoRead";
 
+    /**
+     * Netty连接重置间隔时间，单位：秒
+     */
+    public static final long NETTY_CONNECTION_RESET_INTERVAL_SEC = 1800L;
+
 }

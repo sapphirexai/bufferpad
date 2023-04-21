@@ -63,7 +63,9 @@ public class Connector {
         startReconnectService();
     }
 
-    private Bootstrap fastBuildClient(String ip, int port) {
+    private Bootstrap fastBuildClient(Connection connection) {
+        String ip = connection.getIp();
+        int port = connection.getPort();
         Bootstrap client = new Bootstrap();
         client.group(connectionMgr.getWorker())
                 .channel(NioSocketChannel.class)
@@ -81,6 +83,12 @@ public class Connector {
                             protected void onScannerMsgReceived(String fMsg) {
                                 super.onScannerMsgReceived(fMsg);
                                 handleScannerData(fMsg);
+                            }
+
+                            @Override
+                            protected void onHearBeat() {
+                                super.onHearBeat();
+                                connection.resetConnectionResetInterval();
                             }
                         });
                         // 添加心跳处理器
@@ -142,7 +150,7 @@ public class Connector {
         String ip = connection.getIp();
         int port = connection.getPort();
         // 创建一个客户端）
-        Bootstrap client = fastBuildClient(ip, port);
+        Bootstrap client = fastBuildClient(connection);
         connection.setClient(client);
         // 与指定的地址建立连接
         try {
@@ -158,7 +166,7 @@ public class Connector {
             // 发起连接
             ChannelFuture cf = client.connect(ip, port).sync();
             connection.setChannelFuture(cf);
-            connection.setStatus(Params.NETTY_CONNECTION_KEY_STATUS_ACTIVE);
+            connection.nowActive();
         } catch (Exception e) {
             log.error("Netty连接异常", e);
             return false;
@@ -226,7 +234,7 @@ public class Connector {
         Connection conn = connectionMgr.getConnection(ip, port);
         if (null == conn) return;
 
+        conn.nowDead();
         conn.getChannelFuture().channel().close();
-        conn.setStatus(Params.NETTY_CONNECTION_KEY_STATUS_DISCONNECTED);
     }
 }
