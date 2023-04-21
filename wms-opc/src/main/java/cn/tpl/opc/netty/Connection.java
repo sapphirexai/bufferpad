@@ -83,7 +83,7 @@ public class Connection {
         public void run() {
             if (isActive()) {
                 connectionResetInterval--;
-                log.info("connectionCheckTask，connectionResetInterval：" + connectionResetInterval);
+                log.info("connectionResetInterval：" + connectionResetInterval);
                 if (0 > connectionResetInterval) nowDead();
             }
         }
@@ -117,9 +117,12 @@ public class Connection {
 
     /**
      * 改变连接状态为活跃
+     *
+     * @param cf 通道
      */
-    public void nowActive() {
+    public void nowActive(ChannelFuture cf) {
         status = Params.NETTY_CONNECTION_KEY_STATUS_ACTIVE;
+        setChannelFuture(cf);
         connectionCheckService.scheduleAtFixedRate(connectionCheckTask, 0, 1, TimeUnit.SECONDS);
     }
 
@@ -129,5 +132,7 @@ public class Connection {
     public void nowDead() {
         status = Params.NETTY_CONNECTION_KEY_STATUS_DISCONNECTED;
         connectionCheckService.shutdown();
+        channelFuture.channel().close();
+        channelFuture = null;
     }
 }

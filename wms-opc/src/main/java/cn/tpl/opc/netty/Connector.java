@@ -1,7 +1,6 @@
 package cn.tpl.opc.netty;
 
 import cn.tpl.opc.commons.constant.Constants;
-import cn.tpl.opc.commons.constant.Params;
 import cn.tpl.opc.entity.CushionInfoEntity;
 import cn.tpl.opc.netty.handler.HeartbeatHandler;
 import cn.tpl.opc.netty.handler.MsgHandler;
@@ -164,8 +163,7 @@ public class Connector {
 
                 // 发起连接
                 ChannelFuture cf = client.connect(ip, port).sync();
-                conn.setChannelFuture(cf);
-                conn.nowActive();
+                conn.nowActive(cf);
             }
         } catch (Exception e) {
             log.error("Netty连接异常", e);
@@ -198,8 +196,7 @@ public class Connector {
                                 log.info("当前连接已断开，尝试重连 => {}:{}...", ip, port);
                                 Bootstrap client = conn.getClient();
                                 ChannelFuture cf = client.connect(ip, port).sync();
-                                conn.setChannelFuture(cf);
-                                conn.nowActive();
+                                conn.nowActive(cf);
                             } catch (Exception e) {
                                 log.error("Netty连接异常", e);
                             }
@@ -221,22 +218,7 @@ public class Connector {
         Connection conn = connectionMgr.getConnection(ip, port);
         if (null == conn) return;
 
-        conn.setStatus(Params.NETTY_CONNECTION_KEY_STATUS_DISCONNECTED);
-    }
-
-
-    /**
-     * 断开连接
-     *
-     * @param ip   目标IP地址
-     * @param port 目标端口
-     */
-    public void disconnect(String ip, int port) {
-        Connection conn = connectionMgr.getConnection(ip, port);
-        if (null == conn) return;
-
         conn.nowDead();
-        conn.getChannelFuture().channel().close();
     }
 
     /**

@@ -52,8 +52,6 @@ public class HeartbeatHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         log.info("与目标建立连接成功，当前连接 => {}:{}", mIP, mPort);
-        // 建立连接成功之后，先向服务端发送一条数据
-        ctx.channel().writeAndFlush("HeartbeatTestStart\n");
         super.channelActive(ctx);
     }
 }
