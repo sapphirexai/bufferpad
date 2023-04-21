@@ -131,6 +131,7 @@ public class Connection {
         }
 
         status = Params.NETTY_CONNECTION_KEY_STATUS_ACTIVE;
+        resetConnectionResetInterval();
         setChannelFuture(cf);
     }
 
