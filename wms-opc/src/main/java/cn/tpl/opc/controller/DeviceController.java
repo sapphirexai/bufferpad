@@ -33,7 +33,7 @@ public class DeviceController {
     @Resource
     private IDeviceInfoService deviceInfoService;
 
-    @Operation(summary = "分页查询设备列表", description = "用于设备配置相关")
+    @Operation(summary = "分页查询设备列表，用于设备配置相关")
     @GetMapping("/devicesPage")
     public ResultDTO<PageData<DeviceInfoDTO>> devicesPage(@Parameter(description = "详情查看<a href=\"#model-BasePageScheme\"> BasePageScheme") BasePageScheme scheme) {
         try {
