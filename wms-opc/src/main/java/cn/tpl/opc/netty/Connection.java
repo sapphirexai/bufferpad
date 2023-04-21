@@ -90,6 +90,9 @@ public class Connection {
         }
     };
 
+    public Connection() {
+        connectionCheckService.scheduleAtFixedRate(connectionCheckTask, 0, 1, TimeUnit.SECONDS);
+    }
 
     /**
      * 判断连接是否处于活跃状态
@@ -129,7 +132,6 @@ public class Connection {
 
         status = Params.NETTY_CONNECTION_KEY_STATUS_ACTIVE;
         setChannelFuture(cf);
-        connectionCheckService.scheduleAtFixedRate(connectionCheckTask, 0, 1, TimeUnit.SECONDS);
     }
 
     /**
@@ -142,7 +144,6 @@ public class Connection {
         }
 
         status = Params.NETTY_CONNECTION_KEY_STATUS_DISCONNECTED;
-        connectionCheckService.shutdown();
         if (null != channelFuture) {
             channelFuture.channel().close();
             channelFuture = null;
