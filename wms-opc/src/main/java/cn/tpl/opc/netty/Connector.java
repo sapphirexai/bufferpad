@@ -164,6 +164,7 @@ public class Connector {
                 conn.setOnStatusChangeListener(new Connection.OnStatusChangeListener() {
                     @Override
                     public void onActive(Connection conn) {
+                        log.info("onActive，conn：{}", conn);
                         DeviceInfoDTO deviceInfo = new DeviceInfoDTO();
                         BeanUtils.copyProperties(conn, deviceInfo);
                         sseService.sendDeviceMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_DEVICE_STATUS, deviceInfo));
@@ -171,6 +172,7 @@ public class Connector {
 
                     @Override
                     public void onDead(Connection conn) {
+                        log.info("onDead，conn：{}", conn);
                         DeviceInfoDTO deviceInfo = new DeviceInfoDTO();
                         BeanUtils.copyProperties(conn, deviceInfo);
                         sseService.sendDeviceMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_DEVICE_STATUS, deviceInfo));
