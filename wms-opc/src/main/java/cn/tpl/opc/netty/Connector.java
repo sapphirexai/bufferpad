@@ -143,6 +143,7 @@ public class Connector {
         int port = connection.getPort();
         // 创建一个客户端）
         Bootstrap client = fastBuildClient(ip, port);
+        connection.setClient(client);
         // 与指定的地址建立连接
         try {
             Connection cConn = connectionMgr.getConnection(ip, port);
@@ -187,7 +188,7 @@ public class Connector {
                                 String ip = conn.getIp();
                                 int port = conn.getPort();
                                 log.info("当前连接已断开，尝试重连 => {}:{}...", ip, port);
-                                Bootstrap client = fastBuildClient(ip, port);
+                                Bootstrap client = conn.getClient();
                                 ChannelFuture cf = client.connect(ip, port).sync();
                                 conn.setChannelFuture(cf);
                             } catch (Exception e) {

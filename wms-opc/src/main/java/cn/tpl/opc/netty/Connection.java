@@ -1,8 +1,8 @@
 package cn.tpl.opc.netty;
 
 import cn.tpl.opc.commons.constant.Params;
+import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
-import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
@@ -51,9 +51,14 @@ public class Connection {
     private String name;
 
     /**
-     * 连接之后产生的I/O操作通道
+     * Netty连接之后产生的I/O操作通道
      */
     private ChannelFuture channelFuture;
+
+    /**
+     * Netty客户端对象
+     */
+    private Bootstrap client;
 
     public Connection() {
     }

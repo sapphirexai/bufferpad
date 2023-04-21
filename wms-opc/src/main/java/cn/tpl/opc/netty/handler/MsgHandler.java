@@ -66,7 +66,7 @@ public class MsgHandler extends ChannelInboundHandlerAdapter {
      * 收到心跳时
      */
     protected void onHearBeat() {
-        log.debug("onHearBeat，来自扫码器的心跳");
+        log.info("onHearBeat，来自扫码器的心跳");
         // TODO: 2023/4/20 重置连接状态计时
     }
 }
