@@ -26,7 +26,7 @@ public class SseController {
     @Resource
     private ISseService sseService;
 
-    @Operation(summary = "订阅当前所有设备状态信息")
+    @Operation(summary = "订阅当前所有设备状态信息，当设备状态发生改变时，会收到对应设备的消息")
     @GetMapping("/devicesStatus/{clientId}")
     public ResultDTO<Boolean> devicesStatus(@Parameter(description = "客户端Id，自己定义") @PathVariable("clientId") String clientId) {
         try {
