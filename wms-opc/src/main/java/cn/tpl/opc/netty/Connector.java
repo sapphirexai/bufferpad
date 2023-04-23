@@ -130,8 +130,7 @@ public class Connector {
         log.info("onScanCodeSuccess");
         CushionInfoDTO cushionInfoDTO = new CushionInfoDTO();
         BeanUtils.copyProperties(cushionInfoEntity, cushionInfoDTO);
-        // 推送一条缓冲垫数据到客户端
-        sseService.sendCushionMsg(cushionInfoDTO);
+        sseService.sendCushionMsg(cushionInfoDTO);// 推送一条缓冲垫数据到客户端
     }
 
     private void handleScannerData(String fMsg) {
@@ -142,7 +141,6 @@ public class Connector {
             if (addResult) onScanCodeSuccess(fMsg);
             return;
         }
-
         //若当前与最后一次扫码时间相差不足一小时，则为无效扫码，不进行操作
         Date lastScanDate = cushionInfoEntity.getLastScanDate();
         long interval = System.currentTimeMillis() - lastScanDate.getTime();
