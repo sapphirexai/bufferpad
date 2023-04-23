@@ -2,7 +2,6 @@ package cn.tpl.opc.netty;
 
 import cn.tpl.opc.commons.constant.Constants;
 import cn.tpl.opc.commons.constant.Params;
-import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import lombok.Data;
 import lombok.ToString;
