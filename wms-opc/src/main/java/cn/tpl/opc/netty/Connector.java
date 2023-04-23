@@ -3,7 +3,6 @@ package cn.tpl.opc.netty;
 import cn.tpl.opc.commons.constant.Constants;
 import cn.tpl.opc.commons.dto.result.CushionInfoDTO;
 import cn.tpl.opc.commons.dto.result.DeviceInfoDTO;
-import cn.tpl.opc.commons.dto.result.SseMsgDTO;
 import cn.tpl.opc.entity.CushionInfoEntity;
 import cn.tpl.opc.netty.handler.HeartbeatHandler;
 import cn.tpl.opc.netty.handler.MsgHandler;
@@ -92,6 +91,12 @@ public class Connector {
                             }
 
                             @Override
+                            protected void onScannerScanFailed() {
+                                super.onScannerScanFailed();
+                                onScanCodeFailed();
+                            }
+
+                            @Override
                             protected void onHearBeat() {
                                 super.onHearBeat();
                                 connection.resetConnectionResetInterval();
@@ -131,6 +136,14 @@ public class Connector {
         CushionInfoDTO cushionInfoDTO = new CushionInfoDTO();
         BeanUtils.copyProperties(cushionInfoEntity, cushionInfoDTO);
         sseService.sendCushionMsg(cushionInfoDTO);// 推送一条缓冲垫数据到客户端
+    }
+
+    /**
+     * 缓冲垫扫码失败
+     */
+    private void onScanCodeFailed() {
+        log.info("onScanCodeFailed");
+        sseService.sendCushionMsg(null);// 推送一条缓冲垫数据到客户端
     }
 
     private void handleScannerData(String fMsg) {

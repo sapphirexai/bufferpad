@@ -35,7 +35,8 @@ public class MsgHandler extends ChannelInboundHandlerAdapter {
                 }
 
                 if (oMsg.contains(Constants.SCANNER_MSG_NO_READ)) {
-                    log.info("channelRead，扫码器未读到数据，不操作。");
+                    log.info("channelRead，扫码器未读到数据。");
+                    onScannerScanFailed();
                     return;
                 }
 
@@ -60,6 +61,13 @@ public class MsgHandler extends ChannelInboundHandlerAdapter {
      */
     protected void onScannerMsgReceived(String fMsg) {
         log.info("onScannerMsgReceived, msg: [{}]", fMsg);
+    }
+
+    /**
+     * 扫码器扫码失败时调用
+     */
+    protected void onScannerScanFailed() {
+        log.info("onScannerScanFailed");
     }
 
     /**
