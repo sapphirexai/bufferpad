@@ -1,7 +1,9 @@
 package cn.tpl.opc.netty.handler;
 
 import cn.tpl.opc.commons.constant.Constants;
+import cn.tpl.opc.commons.dto.event.EventBusMsgPlcCmd;
 import cn.tpl.opc.commons.dto.result.CushionInfoDTO;
+import cn.tpl.opc.commons.dto.event.EventBusMsgCushionQrCode;
 import cn.tpl.opc.entity.CushionInfoEntity;
 import cn.tpl.opc.netty.Connection;
 import cn.tpl.opc.service.ICushionInfoService;
@@ -13,6 +15,9 @@ import io.netty.util.CharsetUtil;
 import io.netty.util.ReferenceCountUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 import org.springframework.beans.BeanUtils;
 
 import java.util.Date;
@@ -41,6 +46,7 @@ public class MsgHandler extends ChannelInboundHandlerAdapter {
         mConnection = connection;
         mCushionInfoService = cushionInfoService;
         mSseService = sseService;
+        EventBus.getDefault().register(this);
     }
 
 
@@ -59,7 +65,7 @@ public class MsgHandler extends ChannelInboundHandlerAdapter {
 
                 if (oMsg.contains(Constants.SCANNER_MSG_NO_READ)) {
                     log.info("channelRead，扫码器未读到数据。");
-                    onScanCodeFailed();
+                    EventBus.getDefault().post(new EventBusMsgCushionQrCode(null));
                     return;
                 }
 
@@ -68,7 +74,7 @@ public class MsgHandler extends ChannelInboundHandlerAdapter {
                     log.info("channelRead，扫码数据帧头匹配，*** 开始操作 ***。");
                     // 替换帧头和帧尾
                     String fMsg = oMsg.replaceAll(SCANNER_DATA_REGEX, "");
-                    handleScannerData(fMsg);
+                    EventBus.getDefault().post(new EventBusMsgCushionQrCode(fMsg));
                 }
             }
         } finally {
@@ -127,8 +133,8 @@ public class MsgHandler extends ChannelInboundHandlerAdapter {
         int maxUseCount = cushionInfoEntity.getMaxUseCount();
         int usedCount = cushionInfoEntity.getUsedCount();
 
+        // TODO: 2023/4/17 PLC设备报警
         if (maxUseCount <= usedCount) {
-            // TODO: 2023/4/17 设备报警
             log.info("handleScannerData，最大使用次数：{}，已使用次数：{}，已超次数：{}", maxUseCount, usedCount, usedCount - maxUseCount);
         }
         // 增加当前缓冲垫1次使用次数
@@ -138,4 +144,9 @@ public class MsgHandler extends ChannelInboundHandlerAdapter {
         if (modifyResult) onScanCodeSuccess(fMsg);
     }
 
+    @SuppressWarnings("unused")
+    @Subscribe(threadMode = ThreadMode.POSTING)
+    public void onMessageEvent(EventBusMsgPlcCmd<Integer> event) {
+        log.info("onMessageEvent，PLC报警");
+    }
 }

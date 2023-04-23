@@ -111,16 +111,12 @@ public class Connector {
                 // 设置状态监听器
                 conn.setOnStatusChangeListener(new Connection.OnStatusChangeListener() {
                     @Override
-                    public void onActive(Connection conn) {
-                        log.info("onActive，conn：{}", conn);
-                        DeviceInfoDTO deviceInfo = new DeviceInfoDTO();
-                        BeanUtils.copyProperties(conn, deviceInfo);
-                        sseService.sendDeviceMsg(deviceInfo);
+                    public void onStatusChanged(Connection conn) {
+                        log.info("onStatusChanged，conn：{}", conn);
+                        sendSseMsg(conn);
                     }
 
-                    @Override
-                    public void onDead(Connection conn) {
-                        log.info("onDead，conn：{}", conn);
+                    private void sendSseMsg(Connection conn) {
                         DeviceInfoDTO deviceInfo = new DeviceInfoDTO();
                         BeanUtils.copyProperties(conn, deviceInfo);
                         sseService.sendDeviceMsg(deviceInfo);

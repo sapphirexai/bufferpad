@@ -131,7 +131,7 @@ public class Connection {
         setChannelFuture(cf);
 
         if (null != onStatusChangeListener)
-            onStatusChangeListener.onActive(this);
+            onStatusChangeListener.onStatusChanged(this);
     }
 
     /**
@@ -150,12 +150,10 @@ public class Connection {
         }
 
         if (null != onStatusChangeListener)
-            onStatusChangeListener.onDead(this);
+            onStatusChangeListener.onStatusChanged(this);
     }
 
     public interface OnStatusChangeListener {
-        void onActive(Connection conn);
-
-        void onDead(Connection conn);
+        void onStatusChanged(Connection conn);
     }
 }
