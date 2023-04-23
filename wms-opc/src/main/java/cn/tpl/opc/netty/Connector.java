@@ -83,98 +83,14 @@ public class Connector {
                         // 配置如果对应时间内未触发写事件，就会触发写闲置事件
                         sc.pipeline().addLast(new IdleStateHandler(0, 30, 0, TimeUnit.SECONDS));
                         // 添加一个入站处理器，对收到的数据进行处理
-                        sc.pipeline().addLast(new MsgHandler() {
-                            @Override
-                            protected void onScannerMsgReceived(String fMsg) {
-                                super.onScannerMsgReceived(fMsg);
-                                handleScannerData(fMsg);
-                            }
-
-                            @Override
-                            protected void onScannerScanFailed() {
-                                super.onScannerScanFailed();
-                                onScanCodeFailed();
-                            }
-
-                            @Override
-                            protected void onHearBeat() {
-                                super.onHearBeat();
-                                connection.resetConnectionResetInterval();
-                            }
-                        });
+                        sc.pipeline().addLast(new MsgHandler(connection, cushionInfoService, sseService));
                         // 添加心跳处理器
-                        sc.pipeline().addLast(new HeartbeatHandler(ip, port) {
-                            @Override
-                            public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-                                log.warn("channelInactive, 服务端主动关闭了连接....");
-                                super.channelInactive(ctx);
-                                onConnectionClosed(ip, port);
-                            }
-
-                            @Override
-                            public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-                                log.error("exceptionCaught, Netty连接中异常捕获：", cause);
-                                super.exceptionCaught(ctx, cause);
-                                onConnectionClosed(ip, port);
-                            }
-                        });
+                        sc.pipeline().addLast(new HeartbeatHandler(connection));
                     }
                 });
         return client;
     }
 
-    /**
-     * 缓冲垫扫码成功
-     *
-     * @param cushionQrCode 缓冲垫二维码
-     */
-    private void onScanCodeSuccess(String cushionQrCode) {
-        if (StringUtils.isEmpty(cushionQrCode)) return;
-        CushionInfoEntity cushionInfoEntity = cushionInfoService.findByQrCode(cushionQrCode);
-        if (null == cushionInfoEntity) return;
-        log.info("onScanCodeSuccess");
-        CushionInfoDTO cushionInfoDTO = new CushionInfoDTO();
-        BeanUtils.copyProperties(cushionInfoEntity, cushionInfoDTO);
-        sseService.sendCushionMsg(cushionInfoDTO);// 推送一条缓冲垫数据到客户端
-    }
-
-    /**
-     * 缓冲垫扫码失败
-     */
-    private void onScanCodeFailed() {
-        log.info("onScanCodeFailed");
-        sseService.sendCushionMsg(null);// 推送一条缓冲垫数据到客户端
-    }
-
-    private void handleScannerData(String fMsg) {
-        CushionInfoEntity cushionInfoEntity = cushionInfoService.findByQrCode(fMsg);
-        if (null == cushionInfoEntity) {
-            boolean addResult = cushionInfoService.add(fMsg);
-            log.info("handleScannerData，新增缓冲垫结果：[{}]", addResult);
-            if (addResult) onScanCodeSuccess(fMsg);
-            return;
-        }
-        //若当前与最后一次扫码时间相差不足一小时，则为无效扫码，不进行操作
-        Date lastScanDate = cushionInfoEntity.getLastScanDate();
-        long interval = System.currentTimeMillis() - lastScanDate.getTime();
-        if (interval < Constants.SCANNER_EFFECTIVE_INTERVAL_MILLIS) {
-            log.info("handleScannerData，无效扫码，不进行操作，当前扫码间隔：{}毫秒", interval);
-            return;
-        }
-
-        int maxUseCount = cushionInfoEntity.getMaxUseCount();
-        int usedCount = cushionInfoEntity.getUsedCount();
-
-        if (maxUseCount <= usedCount) {
-            // TODO: 2023/4/17 设备报警
-            log.info("handleScannerData，最大使用次数：{}，已使用次数：{}，已超次数：{}", maxUseCount, usedCount, usedCount - maxUseCount);
-        }
-        // 增加当前缓冲垫1次使用次数
-        usedCount++;
-        boolean modifyResult = cushionInfoService.modifyUsedCountByQrCode(fMsg, usedCount);
-        log.info("handleScannerData，增加缓冲垫已使用次数结果：[{}]", modifyResult);
-        if (modifyResult) onScanCodeSuccess(fMsg);
-    }
 
     /**
      * 连接

@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.util.Map;
 import java.util.concurrent.*;
 
 /**
@@ -47,14 +48,15 @@ public class SseServiceImpl implements ISseService {
 
     @Override
     public <T> void sendMsg(SseMsgDTO<T> msg) {
-        for (SseEmitter sseEmitter : SSE_CLIENTS.values()) {
+        for (Map.Entry<String, SseEmitter> entry : SSE_CLIENTS.entrySet()) {
             MSG_SERVICE.execute(() -> {
                 try {
                     String fMsg = FastJsonUtils.toJSONString(ResultDTO.success(msg));
                     log.info("sendMsg，msgJson：{}", fMsg);
-                    sseEmitter.send(fMsg);
+                    entry.getValue().send(fMsg);
                 } catch (Exception e) {
-                    log.error("sendMsg，异常：", e);
+                    log.error("sendMsg，Client：{}，异常", entry.getKey(), e);
+                    SSE_CLIENTS.remove(entry.getKey());
                 }
             });
         }

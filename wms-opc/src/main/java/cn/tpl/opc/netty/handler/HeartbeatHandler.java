@@ -1,6 +1,7 @@
 package cn.tpl.opc.netty.handler;
 
 import cn.tpl.opc.commons.constant.Constants;
+import cn.tpl.opc.netty.Connection;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -18,18 +19,12 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class HeartbeatHandler extends ChannelInboundHandlerAdapter {
     /**
-     * 目标IP地址
+     * 连接信息
      */
-    private String mIP;
+    private final Connection mConnection;
 
-    /**
-     * 目标端口
-     */
-    private int mPort;
-
-    public HeartbeatHandler(String ip, int port) {
-        mIP = ip;
-        mPort = port;
+    public HeartbeatHandler(Connection connection) {
+        mConnection = connection;
     }
 
     @Override
@@ -42,7 +37,7 @@ public class HeartbeatHandler extends ChannelInboundHandlerAdapter {
                 // 为了防止服务端关闭当前连接，手动发送一个心跳包
                 String hb = Constants.SCANNER_MSG_STX + Constants.SCANNER_MSG_HEART_BEAT + Constants.SCANNER_MSG_ETX;
                 ctx.channel().writeAndFlush(Unpooled.unreleasableBuffer(Unpooled.copiedBuffer(hb.getBytes(CharsetUtil.UTF_8))).duplicate());
-                log.info("userEventTriggered，成功向目标发送心跳包{}，当前连接 => {}:{}", hb, mIP, mPort);
+                log.info("userEventTriggered，成功向目标发送心跳包{}，当前连接 => {}:{}", hb, mConnection.getIp(), mConnection.getPort());
             } else {
                 super.userEventTriggered(ctx, event);
             }
@@ -51,8 +46,30 @@ public class HeartbeatHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        log.info("与目标建立连接成功，当前连接 => {}:{}", mIP, mPort);
+        log.info("与目标建立连接成功，当前连接 => {}:{}", mConnection.getIp(), mConnection.getPort());
         super.channelActive(ctx);
+    }
+
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        super.channelInactive(ctx);
+        log.warn("channelInactive, 服务端主动关闭了连接....");
+        onConnectionClosed();
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        super.exceptionCaught(ctx, cause);
+        log.error("exceptionCaught, Netty连接中异常捕获：", cause);
+        onConnectionClosed();
+    }
+
+    /**
+     * 连接被迫关闭时调用
+     */
+    private void onConnectionClosed() {
+        log.info("onConnectionClosed");
+        mConnection.nowDead();
     }
 }
 
