@@ -1,5 +1,6 @@
 package cn.tpl.opc.service;
 
+import cn.tpl.opc.commons.dto.result.CushionInfoDTO;
 import cn.tpl.opc.commons.dto.result.DeviceInfoDTO;
 import cn.tpl.opc.commons.dto.result.SseMsgDTO;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -22,7 +23,21 @@ public interface ISseService {
     /**
      * 发送设备消息
      *
-     * @param msg 设备消息
+     * @param deviceInfo 设备消息
      */
-    void sendDeviceMsg(SseMsgDTO<DeviceInfoDTO> msg);
+    void sendDeviceMsg(DeviceInfoDTO deviceInfo);
+
+    /**
+     * 发送消息
+     *
+     * @param msg 消息
+     */
+    <T> void sendMsg(SseMsgDTO<T> msg);
+
+    /**
+     * 发送缓冲垫消息
+     *
+     * @param msg 缓冲垫消息
+     */
+    void sendCushionMsg(SseMsgDTO<CushionInfoDTO> msg);
 }

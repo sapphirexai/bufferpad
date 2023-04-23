@@ -1,6 +1,8 @@
 package cn.tpl.opc.service.impl;
 
+import cn.tpl.opc.commons.constant.Constants;
 import cn.tpl.opc.commons.dto.ResultDTO;
+import cn.tpl.opc.commons.dto.result.CushionInfoDTO;
 import cn.tpl.opc.commons.dto.result.DeviceInfoDTO;
 import cn.tpl.opc.commons.dto.result.SseMsgDTO;
 import cn.tpl.opc.service.ISseService;
@@ -44,20 +46,27 @@ public class SseServiceImpl implements ISseService {
     }
 
     @Override
-    public void sendDeviceMsg(SseMsgDTO<DeviceInfoDTO> msg) {
+    public <T> void sendMsg(SseMsgDTO<T> msg) {
         for (SseEmitter sseEmitter : SSE_CLIENTS.values()) {
-            MSG_SERVICE.execute(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        String fMsg = FastJsonUtils.toJSONString(ResultDTO.success(msg));
-                        log.info("sendDeviceMsg，msgJson：{}", fMsg);
-                        sseEmitter.send(fMsg);
-                    } catch (Exception e) {
-                        log.error("sendDeviceMsg，异常：", e);
-                    }
+            MSG_SERVICE.execute(() -> {
+                try {
+                    String fMsg = FastJsonUtils.toJSONString(ResultDTO.success(msg));
+                    log.info("sendMsg，msgJson：{}", fMsg);
+                    sseEmitter.send(fMsg);
+                } catch (Exception e) {
+                    log.error("sendMsg，异常：", e);
                 }
             });
         }
+    }
+
+    @Override
+    public void sendDeviceMsg(DeviceInfoDTO deviceInfo) {
+        sendMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_DEVICE_STATUS, deviceInfo));
+    }
+
+    @Override
+    public void sendCushionMsg(SseMsgDTO<CushionInfoDTO> msg) {
+
     }
 }

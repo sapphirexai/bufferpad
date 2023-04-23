@@ -1,6 +1,7 @@
 package cn.tpl.opc.netty;
 
 import cn.tpl.opc.commons.constant.Constants;
+import cn.tpl.opc.commons.dto.result.CushionInfoDTO;
 import cn.tpl.opc.commons.dto.result.DeviceInfoDTO;
 import cn.tpl.opc.commons.dto.result.SseMsgDTO;
 import cn.tpl.opc.entity.CushionInfoEntity;
@@ -19,6 +20,7 @@ import io.netty.handler.codec.string.StringEncoder;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.CharsetUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
@@ -116,11 +118,28 @@ public class Connector {
         return client;
     }
 
+    /**
+     * 缓冲垫扫码成功
+     *
+     * @param cushionQrCode 缓冲垫二维码
+     */
+    private void onScanCodeSuccess(String cushionQrCode) {
+        if (StringUtils.isEmpty(cushionQrCode)) return;
+        CushionInfoEntity cushionInfoEntity = cushionInfoService.findByQrCode(cushionQrCode);
+        if (null == cushionInfoEntity) return;
+        log.info("onScanCodeSuccess");
+        CushionInfoDTO cushionInfoDTO = new CushionInfoDTO();
+        BeanUtils.copyProperties(cushionInfoEntity, cushionInfoDTO);
+        // 推送一条缓冲垫数据到客户端
+
+    }
+
     private void handleScannerData(String fMsg) {
         CushionInfoEntity cushionInfoEntity = cushionInfoService.findByQrCode(fMsg);
         if (null == cushionInfoEntity) {
             boolean addResult = cushionInfoService.add(fMsg);
             log.info("handleScannerData，新增缓冲垫结果：[{}]", addResult);
+            if (addResult) onScanCodeSuccess(fMsg);
             return;
         }
 
@@ -140,8 +159,10 @@ public class Connector {
             log.info("handleScannerData，最大使用次数：{}，已使用次数：{}，已超次数：{}", maxUseCount, usedCount, usedCount - maxUseCount);
         }
         // 增加当前缓冲垫1次使用次数
-        boolean modifyResult = cushionInfoService.modifyUsedCountByQrCode(fMsg, usedCount + 1);
+        usedCount++;
+        boolean modifyResult = cushionInfoService.modifyUsedCountByQrCode(fMsg, usedCount);
         log.info("handleScannerData，增加缓冲垫已使用次数结果：[{}]", modifyResult);
+        if (modifyResult) onScanCodeSuccess(fMsg);
     }
 
     /**
@@ -167,7 +188,7 @@ public class Connector {
                         log.info("onActive，conn：{}", conn);
                         DeviceInfoDTO deviceInfo = new DeviceInfoDTO();
                         BeanUtils.copyProperties(conn, deviceInfo);
-                        sseService.sendDeviceMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_DEVICE_STATUS, deviceInfo));
+                        sseService.sendDeviceMsg(deviceInfo);
                     }
 
                     @Override
@@ -175,7 +196,7 @@ public class Connector {
                         log.info("onDead，conn：{}", conn);
                         DeviceInfoDTO deviceInfo = new DeviceInfoDTO();
                         BeanUtils.copyProperties(conn, deviceInfo);
-                        sseService.sendDeviceMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_DEVICE_STATUS, deviceInfo));
+                        sseService.sendDeviceMsg(deviceInfo);
                     }
                 });
 

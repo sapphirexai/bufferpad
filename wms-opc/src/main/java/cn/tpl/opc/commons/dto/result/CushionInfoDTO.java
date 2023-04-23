@@ -46,4 +46,10 @@ public class CushionInfoDTO extends AbsBaseDTO {
      */
     @Schema(description = "最近一次扫码时间")
     private Date lastScanDate;
+
+    /**
+     * 创建时间
+     */
+    @Schema(description = "创建该条记录的时间")
+    private Date createdDate;
 }
