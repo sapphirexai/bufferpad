@@ -2,6 +2,7 @@ package cn.tpl.opc.service;
 
 import cn.tpl.opc.commons.dto.result.DeviceInfoDTO;
 import cn.tpl.opc.commons.dto.result.SseMsgDTO;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 /**
  * Author: Luo GuoWen
@@ -14,9 +15,9 @@ public interface ISseService {
      * 订阅设备状态
      *
      * @param clientId 客户端Id
-     * @return 订阅结果，true 成功
+     * @return SseEmitter 对象
      */
-    boolean subscribeDevicesStatus(String clientId);
+    SseEmitter subscribeDevicesStatus(String clientId);
 
     /**
      * 发送设备消息

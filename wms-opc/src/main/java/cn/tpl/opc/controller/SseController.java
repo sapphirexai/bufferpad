@@ -6,10 +6,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import javax.annotation.Resource;
 
@@ -27,13 +29,13 @@ public class SseController {
     private ISseService sseService;
 
     @Operation(summary = "订阅当前所有设备状态信息，当设备状态发生改变时，会收到对应设备的消息")
-    @GetMapping("/devicesStatus/{clientId}")
-    public ResultDTO<Boolean> devicesStatus(@Parameter(description = "客户端Id，自己定义") @PathVariable("clientId") String clientId) {
+    @GetMapping(value = "/devicesStatus/{clientId}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter devicesStatus(@Parameter(description = "客户端Id，自己定义") @PathVariable("clientId") String clientId) {
         try {
             log.info("sse设备状态订阅，clientId：{}", clientId);
-            return ResultDTO.success(sseService.subscribeDevicesStatus(clientId));
+            return sseService.subscribeDevicesStatus(clientId);
         } catch (Exception e) {
-            return ResultDTO.exception(e);
+            return null;
         }
     }
 }

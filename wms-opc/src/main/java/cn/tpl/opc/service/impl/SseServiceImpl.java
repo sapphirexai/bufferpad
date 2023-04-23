@@ -4,6 +4,7 @@ import cn.tpl.opc.commons.dto.ResultDTO;
 import cn.tpl.opc.commons.dto.result.DeviceInfoDTO;
 import cn.tpl.opc.commons.dto.result.SseMsgDTO;
 import cn.tpl.opc.service.ISseService;
+import cn.tpl.opc.util.FastJsonUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -34,10 +35,12 @@ public class SseServiceImpl implements ISseService {
     private static final ConcurrentHashMap<String, SseEmitter> SSE_CLIENTS = new ConcurrentHashMap<>();
 
     @Override
-    public boolean subscribeDevicesStatus(String clientId) {
+    public SseEmitter subscribeDevicesStatus(String clientId) {
+        SseEmitter sseEmitter = new SseEmitter(0L);
+        sseEmitter.onError((err) -> log.error("Sse Error，clientId：{}，err：{}", err.getMessage(), clientId));
         SSE_CLIENTS.remove(clientId);
-        SSE_CLIENTS.put(clientId, new SseEmitter(0L));
-        return true;
+        SSE_CLIENTS.put(clientId, sseEmitter);
+        return sseEmitter;
     }
 
     @Override
@@ -47,10 +50,9 @@ public class SseServiceImpl implements ISseService {
                 @Override
                 public void run() {
                     try {
-                        sseEmitter.send(ResultDTO.success(msg));
+                        sseEmitter.send(FastJsonUtils.toJSONString(ResultDTO.success(msg)));
                     } catch (Exception e) {
                         log.error("sendDeviceMsg异常：", e);
-
                     }
                 }
             });
