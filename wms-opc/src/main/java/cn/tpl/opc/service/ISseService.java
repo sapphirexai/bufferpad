@@ -20,12 +20,6 @@ public interface ISseService {
      */
     SseEmitter subscribeDevicesStatus(String clientId);
 
-    /**
-     * 发送设备消息
-     *
-     * @param deviceInfo 设备消息
-     */
-    void sendDeviceMsg(DeviceInfoDTO deviceInfo);
 
     /**
      * 发送消息
@@ -35,9 +29,16 @@ public interface ISseService {
     <T> void sendMsg(SseMsgDTO<T> msg);
 
     /**
+     * 发送设备消息
+     *
+     * @param deviceInfo 设备数据
+     */
+    void sendDeviceMsg(DeviceInfoDTO deviceInfo);
+
+    /**
      * 发送缓冲垫消息
      *
-     * @param msg 缓冲垫消息
+     * @param cushionInfo 缓冲垫数据
      */
-    void sendCushionMsg(SseMsgDTO<CushionInfoDTO> msg);
+    void sendCushionMsg(CushionInfoDTO cushionInfo);
 }

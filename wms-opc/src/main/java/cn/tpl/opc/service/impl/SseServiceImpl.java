@@ -66,7 +66,7 @@ public class SseServiceImpl implements ISseService {
     }
 
     @Override
-    public void sendCushionMsg(SseMsgDTO<CushionInfoDTO> msg) {
-
+    public void sendCushionMsg(CushionInfoDTO cushionInfo) {
+        sendMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, cushionInfo));
     }
 }

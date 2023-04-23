@@ -51,6 +51,9 @@ public final class Constants {
     /**
      * Sse消息主题
      * SSE_MSG_TOPIC_DEVICE_STATUS 设备状态
+     * SSE_MSG_TOPIC_CUSHION_INFO 缓冲垫数据
      */
-    public static final String SSE_MSG_TOPIC_DEVICE_STATUS = "deviceStatus";
+    public static final String
+            SSE_MSG_TOPIC_DEVICE_STATUS = "deviceStatus",
+            SSE_MSG_TOPIC_CUSHION_INFO = "cushionInfo";
 }
