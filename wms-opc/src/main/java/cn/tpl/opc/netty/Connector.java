@@ -195,6 +195,7 @@ public class Connector {
     }
 
     public void startReconnectService() {
+        long timeExecuteSec = 120L;// 执行时间，单位：秒
         scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
@@ -216,7 +217,7 @@ public class Connector {
                                 String ip = conn.getIp();
                                 int port = conn.getPort();
                                 log.info("当前连接已断开，尝试重连 => {}:{}...", ip, port);
-                                Bootstrap client =fastBuildClient(conn);
+                                Bootstrap client = fastBuildClient(conn);
                                 ChannelFuture cf = client.connect(ip, port).sync();
                                 conn.nowActive(cf);
                             } catch (Exception e) {
@@ -226,7 +227,7 @@ public class Connector {
                     });
                 }
             }
-        }, 40, 40, TimeUnit.SECONDS);
+        }, timeExecuteSec, timeExecuteSec, TimeUnit.SECONDS);
 
     }
 

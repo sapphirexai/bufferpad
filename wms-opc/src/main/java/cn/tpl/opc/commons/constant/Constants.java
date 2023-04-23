@@ -46,7 +46,7 @@ public final class Constants {
     /**
      * Netty连接重置间隔时间，单位：秒
      */
-    public static final long NETTY_CONNECTION_RESET_INTERVAL_SEC = 180L;
+    public static final long NETTY_CONNECTION_RESET_INTERVAL_SEC = 100L;
 
     /**
      * Sse消息主题
