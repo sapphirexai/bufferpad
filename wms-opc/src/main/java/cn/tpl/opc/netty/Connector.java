@@ -131,7 +131,7 @@ public class Connector {
         CushionInfoDTO cushionInfoDTO = new CushionInfoDTO();
         BeanUtils.copyProperties(cushionInfoEntity, cushionInfoDTO);
         // 推送一条缓冲垫数据到客户端
-
+        sseService.sendCushionMsg(cushionInfoDTO);
     }
 
     private void handleScannerData(String fMsg) {
