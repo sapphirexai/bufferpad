@@ -183,8 +183,6 @@ public class Connector {
                 connectionMgr.saveConnection(ip, port, conn);
                 // 创建一个客户端）
                 Bootstrap client = fastBuildClient(conn);
-                conn.setClient(client);
-
                 // 发起连接
                 ChannelFuture cf = client.connect(ip, port).sync();
                 conn.nowActive(cf);
@@ -218,7 +216,7 @@ public class Connector {
                                 String ip = conn.getIp();
                                 int port = conn.getPort();
                                 log.info("当前连接已断开，尝试重连 => {}:{}...", ip, port);
-                                Bootstrap client = conn.getClient();
+                                Bootstrap client =fastBuildClient(conn);
                                 ChannelFuture cf = client.connect(ip, port).sync();
                                 conn.nowActive(cf);
                             } catch (Exception e) {
@@ -228,7 +226,7 @@ public class Connector {
                     });
                 }
             }
-        }, 5, 5, TimeUnit.MINUTES);
+        }, 40, 40, TimeUnit.SECONDS);
 
     }
 

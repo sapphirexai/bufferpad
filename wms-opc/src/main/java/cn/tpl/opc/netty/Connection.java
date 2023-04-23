@@ -61,11 +61,6 @@ public class Connection {
      */
     private volatile ChannelFuture channelFuture;
 
-    /**
-     * Netty客户端对象
-     */
-    private Bootstrap client;
-
     private OnStatusChangeListener onStatusChangeListener;
 
     /**
