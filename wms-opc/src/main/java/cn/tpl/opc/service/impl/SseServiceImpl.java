@@ -37,7 +37,7 @@ public class SseServiceImpl implements ISseService {
     @Override
     public SseEmitter subscribeDevicesStatus(String clientId) {
         SseEmitter sseEmitter = new SseEmitter(0L);
-        sseEmitter.onError((err) -> log.error("Sse Error，clientId：{}，err：{}", err.getMessage(), clientId));
+        sseEmitter.onError((err) -> log.error("SseError，clientId：{}，异常：{}", err.getMessage(), clientId));
         SSE_CLIENTS.remove(clientId);
         SSE_CLIENTS.put(clientId, sseEmitter);
         return sseEmitter;
@@ -50,9 +50,11 @@ public class SseServiceImpl implements ISseService {
                 @Override
                 public void run() {
                     try {
-                        sseEmitter.send(FastJsonUtils.toJSONString(ResultDTO.success(msg)));
+                        String fMsg = FastJsonUtils.toJSONString(ResultDTO.success(msg));
+                        log.info("sendDeviceMsg，msgJson：{}", fMsg);
+                        sseEmitter.send(fMsg);
                     } catch (Exception e) {
-                        log.error("sendDeviceMsg异常：", e);
+                        log.error("sendDeviceMsg，异常：", e);
                     }
                 }
             });
