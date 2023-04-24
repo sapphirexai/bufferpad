@@ -14,13 +14,22 @@ public final class Constants {
      * 缓冲垫二维码前缀
      */
     public static final String
-            CUSHION_INFO_QR_CODE_PREFIX_P = "P",
-            CUSHION_INFO_QR_CODE_PREFIX_T = "T";
+            CUSHION_QR_CODE_PREFIX_P = "P",
+            CUSHION_QR_CODE_PREFIX_T = "T";
 
     /**
-     * 新增缓冲垫时默认使用次数
+     * 缓冲垫默认最大使用次数
+     * CUSHION_DEFAULT_MAX_USE_COUNT_P 二维码P开头
+     * CUSHION_DEFAULT_MAX_USE_COUNT_T 二维码T开头
      */
-    public static final int CUSHION_INGO_ADD_DEFAULT_USED_COUNT = 1;
+    public static final int
+            CUSHION_DEFAULT_MAX_USE_COUNT_P = 100,
+            CUSHION_DEFAULT_MAX_USE_COUNT_T = 150;
+
+    /**
+     * 新增缓冲垫时默认已使用次数
+     */
+    public static final int CUSHION_ADD_DEFAULT_USED_COUNT = 1;
 
     /**
      * 扫码器有效扫码间隔
