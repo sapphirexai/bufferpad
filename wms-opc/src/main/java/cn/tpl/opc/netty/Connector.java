@@ -1,16 +1,12 @@
 package cn.tpl.opc.netty;
 
-import cn.tpl.opc.commons.constant.Constants;
-import cn.tpl.opc.commons.dto.result.CushionInfoDTO;
 import cn.tpl.opc.commons.dto.result.DeviceInfoDTO;
-import cn.tpl.opc.entity.CushionInfoEntity;
 import cn.tpl.opc.netty.handler.HeartbeatHandler;
 import cn.tpl.opc.netty.handler.MsgHandler;
 import cn.tpl.opc.service.ICushionInfoService;
 import cn.tpl.opc.service.ISseService;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.socket.SocketChannel;
@@ -19,14 +15,12 @@ import io.netty.handler.codec.string.StringEncoder;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.CharsetUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
 import java.util.Collection;
-import java.util.Date;
 import java.util.concurrent.*;
 
 /**
@@ -83,7 +77,7 @@ public class Connector {
                         // 配置如果对应时间内未触发写事件，就会触发写闲置事件
                         sc.pipeline().addLast(new IdleStateHandler(0, 30, 0, TimeUnit.SECONDS));
                         // 添加一个入站处理器，对收到的数据进行处理
-                        sc.pipeline().addLast(new MsgHandler(connection, cushionInfoService, sseService));
+                        sc.pipeline().addLast(new MsgHandler(connection));
                         // 添加心跳处理器
                         sc.pipeline().addLast(new HeartbeatHandler(connection));
                     }

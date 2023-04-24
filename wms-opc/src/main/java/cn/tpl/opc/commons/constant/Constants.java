@@ -56,4 +56,15 @@ public final class Constants {
     public static final String
             SSE_MSG_TOPIC_DEVICE_STATUS = "deviceStatus",
             SSE_MSG_TOPIC_CUSHION_INFO = "cushionInfo";
+
+    /**
+     * 接口请求结果消息
+     * RESULT_MSG_CUSHION_ADD_FAILED 新增缓冲垫失败
+     * RESULT_MSG_CUSHION_ADD_USED_COUNT_FAILED 增加缓冲垫使用次数失败
+     * RESULT_MSG_CUSHION_INVALID_SCAN 缓冲垫无效扫码
+     */
+    public static final String
+            RESULT_MSG_CUSHION_ADD_FAILED = "新增缓冲垫失败！",
+            RESULT_MSG_CUSHION_ADD_USED_COUNT_FAILED = "增加缓冲垫使用次数失败！",
+            RESULT_MSG_CUSHION_INVALID_SCAN = "扫码间隔时间不足1小时，无效扫码！";
 }

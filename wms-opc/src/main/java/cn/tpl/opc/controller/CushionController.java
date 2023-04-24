@@ -38,14 +38,16 @@ public class CushionController {
         }
     }
 
-//    @PostMapping("/manualCushionInfo/{qrCode}")
-//    public ResultDTO<CushionInfoDTO> manualCushionInfo(@PathVariable("qrCode") String qrCode) {
-//        try {
-//            log.debug("manualCushionInfo，qrCode：{}", qrCode);
-//            if (StringUtils.isEmpty(qrCode))
-//                return ResultDTO.failure("缓冲垫编码不能为空！");
-//        } catch (Exception e) {
-//            return ResultDTO.exception(e);
-//        }
+    @Operation(summary = "手动输入缓冲垫二维码")
+    @PostMapping("/manualCushionInfo/{qrCode}")
+    public ResultDTO<CushionInfoDTO> manualCushionInfo(@PathVariable("qrCode") String qrCode) {
+        try {
+            log.debug("manualCushionInfo，qrCode：{}", qrCode);
+            if (StringUtils.isEmpty(qrCode))
+                return ResultDTO.failure("缓冲垫编码不能为空！");
+            return cushionInfoService.onQrCodeReceived(qrCode);
+        } catch (Exception e) {
+            return ResultDTO.exception(e);
+        }
     }
-//}
+}

@@ -1,6 +1,7 @@
 package cn.tpl.opc.service.impl;
 
 import cn.tpl.opc.commons.constant.Constants;
+import cn.tpl.opc.commons.dto.ResultDTO;
 import cn.tpl.opc.commons.dto.event.EventBusMsgPlcCmd;
 import cn.tpl.opc.commons.dto.result.CushionInfoDTO;
 import cn.tpl.opc.commons.dto.event.EventBusMsgCushionQrCode;
@@ -43,20 +44,20 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
 
 
     @Override
-    public void onQrCodeReceived(String qrCode) {
+    public ResultDTO<CushionInfoDTO> onQrCodeReceived(String qrCode) {
         CushionInfoEntity cushionInfoEntity = findByQrCode(qrCode);
         if (null == cushionInfoEntity) {
             boolean addResult = add(qrCode);
             log.info("onQrCodeReceived，新增缓冲垫结果：[{}]", addResult);
-            if (addResult) onScanCodeSuccess(qrCode);
-            return;
+            if (addResult) return ResultDTO.success(onScanCodeSuccess(qrCode));
+            return ResultDTO.failure(Constants.RESULT_MSG_CUSHION_ADD_FAILED);
         }
         //若当前与最后一次扫码时间相差不足一小时，则为无效扫码，不进行操作
         Date lastScanDate = cushionInfoEntity.getLastScanDate();
         long interval = System.currentTimeMillis() - lastScanDate.getTime();
         if (interval < Constants.SCANNER_EFFECTIVE_INTERVAL_MILLIS) {
             log.info("handleScannerData，无效扫码，不进行操作，当前扫码间隔：{}毫秒", interval);
-            return;
+            return ResultDTO.failure(Constants.RESULT_MSG_CUSHION_INVALID_SCAN);
         }
 
         int maxUseCount = cushionInfoEntity.getMaxUseCount();
@@ -65,13 +66,14 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
         // TODO: 2023/4/17 PLC设备报警
         if (maxUseCount <= usedCount) {
             log.info("handleScannerData，最大使用次数：{}，已使用次数：{}，已超次数：{}", maxUseCount, usedCount, usedCount - maxUseCount);
-            EventBus.getDefault().post(new EventBusMsgPlcCmd<Integer>("test", 1));
+            EventBus.getDefault().post(new EventBusMsgPlcCmd<>("test", 1));
         }
         // 增加当前缓冲垫1次使用次数
         usedCount++;
         boolean modifyResult = modifyUsedCountByQrCode(qrCode, usedCount);
         log.info("handleScannerData，增加缓冲垫已使用次数结果：[{}]", modifyResult);
-        if (modifyResult) onScanCodeSuccess(qrCode);
+        if (modifyResult) return ResultDTO.success(onScanCodeSuccess(qrCode));
+        return ResultDTO.failure(Constants.RESULT_MSG_CUSHION_ADD_USED_COUNT_FAILED);
     }
 
     /**
@@ -79,14 +81,15 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
      *
      * @param cushionQrCode 缓冲垫二维码
      */
-    private void onScanCodeSuccess(String cushionQrCode) {
-        if (StringUtils.isEmpty(cushionQrCode)) return;
+    private CushionInfoDTO onScanCodeSuccess(String cushionQrCode) {
+        if (StringUtils.isEmpty(cushionQrCode)) return null;
         CushionInfoEntity cushionInfoEntity = findByQrCode(cushionQrCode);
-        if (null == cushionInfoEntity) return;
+        if (null == cushionInfoEntity) return null;
         log.info("onScanCodeSuccess");
         CushionInfoDTO cushionInfoDTO = new CushionInfoDTO();
         BeanUtils.copyProperties(cushionInfoEntity, cushionInfoDTO);
         sseService.sendCushionMsg(cushionInfoDTO);// 推送一条缓冲垫数据到客户端
+        return cushionInfoDTO;
     }
 
     /**
