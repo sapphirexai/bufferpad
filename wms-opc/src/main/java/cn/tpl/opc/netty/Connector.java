@@ -107,11 +107,13 @@ public class Connector {
                 // 获取锁后进行二次判断
                 if (connectionExists(ip, port)) return true;
 
+                // 保存连接信息到列表
+                connectionMgr.saveConnection(ip, port, conn);
+
                 if (Params.DEVICE_TYPE_KEY_SCANNER == type)
                     connectScanner(conn, ip, port);
                 else
                     connectPLC(conn, ip, port);
-
             }
         } catch (Exception e) {
             log.error("Netty连接异常", e);
@@ -144,8 +146,6 @@ public class Connector {
             }
         });
 
-        // 保存连接信息到列表
-        connectionMgr.saveConnection(ip, port, conn);
         // 创建一个客户端）
         Bootstrap client = fastBuildClient(conn);
         // 发起连接
