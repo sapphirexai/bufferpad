@@ -63,16 +63,22 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
         int maxUseCount = cushionInfoEntity.getMaxUseCount();
         int usedCount = cushionInfoEntity.getUsedCount();
 
-        // TODO: 2023/4/17 PLC设备报警
+        // 超次数PLC报警
         if (maxUseCount <= usedCount) {
             log.info("handleScannerData，最大使用次数：{}，已使用次数：{}，已超次数：{}", maxUseCount, usedCount, usedCount - maxUseCount);
-            EventBus.getDefault().post(new EventBusMsgPlcCmd<>("test", 1));
+            EventBus.getDefault().post(new EventBusMsgPlcCmd(Constants.PLC_DATA_ADDRESS_D9001, 1));
+            return ResultDTO.failure(Constants.RESULT_MSG_CUSHION_USED_COUNT_REACHED_MAX);
         }
         // 增加当前缓冲垫1次使用次数
         usedCount++;
         boolean modifyResult = modifyUsedCountByQrCode(qrCode, usedCount);
         log.info("handleScannerData，增加缓冲垫已使用次数结果：[{}]", modifyResult);
-        if (modifyResult) return ResultDTO.success(onScanCodeSuccess(qrCode));
+        if (modifyResult) {
+            // 扫码成功PLC提示
+            EventBus.getDefault().post(new EventBusMsgPlcCmd(Constants.PLC_DATA_ADDRESS_D9002, 1));
+            return ResultDTO.success(onScanCodeSuccess(qrCode));
+        }
+
         return ResultDTO.failure(Constants.RESULT_MSG_CUSHION_ADD_USED_COUNT_FAILED);
     }
 

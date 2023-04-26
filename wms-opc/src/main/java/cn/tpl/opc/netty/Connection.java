@@ -1,12 +1,17 @@
 package cn.tpl.opc.netty;
 
+import HslCommunication.Core.Types.OperateResult;
 import HslCommunication.Profinet.Melsec.MelsecMcNet;
 import cn.tpl.opc.commons.constant.Constants;
 import cn.tpl.opc.commons.constant.Params;
+import cn.tpl.opc.commons.dto.event.EventBusMsgPlcCmd;
 import io.netty.channel.ChannelFuture;
 import lombok.Data;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -157,6 +162,9 @@ public class Connection {
 
         status = Params.NETTY_CONNECTION_KEY_STATUS_ACTIVE;
         setMelsecMcNet(melsecMcNet);
+        boolean isRegistered = EventBus.getDefault().isRegistered(this);
+        if (isRegistered) return;
+        EventBus.getDefault().register(this);
     }
 
     /**
@@ -174,11 +182,24 @@ public class Connection {
             channelFuture = null;
         }
 
+        if (null != melsecMcNet) {
+            melsecMcNet = null;
+        }
+
         if (null != onStatusChangeListener)
             onStatusChangeListener.onStatusChanged(this);
     }
 
     public interface OnStatusChangeListener {
         void onStatusChanged(Connection conn);
+    }
+
+    @Subscribe(threadMode = ThreadMode.POSTING)
+    public void onMessageEvent(EventBusMsgPlcCmd event) {
+        log.info("onMessageEvent，EventBusMsgPlcCmd：{}", event);
+        if (null != melsecMcNet) {
+            OperateResult result = melsecMcNet.Write(event.getAddress(), event.getCmd());
+            if (!result.IsSuccess) nowDead();
+        }
     }
 }

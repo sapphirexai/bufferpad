@@ -15,7 +15,7 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 @Data
 @ToString
-public class EventBusMsgPlcCmd<T> extends AbsBaseDTO {
+public class EventBusMsgPlcCmd extends AbsBaseDTO {
     /**
      * 指令地址
      */
@@ -23,9 +23,9 @@ public class EventBusMsgPlcCmd<T> extends AbsBaseDTO {
     /**
      * 指令
      */
-    private T cmd;
+    private int cmd;
 
-    public EventBusMsgPlcCmd(String address, T cmd) {
+    public EventBusMsgPlcCmd(String address, int cmd) {
         this.address = address;
         this.cmd = cmd;
     }

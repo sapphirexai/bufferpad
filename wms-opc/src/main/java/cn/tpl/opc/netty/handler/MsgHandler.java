@@ -11,8 +11,6 @@ import io.netty.util.CharsetUtil;
 import io.netty.util.ReferenceCountUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.greenrobot.eventbus.EventBus;
-import org.greenrobot.eventbus.Subscribe;
-import org.greenrobot.eventbus.ThreadMode;
 
 /**
  * Author: Luo GuoWen
@@ -34,7 +32,6 @@ public class MsgHandler extends ChannelInboundHandlerAdapter {
 
     public MsgHandler(Connection connection) {
         mConnection = connection;
-        EventBus.getDefault().register(this);
     }
 
 
@@ -54,6 +51,8 @@ public class MsgHandler extends ChannelInboundHandlerAdapter {
                 if (oMsg.contains(Constants.SCANNER_MSG_NO_READ)) {
                     log.info("channelRead，扫码器未读到数据。");
                     EventBus.getDefault().post(new EventBusMsgCushionQrCode(null));
+                    // 扫码失败PLC报警
+                    EventBus.getDefault().post(new EventBusMsgPlcCmd(Constants.PLC_DATA_ADDRESS_D9000, 1));
                     return;
                 }
 
@@ -79,10 +78,4 @@ public class MsgHandler extends ChannelInboundHandlerAdapter {
         mConnection.resetConnectionResetInterval();
     }
 
-    @SuppressWarnings("unused")
-    @Subscribe(threadMode = ThreadMode.POSTING)
-    public void onMessageEvent(EventBusMsgPlcCmd<Integer> event) {
-        log.info("onMessageEvent，PLC报警");
-        // TODO: 2023/4/24  PLC报警
-    }
 }
