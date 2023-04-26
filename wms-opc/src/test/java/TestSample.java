@@ -1,9 +1,9 @@
 import HslCommunication.Core.Types.OperateResult;
-import HslCommunication.ModBus.ModbusTcpNet;
+import HslCommunication.Core.Types.OperateResultExOne;
+import HslCommunication.Profinet.Melsec.MelsecMcNet;
 import cn.tpl.opc.OpcApplication;
 import cn.tpl.opc.netty.MsgBus;
-import cn.tpl.opc.util.FastJsonUtils;
-import com.alibaba.druid.sql.visitor.functions.Char;
+import cn.tpl.opc.service.INettyService;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -20,11 +20,14 @@ import java.util.Date;
  * Email: luoguowen123@qq.com
  * Time: 2023/3/31
  */
+@Slf4j
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = OpcApplication.class)
-public class TestSample {
+public class TestSample implements AutoCloseable {
     @Resource
     private MsgBus nettyMsgBus;
+    @Resource
+    private INettyService nettyService;
 
     @Test
     public void testSample() throws ParseException {
@@ -37,15 +40,26 @@ public class TestSample {
     }
 
     @Test
-    public void testNettyMsg() {
-        nettyMsgBus.sendMsg("localhost", 6000, "A msg from Gavin`s NettyMsgBus.");
+    public void testPLC() {
+        MelsecMcNet melsecMc = new MelsecMcNet("127.0.0.1", 6000);
+        melsecMc.ConnectServer();
+        OperateResult connectResult = melsecMc.ConnectServer();
+        if (connectResult.IsSuccess) {
+            System.out.println("连接成功");
+            OperateResultExOne<Short> D7000 = melsecMc.ReadInt16("D7000");
+            if (D7000.IsSuccess) {
+                System.out.println("读取结果：" + D7000.Content);
+            } else {
+                System.out.println("读取失败：" + D7000.Message);
+            }
+        } else {
+            System.out.print("连接失败：" + connectResult.Message);
+        }
     }
 
-    @Test
-    public void testPLC() {
-        ModbusTcpNet modbusTcpNet = new ModbusTcpNet("localhost", 6000, (byte) 1);
-        modbusTcpNet.ConnectServer();
-        short D9001 = modbusTcpNet.ReadInt16("D9001").Content;
-        System.out.println("PLC Result: => " + D9001);
+
+    @Override
+    public void close() throws Exception {
+        System.out.println("AutoClose");
     }
 }

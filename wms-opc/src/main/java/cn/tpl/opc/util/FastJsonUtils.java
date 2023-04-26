@@ -11,6 +11,7 @@ import java.util.List;
  * Author: Luo GuoWen
  * Email: luoguowen123@qq.com
  * Time: 2023/3/31
+ * FastJson相关操作集合
  */
 public class FastJsonUtils {
 

@@ -28,7 +28,10 @@ public class Connection {
     private Long id;
 
     /**
-     * 设备类型，0: 扫码器；1: PLC
+     * 设备类型
+     *
+     * @see Params#DEVICE_TYPE_KEY_SCANNER
+     * @see Params#DEVICE_TYPE_KEY_PLC
      */
     private Integer type;
 
@@ -87,7 +90,8 @@ public class Connection {
     };
 
     public Connection() {
-        connectionCheckService.scheduleAtFixedRate(connectionCheckTask, 0, 1, TimeUnit.SECONDS);
+        if (Params.DEVICE_TYPE_KEY_SCANNER == status)
+            connectionCheckService.scheduleAtFixedRate(connectionCheckTask, 0, 1, TimeUnit.SECONDS);
     }
 
     /**

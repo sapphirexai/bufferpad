@@ -26,6 +26,24 @@ public final class Params {
 
 
     /**
+     * 设备类型
+     * DEVICE_TYPE_KEY_SCANNER 扫码器
+     * DEVICE_TYPE_KEY_PLC PLC
+     */
+    public static final int
+            DEVICE_TYPE_KEY_SCANNER = 0,
+            DEVICE_TYPE_KEY_PLC = 1;
+
+    /**
+     * 设备类型
+     * DEVICE_TYPE_VAL_SCANNER 扫码器
+     * DEVICE_TYPE_VAL_PLC PLC
+     */
+    public static final String
+            DEVICE_TYPE_VAL_SCANNER = "SCANNER",
+            DEVICE_TYPE_VAL_PLC = "PLC";
+
+    /**
      * NETTY连接状态名
      * NETTY_CONNECTION_KEY_STATUS_DISCONNECTED 未连接
      * NETTY_CONNECTION_KEY_STATUS_ACTIVE 活跃中
