@@ -146,11 +146,7 @@ public class Connector {
             }
         });
 
-        // 创建一个客户端）
-        Bootstrap client = fastBuildClient(conn);
-        // 发起连接
-        ChannelFuture cf = client.connect(ip, port).sync();
-        conn.nowActive(cf);
+        doScannerConnect(conn, ip, port);
     }
 
     /**
@@ -193,9 +189,10 @@ public class Connector {
                                 String ip = conn.getIp();
                                 int port = conn.getPort();
                                 log.info("当前连接已断开，尝试重连 => {}:{}...", ip, port);
-                                Bootstrap client = fastBuildClient(conn);
-                                ChannelFuture cf = client.connect(ip, port).sync();
-                                conn.nowActive(cf);
+                                if (isScannerConn(conn))
+                                    doScannerConnect(conn, ip, port);
+                                else
+                                    connectPLC(conn, ip, port);
                             } catch (Exception e) {
                                 log.error("Netty连接异常", e);
                             }
@@ -205,6 +202,18 @@ public class Connector {
             }
         }, timeExecuteSec, timeExecuteSec, TimeUnit.SECONDS);
 
+    }
+
+    private void doScannerConnect(Connection conn, String ip, int port) throws InterruptedException {
+        // 创建一个客户端）
+        Bootstrap client = fastBuildClient(conn);
+        // 发起连接
+        ChannelFuture cf = client.connect(ip, port).sync();
+        conn.nowActive(cf);
+    }
+
+    private boolean isScannerConn(Connection conn) {
+        return Params.DEVICE_TYPE_KEY_SCANNER == conn.getType();
     }
 
     /**
