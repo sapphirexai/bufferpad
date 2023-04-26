@@ -1,5 +1,9 @@
 package cn.tpl.opc.netty;
 
+import HslCommunication.Core.Types.OperateResult;
+import HslCommunication.Core.Types.OperateResultExOne;
+import HslCommunication.Profinet.Melsec.MelsecMcNet;
+import cn.tpl.opc.commons.constant.Params;
 import cn.tpl.opc.commons.dto.result.DeviceInfoDTO;
 import cn.tpl.opc.netty.handler.HeartbeatHandler;
 import cn.tpl.opc.netty.handler.MsgHandler;
@@ -95,6 +99,7 @@ public class Connector {
     public boolean connect(Connection conn) {
         String ip = conn.getIp();
         int port = conn.getPort();
+        int type = conn.getType();
         try {
             // 若连接已存在就返回成功
             if (connectionExists(ip, port)) return true;
@@ -102,34 +107,67 @@ public class Connector {
                 // 获取锁后进行二次判断
                 if (connectionExists(ip, port)) return true;
 
-                // 设置状态监听器
-                conn.setOnStatusChangeListener(new Connection.OnStatusChangeListener() {
-                    @Override
-                    public void onStatusChanged(Connection conn) {
-                        log.info("onStatusChanged，conn：{}", conn);
-                        sendSseMsg(conn);
-                    }
+                if (Params.DEVICE_TYPE_KEY_SCANNER == type)
+                    connectScanner(conn, ip, port);
+                else
+                    connectPLC(conn, ip, port);
 
-                    private void sendSseMsg(Connection conn) {
-                        DeviceInfoDTO deviceInfo = new DeviceInfoDTO();
-                        BeanUtils.copyProperties(conn, deviceInfo);
-                        sseService.sendDeviceMsg(deviceInfo);
-                    }
-                });
-
-                // 保存连接信息到列表
-                connectionMgr.saveConnection(ip, port, conn);
-                // 创建一个客户端）
-                Bootstrap client = fastBuildClient(conn);
-                // 发起连接
-                ChannelFuture cf = client.connect(ip, port).sync();
-                conn.nowActive(cf);
             }
         } catch (Exception e) {
             log.error("Netty连接异常", e);
             return false;
         }
         return true;
+    }
+
+    /**
+     * 连接扫码器
+     *
+     * @param conn 连接信息
+     * @param ip   IP地址
+     * @param port 端口号
+     */
+    private void connectScanner(Connection conn, String ip, int port) throws InterruptedException {
+        log.info("connect，当前正在连接扫码器 =>> {}", ip + ":" + port);
+        // 设置状态监听器
+        conn.setOnStatusChangeListener(new Connection.OnStatusChangeListener() {
+            @Override
+            public void onStatusChanged(Connection conn) {
+                log.info("onStatusChanged，conn：{}", conn);
+                sendSseMsg(conn);
+            }
+
+            private void sendSseMsg(Connection conn) {
+                DeviceInfoDTO deviceInfo = new DeviceInfoDTO();
+                BeanUtils.copyProperties(conn, deviceInfo);
+                sseService.sendDeviceMsg(deviceInfo);
+            }
+        });
+
+        // 保存连接信息到列表
+        connectionMgr.saveConnection(ip, port, conn);
+        // 创建一个客户端）
+        Bootstrap client = fastBuildClient(conn);
+        // 发起连接
+        ChannelFuture cf = client.connect(ip, port).sync();
+        conn.nowActive(cf);
+    }
+
+    /**
+     * 连接PLC
+     *
+     * @param conn 连接信息
+     * @param ip   IP地址
+     * @param port 端口号
+     */
+    private void connectPLC(Connection conn, String ip, int port) {
+        log.info("connect，当前正在连接PLC =>> {}", ip + ":" + port);
+        MelsecMcNet melsecMcNet = new MelsecMcNet(ip, port);
+        OperateResult connectResult = melsecMcNet.ConnectServer();
+        if (connectResult.IsSuccess) {
+            log.info("connect，当前正在连接PLC =>> 连接成功");
+            conn.nowActive(melsecMcNet);
+        }
     }
 
     public void startReconnectService() {

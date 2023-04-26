@@ -1,5 +1,6 @@
 package cn.tpl.opc.netty;
 
+import HslCommunication.Profinet.Melsec.MelsecMcNet;
 import cn.tpl.opc.commons.constant.Constants;
 import cn.tpl.opc.commons.constant.Params;
 import io.netty.channel.ChannelFuture;
@@ -62,6 +63,11 @@ public class Connection {
      * Netty连接之后产生的I/O操作通道
      */
     private volatile ChannelFuture channelFuture;
+
+    /**
+     * PLC连接后产生的I/O操作通道
+     */
+    private volatile MelsecMcNet melsecMcNet;
 
     private OnStatusChangeListener onStatusChangeListener;
 
@@ -136,6 +142,21 @@ public class Connection {
 
         if (null != onStatusChangeListener)
             onStatusChangeListener.onStatusChanged(this);
+    }
+
+    /**
+     * 改变连接状态为活跃
+     *
+     * @param melsecMcNet 通道
+     */
+    public synchronized void nowActive(MelsecMcNet melsecMcNet) {
+        if (isActive()) {
+            log.info("nowActive，连接已活不做操作");
+            return;
+        }
+
+        status = Params.NETTY_CONNECTION_KEY_STATUS_ACTIVE;
+        setMelsecMcNet(melsecMcNet);
     }
 
     /**

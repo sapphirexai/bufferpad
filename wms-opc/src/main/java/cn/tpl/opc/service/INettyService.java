@@ -15,6 +15,13 @@ public interface INettyService {
     ResultDTO<Boolean> sendMsg(String ip, Integer port, String msg);
 
     /**
+     * 连接所有设备，并返回当前所有设备状态信息
+     *
+     * @return 所有设备状态信息
+     */
+    ResultDTO<List<DeviceInfoDTO>> connectDevices();
+
+    /**
      * 连接所有扫码器，并返回当前所有扫码器状态信息
      *
      * @return 所有扫码器状态信息

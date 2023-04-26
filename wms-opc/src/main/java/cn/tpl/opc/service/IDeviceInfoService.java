@@ -29,4 +29,11 @@ public interface IDeviceInfoService {
      * @return 分页数据
      */
     PageData<DeviceInfoDTO> listByPage(BasePageScheme scheme);
+
+    /**
+     * 查询所有设备数据
+     *
+     * @return 所有设备数据
+     */
+    List<DeviceInfoEntity> list();
 }

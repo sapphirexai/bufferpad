@@ -40,6 +40,11 @@ public class DeviceInfoServiceImpl implements IDeviceInfoService {
         return PageData.of(iPage, this::deviceInfo2DTO);
     }
 
+    @Override
+    public List<DeviceInfoEntity> list() {
+        return deviceInfoEntityMapper.list();
+    }
+
     private DeviceInfoDTO deviceInfo2DTO(DeviceInfoEntity deviceInfo) {
         DeviceInfoDTO deviceInfoDTO = new DeviceInfoDTO();
         BeanUtils.copyProperties(deviceInfo, deviceInfoDTO);

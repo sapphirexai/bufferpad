@@ -44,6 +44,16 @@ public class DeviceController {
         }
     }
 
+    @Operation(summary = "连接所有设备（扫码器和PLC），并返回当前所有扫码器状态信息")
+    @GetMapping("/deviceConnections")
+    public ResultDTO<List<DeviceInfoDTO>> deviceConnections() {
+        try {
+            return nettyService.connectDevices();
+        } catch (Exception e) {
+            return ResultDTO.exception(e);
+        }
+    }
+
     @Operation(summary = "连接所有扫码器，并返回当前所有扫码器状态信息")
     @GetMapping("/scannerConnections")
     public ResultDTO<List<DeviceInfoDTO>> scannerConnections() {

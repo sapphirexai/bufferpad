@@ -1,5 +1,6 @@
 package cn.tpl.opc.mapper;
 
+import cn.tpl.opc.commons.dto.result.DeviceInfoDTO;
 import cn.tpl.opc.entity.DeviceInfoEntity;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -61,4 +62,6 @@ public interface DeviceInfoEntityMapper extends BaseMapper<DeviceInfoEntity> {
     List<DeviceInfoEntity> listDeviceInfoByType(Integer type);
 
     IPage<DeviceInfoEntity> listByPage(Page<DeviceInfoEntity> page);
+
+    List<DeviceInfoEntity> list();
 }
