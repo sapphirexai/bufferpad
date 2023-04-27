@@ -25,8 +25,14 @@ public class EventBusMsgPlcCmd extends AbsBaseDTO {
      */
     private int cmd;
 
-    public EventBusMsgPlcCmd(String address, int cmd) {
+    /**
+     * 产线
+     */
+    private int workLine;
+
+    public EventBusMsgPlcCmd(String address, int cmd, int workLine) {
         this.address = address;
         this.cmd = cmd;
+        this.workLine = workLine;
     }
 }

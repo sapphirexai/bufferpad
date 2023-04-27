@@ -28,8 +28,14 @@ public class SseMsgDTO<T> extends AbsBaseDTO {
      */
     private T data;
 
-    public SseMsgDTO(String topic, T data) {
+    /**
+     * 产线
+     */
+    private int workLine;
+
+    public SseMsgDTO(String topic, T data, int workLine) {
         this.topic = topic;
         this.data = data;
+        this.workLine = workLine;
     }
 }

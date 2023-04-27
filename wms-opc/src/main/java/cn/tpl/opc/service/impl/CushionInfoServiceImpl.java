@@ -44,12 +44,16 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
 
 
     @Override
-    public ResultDTO<CushionInfoDTO> onQrCodeReceived(String qrCode) {
+    public ResultDTO<CushionInfoDTO> onQrCodeReceived(Integer workLine, String qrCode) {
         CushionInfoEntity cushionInfoEntity = findByQrCode(qrCode);
         if (null == cushionInfoEntity) {
-            boolean addResult = add(qrCode);
+            boolean addResult = add(workLine, qrCode);
             log.info("onQrCodeReceived，新增缓冲垫结果：[{}]", addResult);
-            if (addResult) return ResultDTO.success(onScanCodeSuccess(qrCode));
+            if (addResult) {
+                // 扫码成功PLC提示
+                EventBus.getDefault().post(new EventBusMsgPlcCmd(Constants.PLC_DATA_ADDRESS_D9002, 1, workLine));
+                return ResultDTO.success(onScanCodeSuccess(qrCode));
+            }
             return ResultDTO.failure(Constants.RESULT_MSG_CUSHION_ADD_FAILED);
         }
         //若当前与最后一次扫码时间相差不足一小时，则为无效扫码，不进行操作
@@ -66,7 +70,7 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
         // 超次数PLC报警
         if (maxUseCount <= usedCount) {
             log.info("handleScannerData，最大使用次数：{}，已使用次数：{}，已超次数：{}", maxUseCount, usedCount, usedCount - maxUseCount);
-            EventBus.getDefault().post(new EventBusMsgPlcCmd(Constants.PLC_DATA_ADDRESS_D9001, 1));
+            EventBus.getDefault().post(new EventBusMsgPlcCmd(Constants.PLC_DATA_ADDRESS_D9001, 1, workLine));
             return ResultDTO.failure(Constants.RESULT_MSG_CUSHION_USED_COUNT_REACHED_MAX);
         }
         // 增加当前缓冲垫1次使用次数
@@ -75,7 +79,7 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
         log.info("handleScannerData，增加缓冲垫已使用次数结果：[{}]", modifyResult);
         if (modifyResult) {
             // 扫码成功PLC提示
-            EventBus.getDefault().post(new EventBusMsgPlcCmd(Constants.PLC_DATA_ADDRESS_D9002, 1));
+            EventBus.getDefault().post(new EventBusMsgPlcCmd(Constants.PLC_DATA_ADDRESS_D9002, 1, workLine));
             return ResultDTO.success(onScanCodeSuccess(qrCode));
         }
 
@@ -100,10 +104,14 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
 
     /**
      * 缓冲垫扫码失败
+     *
+     * @param workLine 产线
      */
-    private void onScanCodeFailed() {
+    private void onScanCodeFailed(int workLine) {
         log.info("onScanCodeFailed");
-        sseService.sendCushionMsg(null);// 推送一条缓冲垫数据到客户端
+        CushionInfoDTO cushionInfoDTO = new CushionInfoDTO();
+        cushionInfoDTO.setWorkLine(workLine);
+        sseService.sendCushionMsg(cushionInfoDTO);// 推送一条缓冲垫数据到客户端
     }
 
     @Override
@@ -124,7 +132,7 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
     }
 
     @Override
-    public boolean add(String qrCode) {
+    public boolean add(Integer workLine, String qrCode) {
         // 二维码为空直接返回失败
         if (StringUtils.isEmpty(qrCode)) return false;
 
@@ -133,6 +141,7 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
             maxUseCount = Constants.CUSHION_DEFAULT_MAX_USE_COUNT_T;
 
         CushionInfoEntity cushionInfoEntity = new CushionInfoEntity();
+        cushionInfoEntity.setWorkLine(workLine);
         cushionInfoEntity.setQrCode(qrCode);
         cushionInfoEntity.setMaxUseCount(maxUseCount);
         cushionInfoEntity.setUsedCount(Constants.CUSHION_ADD_DEFAULT_USED_COUNT);
@@ -156,12 +165,12 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
     }
 
     @Override
-    public void afterPropertiesSet() throws Exception {
+    public void afterPropertiesSet() {
         EventBus.getDefault().register(this);
     }
 
     @Override
-    public void destroy() throws Exception {
+    public void destroy() {
         EventBus.getDefault().unregister(this);
     }
 
@@ -170,10 +179,11 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
     public void onMessageEvent(EventBusMsgCushionQrCode event) {
         log.info("onMessageEvent，EventBusMsgCushionQrCode：{}", event);
         String qrCode = event.getQrCode();
+        int workLine = event.getWorkLine();
         if (StringUtils.isEmpty(qrCode)) {
-            onScanCodeFailed();
+            onScanCodeFailed(workLine);
             return;
         }
-        onQrCodeReceived(qrCode);
+        onQrCodeReceived(workLine, qrCode);
     }
 }

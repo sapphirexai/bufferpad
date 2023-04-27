@@ -42,6 +42,12 @@ public class CushionInfoDTO extends AbsBaseDTO {
     private Integer usedCount;
 
     /**
+     * 产线
+     */
+    @Schema(description = "产线")
+    private Integer workLine;
+
+    /**
      * 最近一次扫码时间
      */
     @Schema(description = "最近一次扫码时间")

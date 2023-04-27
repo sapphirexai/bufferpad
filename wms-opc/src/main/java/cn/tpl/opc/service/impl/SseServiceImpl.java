@@ -8,6 +8,7 @@ import cn.tpl.opc.commons.dto.result.SseMsgDTO;
 import cn.tpl.opc.service.ISseService;
 import cn.tpl.opc.util.FastJsonUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -49,6 +50,11 @@ public class SseServiceImpl implements ISseService {
     @Override
     public <T> void sendMsg(SseMsgDTO<T> msg) {
         for (Map.Entry<String, SseEmitter> entry : SSE_CLIENTS.entrySet()) {
+            String clientId = entry.getKey();
+            String workLine = String.valueOf(msg.getWorkLine());
+            // 只给当前客户端ID与产线相同的业务推送消息
+            if (!clientId.equals(workLine)) continue;
+
             MSG_SERVICE.execute(() -> {
                 try {
                     String fMsg = FastJsonUtils.toJSONString(ResultDTO.success(msg));
@@ -64,15 +70,16 @@ public class SseServiceImpl implements ISseService {
 
     @Override
     public void sendDeviceMsg(DeviceInfoDTO deviceInfo) {
-        sendMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_DEVICE_STATUS, deviceInfo));
+        sendMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_DEVICE_STATUS, deviceInfo, deviceInfo.getWorkLine()));
     }
 
     @Override
     public void sendCushionMsg(CushionInfoDTO cushionInfo) {
-        if (null == cushionInfo) {
-            sendMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, Constants.SCANNER_MSG_NO_READ));
+        String qrCode = cushionInfo.getQrCode();
+        if (StringUtils.isEmpty(qrCode)) {
+            sendMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, Constants.SCANNER_MSG_NO_READ, cushionInfo.getWorkLine()));
             return;
         }
-        sendMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, cushionInfo));
+        sendMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, cushionInfo, cushionInfo.getWorkLine()));
     }
 }

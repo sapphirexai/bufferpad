@@ -94,14 +94,11 @@ public class Connection {
     /**
      * 连接检查任务
      */
-    private final Runnable connectionCheckTask = new Runnable() {
-        @Override
-        public void run() {
-            if (isActive()) {
-                long resetInterval = connectionResetInterval.decrementAndGet();
-                log.info("connectionResetInterval：" + resetInterval);
-                if (0 > resetInterval) nowDead();
-            }
+    private final Runnable connectionCheckTask = () -> {
+        if (isActive()) {
+            long resetInterval = connectionResetInterval.decrementAndGet();
+            log.info("connectionResetInterval：" + resetInterval);
+            if (0 > resetInterval) nowDead();
         }
     };
 
@@ -202,9 +199,10 @@ public class Connection {
     @Subscribe(threadMode = ThreadMode.POSTING)
     public void onMessageEvent(EventBusMsgPlcCmd event) {
         log.info("onMessageEvent，EventBusMsgPlcCmd：{}", event);
-        if (null != melsecMcNet) {
-            OperateResult result = melsecMcNet.Write(event.getAddress(), event.getCmd());
-            if (!result.IsSuccess) nowDead();
-        }
+        if (null == melsecMcNet) return;
+        if (workLine != event.getWorkLine()) return;
+
+        OperateResult result = melsecMcNet.Write(event.getAddress(), event.getCmd());
+        if (!result.IsSuccess) nowDead();
     }
 }

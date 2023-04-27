@@ -39,13 +39,21 @@ public class CushionController {
     }
 
     @Operation(summary = "手动输入缓冲垫二维码")
-    @PostMapping("/manualCushionInfo/{qrCode}")
-    public ResultDTO<CushionInfoDTO> manualCushionInfo(@PathVariable("qrCode") String qrCode) {
+    @PostMapping("/manualCushionInfo/{workLine}/{qrCode}")
+    public ResultDTO<CushionInfoDTO> manualCushionInfo(
+            @Parameter(description = "产线")
+            @PathVariable("workLine") Integer workLine,
+            @Parameter(description = "二维码")
+            @PathVariable("qrCode") String qrCode) {
         try {
-            log.debug("manualCushionInfo，qrCode：{}", qrCode);
+            log.debug("manualCushionInfo，workLine：{}，qrCode：{}", workLine, qrCode);
+
+            if (null == workLine)
+                return ResultDTO.failure("产线不能为空！");
+
             if (StringUtils.isEmpty(qrCode))
                 return ResultDTO.failure("缓冲垫编码不能为空！");
-            return cushionInfoService.onQrCodeReceived(qrCode);
+            return cushionInfoService.onQrCodeReceived(workLine,qrCode);
         } catch (Exception e) {
             return ResultDTO.exception(e);
         }

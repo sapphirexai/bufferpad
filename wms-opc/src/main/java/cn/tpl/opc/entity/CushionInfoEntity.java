@@ -3,6 +3,7 @@ package cn.tpl.opc.entity;
 import java.io.Serializable;
 import java.util.Date;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -32,6 +33,11 @@ public class CushionInfoEntity implements Serializable {
      * 已使用次数
      */
     private Integer usedCount;
+
+    /**
+     * 产线
+     */
+    private Integer workLine;
 
     /**
      * 最近一次扫码时间
