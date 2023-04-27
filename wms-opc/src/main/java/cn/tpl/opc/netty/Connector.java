@@ -108,6 +108,19 @@ public class Connector {
                 if (connectionExists(ip, port)) return true;
 
                 // 保存连接信息到列表
+                conn.setOnStatusChangeListener(new Connection.OnStatusChangeListener() {
+                    @Override
+                    public void onStatusChanged(Connection conn) {
+                        log.info("onStatusChanged，conn：{}", conn);
+                        sendSseMsg(conn);
+                    }
+
+                    private void sendSseMsg(Connection conn) {
+                        DeviceInfoDTO deviceInfo = new DeviceInfoDTO();
+                        BeanUtils.copyProperties(conn, deviceInfo);
+                        sseService.sendDeviceMsg(deviceInfo);
+                    }
+                });
                 connectionMgr.saveConnection(ip, port, conn);
 
                 if (Params.DEVICE_TYPE_KEY_SCANNER == type)
@@ -132,20 +145,6 @@ public class Connector {
     private void connectScanner(Connection conn, String ip, int port) throws InterruptedException {
         log.info("connect，当前正在连接扫码器 =>> {}", ip + ":" + port);
         // 设置状态监听器
-        conn.setOnStatusChangeListener(new Connection.OnStatusChangeListener() {
-            @Override
-            public void onStatusChanged(Connection conn) {
-                log.info("onStatusChanged，conn：{}", conn);
-                sendSseMsg(conn);
-            }
-
-            private void sendSseMsg(Connection conn) {
-                DeviceInfoDTO deviceInfo = new DeviceInfoDTO();
-                BeanUtils.copyProperties(conn, deviceInfo);
-                sseService.sendDeviceMsg(deviceInfo);
-            }
-        });
-
         doScannerConnect(conn, ip, port);
     }
 
