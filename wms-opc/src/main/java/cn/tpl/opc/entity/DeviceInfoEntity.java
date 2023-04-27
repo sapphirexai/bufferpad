@@ -44,6 +44,11 @@ public class DeviceInfoEntity implements Serializable {
     private String name;
 
     /**
+     * 产线
+     */
+    private Integer workLine;
+
+    /**
      * 创建时间
      */
     private Date createdDate;

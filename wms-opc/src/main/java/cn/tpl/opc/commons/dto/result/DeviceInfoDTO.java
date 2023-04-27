@@ -55,4 +55,10 @@ public class DeviceInfoDTO extends AbsBaseDTO {
     @Schema(description = "设备名字")
     private String name;
 
+    /**
+     * 产线
+     */
+    @Schema(description = "产线")
+    private Integer workLine;
+
 }
