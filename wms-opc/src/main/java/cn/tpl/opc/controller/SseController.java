@@ -30,7 +30,7 @@ public class SseController {
 
     @Operation(summary = "订阅当前所有设备状态信息，当设备状态发生改变时，会收到对应设备的消息")
     @GetMapping(value = "/devicesStatus/{clientId}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter devicesStatus(@Parameter(description = "客户端Id，自己定义") @PathVariable("clientId") String clientId) {
+    public SseEmitter devicesStatus(@Parameter(description = "客户端Id，与产线号一致") @PathVariable("clientId") String clientId) {
         try {
             log.info("sse设备状态订阅，clientId：{}", clientId);
             return sseService.subscribeDevicesStatus(clientId);
