@@ -17,7 +17,6 @@
         <spring-boot.version>2.7.10</spring-boot.version>
         <spring-cloud-alibaba.version>2021.0.5.0</spring-cloud-alibaba.version>
         <druid.version>1.2.16</druid.version>
-        <plc4x.version>0.10.0</plc4x.version>
     </properties>
 
     <dependencies>
