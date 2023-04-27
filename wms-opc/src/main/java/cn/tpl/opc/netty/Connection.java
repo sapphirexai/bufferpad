@@ -186,6 +186,9 @@ public class Connection {
 
         if (null != melsecMcNet) {
             melsecMcNet = null;
+            boolean isRegistered = EventBus.getDefault().isRegistered(this);
+            if (isRegistered)
+                EventBus.getDefault().unregister(this);
         }
 
         if (null != onStatusChangeListener)
