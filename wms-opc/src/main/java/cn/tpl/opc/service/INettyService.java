@@ -29,9 +29,9 @@ public interface INettyService {
     ResultDTO<List<DeviceInfoDTO>> connectScanners();
 
     /**
-     * 获取当前所有扫码器状态信息
+     * 获取当前设备状态信息
      *
-     * @return 所有扫码器状态信息
+     * @return 设备状态信息
      */
-    List<DeviceInfoDTO> getScannersStatus();
+    List<DeviceInfoDTO> getDevicesStatus();
 }

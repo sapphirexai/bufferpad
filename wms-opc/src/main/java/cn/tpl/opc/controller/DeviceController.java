@@ -64,11 +64,11 @@ public class DeviceController {
         }
     }
 
-    @Operation(summary = "获取当前所有扫码器状态信息")
-    @GetMapping("/scannerStatus")
-    public ResultDTO<List<DeviceInfoDTO>> scannerStatus() {
+    @Operation(summary = "获取当前设备状态信息")
+    @GetMapping("/devicesStatus")
+    public ResultDTO<List<DeviceInfoDTO>> devicesStatus() {
         try {
-            return ResultDTO.success(nettyService.getScannersStatus());
+            return ResultDTO.success(nettyService.getDevicesStatus());
         } catch (Exception e) {
             return ResultDTO.exception(e);
         }

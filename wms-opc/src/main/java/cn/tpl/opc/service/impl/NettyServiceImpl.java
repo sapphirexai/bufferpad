@@ -61,7 +61,7 @@ public class NettyServiceImpl implements INettyService {
     }
 
     @Override
-    public List<DeviceInfoDTO> getScannersStatus() {
+    public List<DeviceInfoDTO> getDevicesStatus() {
         return connectionMgr.getConnections().values().stream().map(this::connection2DeviceDTO).collect(Collectors.toList());
     }
 
