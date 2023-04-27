@@ -50,7 +50,7 @@ public class MsgHandler extends ChannelInboundHandlerAdapter {
 
                 if (oMsg.contains(Constants.SCANNER_MSG_NO_READ)) {
                     log.info("channelRead，扫码器未读到数据。");
-                    EventBus.getDefault().post(new EventBusMsgCushionQrCode(null));
+                    EventBus.getDefault().post(new EventBusMsgCushionQrCode(null, mConnection.getWorkLine()));
                     // 扫码失败PLC报警
                     EventBus.getDefault().post(new EventBusMsgPlcCmd(Constants.PLC_DATA_ADDRESS_D9000, 1));
                     return;
@@ -61,7 +61,7 @@ public class MsgHandler extends ChannelInboundHandlerAdapter {
                     log.info("channelRead，扫码数据帧头匹配，*** 开始操作 ***。");
                     // 替换帧头和帧尾
                     String fMsg = oMsg.replaceAll(SCANNER_DATA_REGEX, "");
-                    EventBus.getDefault().post(new EventBusMsgCushionQrCode(fMsg));
+                    EventBus.getDefault().post(new EventBusMsgCushionQrCode(fMsg, mConnection.getWorkLine()));
                 }
             }
         } finally {

@@ -65,6 +65,11 @@ public class Connection {
     private String name;
 
     /**
+     * 产线
+     */
+    private Integer workLine;
+
+    /**
      * Netty连接之后产生的I/O操作通道
      */
     private volatile ChannelFuture channelFuture;
