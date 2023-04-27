@@ -11,6 +11,11 @@ public final class Constants {
     }
 
     /**
+     * 产线，全部
+     */
+    public static final int WORK_LINE_ALL = 0;
+
+    /**
      * PLC数据交互地址
      */
     public static final String

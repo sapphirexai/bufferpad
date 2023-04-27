@@ -55,6 +55,16 @@ public class DeviceController {
         }
     }
 
+    @Operation(summary = "获取当前设备状态信息")
+    @GetMapping("/devicesStatus/{workLine}")
+    public ResultDTO<List<DeviceInfoDTO>> devicesStatus(@Parameter(description = "生产线，为0则获取所有产线") @PathVariable Integer workLine) {
+        try {
+            return ResultDTO.success(nettyService.getDevicesStatus(workLine));
+        } catch (Exception e) {
+            return ResultDTO.exception(e);
+        }
+    }
+
     @Operation(summary = "连接所有扫码器，并返回当前所有扫码器状态信息")
     @GetMapping("/scannerConnections")
     public ResultDTO<List<DeviceInfoDTO>> scannerConnections() {
@@ -65,13 +75,4 @@ public class DeviceController {
         }
     }
 
-    @Operation(summary = "获取当前设备状态信息")
-    @GetMapping("/devicesStatus")
-    public ResultDTO<List<DeviceInfoDTO>> devicesStatus() {
-        try {
-            return ResultDTO.success(nettyService.getDevicesStatus());
-        } catch (Exception e) {
-            return ResultDTO.exception(e);
-        }
-    }
 }

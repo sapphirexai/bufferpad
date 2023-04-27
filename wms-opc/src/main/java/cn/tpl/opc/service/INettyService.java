@@ -32,7 +32,8 @@ public interface INettyService {
     /**
      * 获取当前设备状态信息
      *
+     * @param workLine 产线
      * @return 设备状态信息
      */
-    List<DeviceInfoDTO> getDevicesStatus();
+    List<DeviceInfoDTO> getDevicesStatus(Integer workLine);
 }

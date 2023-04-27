@@ -5,6 +5,8 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -38,6 +40,14 @@ public class ConnectionMgr {
 
     public ConcurrentHashMap<String, Connection> getConnections() {
         return CONNECTIONS;
+    }
+
+    public List<Connection> getConnectionsByWorkLine(int workLine) {
+        List<Connection> connByWorkLine = new ArrayList<>();
+        for (Connection conn : CONNECTIONS.values()) {
+            if (conn.getWorkLine() == workLine) connByWorkLine.add(conn);
+        }
+        return connByWorkLine;
     }
 
     private Connection getConnection(String key) {

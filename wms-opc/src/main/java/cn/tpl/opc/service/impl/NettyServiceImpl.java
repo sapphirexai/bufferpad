@@ -1,5 +1,6 @@
 package cn.tpl.opc.service.impl;
 
+import cn.tpl.opc.commons.constant.Constants;
 import cn.tpl.opc.commons.constant.Params;
 import cn.tpl.opc.commons.dto.ResultDTO;
 import cn.tpl.opc.commons.dto.result.DeviceInfoDTO;
@@ -61,8 +62,10 @@ public class NettyServiceImpl implements INettyService {
     }
 
     @Override
-    public List<DeviceInfoDTO> getDevicesStatus() {
-        return connectionMgr.getConnections().values().stream().map(this::connection2DeviceDTO).collect(Collectors.toList());
+    public List<DeviceInfoDTO> getDevicesStatus(Integer workLine) {
+        if (null == workLine || Constants.WORK_LINE_ALL == workLine)
+            return connectionMgr.getConnections().values().stream().map(this::connection2DeviceDTO).collect(Collectors.toList());
+        return connectionMgr.getConnectionsByWorkLine(workLine).stream().map(this::connection2DeviceDTO).collect(Collectors.toList());
     }
 
     private DeviceInfoDTO device2DTO(DeviceInfoEntity deviceInfo) {
