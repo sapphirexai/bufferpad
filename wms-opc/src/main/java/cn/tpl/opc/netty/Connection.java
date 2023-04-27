@@ -206,6 +206,11 @@ public class Connection {
         if (workLine != event.getWorkLine()) return;
 
         OperateResult result = melsecMcNet.Write(event.getAddress(), event.getCmd());
-        if (!result.IsSuccess) nowDead();
+        if (!result.IsSuccess) {
+            nowDead();
+            return;
+        }
+
+        if (isDead()) nowActive(melsecMcNet);
     }
 }
