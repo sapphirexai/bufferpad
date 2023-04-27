@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -44,11 +45,11 @@ public class DeviceController {
         }
     }
 
-    @Operation(summary = "连接所有设备（扫码器和PLC），并返回当前所有扫码器状态信息")
-    @GetMapping("/deviceConnections")
-    public ResultDTO<List<DeviceInfoDTO>> deviceConnections() {
+    @Operation(summary = "连接所有设备（扫码器和PLC），并返回当前所有设备状态信息")
+    @GetMapping("/deviceConnections/{workLine}")
+    public ResultDTO<List<DeviceInfoDTO>> deviceConnections(@Parameter(description = "生产线，为0则连接所有产线") @PathVariable Integer workLine) {
         try {
-            return nettyService.connectDevices();
+            return nettyService.connectDevices(workLine);
         } catch (Exception e) {
             return ResultDTO.exception(e);
         }

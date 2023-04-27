@@ -45,6 +45,11 @@ public class DeviceInfoServiceImpl implements IDeviceInfoService {
         return deviceInfoEntityMapper.list();
     }
 
+    @Override
+    public List<DeviceInfoEntity> listByWorkLine(Integer workLine) {
+        return deviceInfoEntityMapper.listByWorkLine(workLine);
+    }
+
     private DeviceInfoDTO deviceInfo2DTO(DeviceInfoEntity deviceInfo) {
         DeviceInfoDTO deviceInfoDTO = new DeviceInfoDTO();
         BeanUtils.copyProperties(deviceInfo, deviceInfoDTO);

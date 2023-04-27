@@ -55,6 +55,17 @@
         from device_info
     </select>
 
+    <select id="listByWorkLine" parameterType="integer" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from device_info
+        <where>
+            <if test="null != workLine and 0 != workLine ">
+                work_line = #{workLine}
+            </if>
+        </where>
+    </select>
+
     <delete id="deleteByPrimaryKey" parameterType="java.lang.Long">
         <!--
           WARNING - @mbg.generated

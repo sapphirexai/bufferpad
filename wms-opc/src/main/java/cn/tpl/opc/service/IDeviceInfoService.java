@@ -36,4 +36,12 @@ public interface IDeviceInfoService {
      * @return 所有设备数据
      */
     List<DeviceInfoEntity> list();
+
+    /**
+     * 根据产线查询所有设备数据
+     *
+     * @param workLine 产线
+     * @return 所有设备数据
+     */
+    List<DeviceInfoEntity> listByWorkLine(Integer workLine);
 }

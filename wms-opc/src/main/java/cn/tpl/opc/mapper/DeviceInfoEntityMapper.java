@@ -64,4 +64,6 @@ public interface DeviceInfoEntityMapper extends BaseMapper<DeviceInfoEntity> {
     IPage<DeviceInfoEntity> listByPage(Page<DeviceInfoEntity> page);
 
     List<DeviceInfoEntity> list();
+
+    List<DeviceInfoEntity> listByWorkLine(Integer workLine);
 }

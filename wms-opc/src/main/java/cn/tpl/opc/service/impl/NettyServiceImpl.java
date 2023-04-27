@@ -44,8 +44,8 @@ public class NettyServiceImpl implements INettyService {
     }
 
     @Override
-    public ResultDTO<List<DeviceInfoDTO>> connectDevices() {
-        List<DeviceInfoEntity> deviceInfoEntities = deviceService.list();
+    public ResultDTO<List<DeviceInfoDTO>> connectDevices(Integer workLine) {
+        List<DeviceInfoEntity> deviceInfoEntities = deviceService.listByWorkLine(workLine);
         if (CollectionUtils.isEmpty(deviceInfoEntities))
             return ResultDTO.failure("无设备");
         return ResultDTO.success(deviceInfoEntities.stream().map(this::device2DTO).collect(Collectors.toList()));
