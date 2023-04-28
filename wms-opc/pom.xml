@@ -133,6 +133,13 @@
             <scope>compile</scope>
         </dependency>
 
+        <!-- https://mvnrepository.com/artifact/com.github.dathlin/HslCommunication -->
+        <dependency>
+            <groupId>com.github.dathlin</groupId>
+            <artifactId>HslCommunication</artifactId>
+            <version>3.4.0</version>
+        </dependency>
+
     </dependencies>
 
     <dependencyManagement>
@@ -151,6 +158,7 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+
         </dependencies>
     </dependencyManagement>
 
@@ -175,7 +183,6 @@
                 <version>${spring-boot.version}</version>
                 <configuration>
                     <mainClass>cn.tpl.opc.OpcApplication</mainClass>
-                    <skip>true</skip>
                 </configuration>
                 <executions>
                     <execution>
@@ -188,4 +195,5 @@
             </plugin>
         </plugins>
     </build>
+
 </project>
