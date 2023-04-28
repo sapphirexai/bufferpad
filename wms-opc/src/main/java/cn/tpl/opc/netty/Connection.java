@@ -164,9 +164,8 @@ public class Connection {
 
         status = Params.NETTY_CONNECTION_KEY_STATUS_ACTIVE;
         setMelsecMcNet(melsecMcNet);
-        boolean isRegistered = EventBus.getDefault().isRegistered(this);
-        if (isRegistered) return;
-        EventBus.getDefault().register(this);
+        if (!EventBus.getDefault().isRegistered(this))
+            EventBus.getDefault().register(this);
     }
 
     /**
@@ -186,8 +185,7 @@ public class Connection {
 
         if (null != melsecMcNet) {
             melsecMcNet = null;
-            boolean isRegistered = EventBus.getDefault().isRegistered(this);
-            if (isRegistered)
+            if (EventBus.getDefault().isRegistered(this))
                 EventBus.getDefault().unregister(this);
         }
 
