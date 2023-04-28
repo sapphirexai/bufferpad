@@ -1,6 +1,5 @@
 package cn.tpl.opc.controller;
 
-import cn.tpl.opc.commons.dto.ResultDTO;
 import cn.tpl.opc.service.ISseService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
