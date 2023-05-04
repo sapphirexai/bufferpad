@@ -122,7 +122,7 @@ public class Connector {
                     }
                 });
                 connectionMgr.saveConnection(ip, port, conn);
-
+                conn.readyToConnect();
                 if (Params.DEVICE_TYPE_KEY_SCANNER == type)
                     connectScanner(conn, ip, port);
                 else

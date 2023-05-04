@@ -103,6 +103,12 @@ public class Connection {
     };
 
     public Connection() {
+    }
+
+    /**
+     * 参数初始化完毕后，首次连接之前调用
+     */
+    public void readyToConnect() {
         if (Params.DEVICE_TYPE_KEY_SCANNER == type)
             connectionCheckService.scheduleAtFixedRate(connectionCheckTask, 0, 1, TimeUnit.SECONDS);
     }
