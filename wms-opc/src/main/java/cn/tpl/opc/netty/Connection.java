@@ -103,7 +103,7 @@ public class Connection {
     };
 
     public Connection() {
-        if (Params.DEVICE_TYPE_KEY_SCANNER == status)
+        if (Params.DEVICE_TYPE_KEY_SCANNER == type)
             connectionCheckService.scheduleAtFixedRate(connectionCheckTask, 0, 1, TimeUnit.SECONDS);
     }
 
@@ -184,6 +184,7 @@ public class Connection {
         }
 
         if (null != melsecMcNet) {
+            melsecMcNet.ConnectClose();
             melsecMcNet = null;
             if (EventBus.getDefault().isRegistered(this))
                 EventBus.getDefault().unregister(this);
