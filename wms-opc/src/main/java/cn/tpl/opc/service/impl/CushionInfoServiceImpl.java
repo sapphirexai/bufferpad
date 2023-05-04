@@ -136,7 +136,7 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
         // 二维码为空直接返回失败
         if (StringUtils.isEmpty(qrCode)) return false;
 
-        int maxUseCount = 100;
+        int maxUseCount = Constants.CUSHION_DEFAULT_MAX_USE_COUNT_P;
         if (qrCode.startsWith(Constants.CUSHION_QR_CODE_PREFIX_T))
             maxUseCount = Constants.CUSHION_DEFAULT_MAX_USE_COUNT_T;
 
