@@ -63,12 +63,17 @@
       ><el-col :span="5">
         <div class="card" style="flex-direction: column;">
           <p class="title">缓冲垫编号</p>
-          <el-input
-            v-model="input"
-            placeholder="缓冲垫编号"
-            :disabled="!handle"
-            style="width: 100%; font-size: 20px;padding: 10px;"
-          ></el-input>
+          <el-form :model="ruleForm" :rules="rules" ref="ruleForm">
+            <el-form-item prop="qrCode">
+              <el-input
+                v-model="ruleForm.qrCode"
+                placeholder="缓冲垫编号"
+                :disabled="!handle"
+                name="qrCode"
+                style="width: 100%; font-size: 20px;"
+              ></el-input>
+            </el-form-item>
+          </el-form>
 
           <el-button
             type="success"
@@ -84,7 +89,7 @@
           <p class="title">使用次数</p>
           <div class="count" style="font-size: 50px;">
             <i class="el-icon-top" style="color: green; font-size:36px ;"></i
-            >{{ useCount }}1111
+            >{{ useCount }}
           </div>
         </div>
       </el-col>
@@ -93,8 +98,7 @@
           <p class="title">剩余次数</p>
           <div class="count" style="font-size: 50px;">
             <i class="el-icon-bottom" style="color:red;font-size:36px "></i>
-            <!-- {{ Count-useCount<=0? '0':Count-useCount}} -->
-            2222
+            {{ Count - useCount <= 0 ? "0" : Count - useCount }}
           </div>
         </div>
       </el-col>
@@ -108,17 +112,18 @@
       empty-text="数据等待中"
       element-loading-text="数据玩命加载中"
     >
-      <el-table-column prop="name" label="缓冲垫编号" width="180">
+      <el-table-column prop="id" label="缓冲垫编号" width="180">
       </el-table-column>
-      <el-table-column prop="name" label="缓存垫类型" width="180">
+      <el-table-column prop="qrCode" label="缓存垫类型" width="180">
       </el-table-column>
-      <el-table-column prop="address" label="第一次使用时间"> </el-table-column>
-      <el-table-column prop="address" label="最后一次使用时间">
+      <el-table-column prop="createdDate" label="第一次使用时间">
       </el-table-column>
-      <el-table-column prop="address" label="最后一次使用位置">
+      <el-table-column prop="lastScanDate" label="最后一次使用时间">
       </el-table-column>
-      <el-table-column prop="address" label="当前使用次数"> </el-table-column>
-      <el-table-column prop="address" label="剩余次数"> </el-table-column>
+      <el-table-column prop="workLine" label="最后一次使用位置">
+      </el-table-column>
+      <el-table-column prop="usedCount" label="当前使用次数"> </el-table-column>
+      <el-table-column prop="maxUseCount" label="剩余次数"> </el-table-column>
     </el-table>
     <el-pagination
       @size-change="handleSizeChange"
@@ -129,7 +134,7 @@
       :page-size="20"
       :pager-count="7"
       layout="total,sizes,prev, pager, next,jumper"
-      :total="1000"
+      :total="total"
     >
     </el-pagination>
   </div>
@@ -203,12 +208,7 @@
 }
 </style>
 <script>
-import {
-  getInfo,
-  getPLCreadCodeStatus,
-  postInfo,
-  getPageInfo
-} from "../../api";
+import { getPLCreadCodeStatus, postInfo, getPageInfo } from "../../api";
 import EventSourses from "../../api/eventSourse";
 export default {
   name: "Running",
@@ -241,15 +241,22 @@ export default {
       ProdLine: "1",
       status: "success",
       tableData: [],
-      input: "T202199828232",
+      input: "",
       events: null,
-      useCount: 111,
+      useCount: "0",
       devicesMessage: "",
       loading: true,
-      pageSizes: [5, 60, 90, NaN],
+      pageSizes: [5, 10, 20],
       pageSize: 5,
       currentPage: 1,
-      total: 0
+      total: 0,
+      Count: "0",
+      ruleForm: {
+        qrCode: ""
+      },
+      rules: {
+        qrCode: [{ required: true, message: "请输入二维码", trigger: "blur" }]
+      }
     };
   },
   methods: {
@@ -259,54 +266,68 @@ export default {
       }
       return "";
     },
-    async getData() {
-      let { data: res } = await getInfo();
-      this.tableData = res;
-    },
-    async addItem(flag) {
+
+    addItem(flag) {
       if (flag) {
         //调用添加数据到数据库的api
-        let res = await postInfo();
-        console.log(res);
-        this.handle = false;
+        this.$refs["ruleForm"].validate(valid => {
+          if (valid) {
+            postInfo(this.ProdLine, this.ruleForm.qrCode.trim()).then(res =>{
+              // console.log(res)
+              if (res.codeSuccess) {
+                this.$message.success("扫码成功");
+                this.handle = false;
+              } else {
+                alert(res.msg);
+              }
+            });
+          }
+        });
       } else {
         this.handle = true;
       }
     },
     async subscribeAll() {
-      let responses = await Promise.all([getInfo(), getPLCreadCodeStatus()]);
-
-      for (const response of responses) {
-        if (response.status == 502) {
-          // 状态 502 是连接超时错误，
-          // 连接挂起时间过长时可能会发生，
-          // 远程服务器或代理会关闭它
-          // 让我们重新连接
-          await subscribeAll();
-        } else if (response.status != 200) {
-          // 一个 error —— 让我们显示它
-          showMessage(response.statusText);
-          // 一秒后重新连接
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          await subscribeAll();
-        } else {
-          // 获取并显示消息
-          let message = await response.text();
-          showMessage(message);
-          // 再次调用 subscribe() 以获取下一条消息
-          await subscribeAll();
+      while (true) {
+        try {
+          let responses = await Promise.all([
+            getPLCreadCodeStatus(this.ProdLine)
+          ]);
+          for (const response of responses) {
+            if (response.status == 502) {
+              // 状态 502 是连接超时错误，
+              // 连接挂起时间过长时可能会发生，
+              // 远程服务器或代理会关闭它
+              // 让我们重新连接
+              continue;
+            } else if (response.status != 200) {
+              // 一个 error —— 让我们显示它
+              // showMessage(response.statusText);
+              // 一秒后重新连接
+              await new Promise(resolve => setTimeout(resolve, 3000));
+              continue;
+            } else {
+              // 获取并显示消息
+              let message = await response.statusText;
+              // console.log(message);
+              // showMessage(message);
+              // 再次调用 subscribe() 以获取下一条消息
+              continue;
+            }
+          }
+        } catch (e) {
+          // 处理其他异常，如网络异常等
+          // console.error(e);
+          await new Promise(resolve => setTimeout(resolve, 3000));
         }
       }
     },
-    showMessage(message) {
-      console.log(message);
-    },
+
     getPLCreadCodeStatus() {
       getPLCreadCodeStatus(this.ProdLine)
         .then(res => {
           if (res.status === 200) {
             this.devicesMessage = res.data.data;
-            console.log(this.devicesMessage);
           }
         })
         .catch(error => {
@@ -323,28 +344,115 @@ export default {
         });
     },
     handleSizeChange(val) {
-      getPageInfo(val, this.currentPage).then(res => {
-        console.log(res);
-      });
+      getPageInfo(this.currentPage, val)
+        .then(res => {
+          if (res.status == 200) {
+            let result = res.data.data.data;
+            this.tableData = result.filter(item => {
+              return item.workLine == this.ProdLine;
+            });
+            this.total = res.data.data.totalPage;
+            this.loading = false;
+          }
+        })
+        .catch(error => {
+          if (error.code === "ECONNABORTED") {
+            // 请求超时错误，处理方法
+            this.$message.error("请求超时，请稍后再试！");
+          } else if (error.message === "Network Error") {
+            // 网络错误，处理方法
+            this.$message.error("网络连接异常，请检查您的网络设置！");
+          } else {
+            // 其他错误，处理方法
+            this.$message.error("发生错误：" + error.message);
+          }
+        });
     },
-    handleCurrentChange() {}
+    handleCurrentChange(val) {
+      getPageInfo(val, this.pageSize)
+        .then(res => {
+          if (res.status == 200) {
+            let result = res.data.data.data;
+            this.tableData = result.filter(item => {
+              return item.workLine == this.ProdLine;
+            });
+            this.total = res.data.data.totalPage;
+            this.loading = false;
+          }
+        })
+        .catch(error => {
+          if (error.code === "ECONNABORTED") {
+            // 请求超时错误，处理方法
+            this.$message.error("请求超时，请稍后再试！");
+          } else if (error.message === "Network Error") {
+            // 网络错误，处理方法
+            this.$message.error("网络连接异常，请检查您的网络设置！");
+          } else {
+            // 其他错误，处理方法
+            this.$message.error("发生错误：" + error.message);
+          }
+        });
+    },
+    InitpageInfo() {
+      getPageInfo(1, 10)
+        .then(res => {
+          if (res.status == 200) {
+            let result = res.data.data.data;
+            this.tableData = result.filter(item => {
+              return item.workLine == this.ProdLine;
+            });
+            this.total = this.tableData.length;
+            this.loading = false;
+          }
+        })
+        .catch(error => {
+          if (error.code === "ECONNABORTED") {
+            // 请求超时错误，处理方法
+            this.$message.error("请求超时，请稍后再试！");
+          } else if (error.message === "Network Error") {
+            // 网络错误，处理方法
+            this.$message.error("网络连接异常，请检查您的网络设置！");
+          } else {
+            // 其他错误，处理方法
+            this.$message.error("发生错误：" + error.message);
+          }
+        });
+    },
+    InitEventSourse() {
+      this.events = new EventSourses(
+        "https://gitlab.example.invalid:40570/sse/devicesStatus/" + this.ProdLine,
+        (res)=>{
+          console.log(res)
+          if (res.data.topic == "cushionInfo") {
+            if (Object.prototype.toString.call(res.data.data)=='[object Object]') {
+              this.ruleForm.qrCode = res.data.data.qrCode;
+              this.useCount = res.data.data.usedCount;
+              this.Count = res.data.data.maxUseCount;
+            } else {
+              this.ruleForm.qrCode = res.data.data;
+
+            }
+          }
+
+          
+        }
+      );
+    }
   },
   watch: {
     ProdLine: {
       handler(newval, oldval) {
         this.getPLCreadCodeStatus();
+        this.handleSizeChange(this.pageSize);
       },
       immediate: true
     }
   },
   mounted() {
+    // this.subscribeAll()
     this.getPLCreadCodeStatus();
-    this.events = new EventSourses(
-      "https://gitlab.example.invalid:40570/sse/devicesStatus/" + this.ProdLine,
-      function(data) {
-        console.log(data);
-      }
-    );
+    this.InitpageInfo();
+    this.InitEventSourse();
   },
   beforeDestroy() {
     this.events.close();

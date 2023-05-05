@@ -15,7 +15,7 @@ module.exports = {
         target: 'https://gitlab.example.invalid:40570', 
         changeOrigin: true,
         ws: true,
-        secure: true,
+        secure: false,
         logLevel: 'debug',
         pathRewrite: {
           '^/api': ''
@@ -24,7 +24,7 @@ module.exports = {
     },
 
     // Various Dev Server settings
-    host: 'localhost', // can be overwritten by process.env.HOST
+    host: '192.0.2.8', // can be overwritten by process.env.HOST
     port: 8081, // can be overwritten by process.env.PORT, if port is in use, a free one will be determined
     autoOpenBrowser: false,
     errorOverlay: true,
