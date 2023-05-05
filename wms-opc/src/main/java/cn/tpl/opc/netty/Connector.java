@@ -175,13 +175,8 @@ public class Connector {
     private boolean doReconnect(Connection conn) {
         if (null == conn) return false;
         if (conn.isActive()) return true;
-        try {
-            log.info("当前连接已断开，尝试重连 => {}:{}...", conn.getIp(), conn.getPort());
-            doConnect(conn);
-        } catch (Exception e) {
-            log.error("Netty连接异常", e);
-        }
-        return true;
+        log.info("当前连接已断开，尝试重连 => {}:{}...", conn.getIp(), conn.getPort());
+        return doConnect(conn);
     }
 
     /**
