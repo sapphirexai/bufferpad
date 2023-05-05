@@ -1,7 +1,6 @@
 package cn.tpl.opc.netty;
 
 import HslCommunication.Core.Types.OperateResult;
-import HslCommunication.Core.Types.OperateResultExOne;
 import HslCommunication.Profinet.Melsec.MelsecMcNet;
 import cn.tpl.opc.commons.constant.Params;
 import cn.tpl.opc.commons.dto.result.DeviceInfoDTO;
@@ -46,7 +45,7 @@ public class Connector {
     /**
      * 重连线程池
      */
-    private final ExecutorService reconnectExecutorService;
+//    private final ExecutorService reconnectExecutorService;
 
     /**
      * 定时执行器
@@ -54,14 +53,14 @@ public class Connector {
     private final ScheduledExecutorService scheduledExecutorService;
 
     {
-        reconnectExecutorService = new ThreadPoolExecutor(
-                Runtime.getRuntime().availableProcessors() * 2,
-                Runtime.getRuntime().availableProcessors() * 4,
-                5,
-                TimeUnit.MINUTES,
-                new LinkedBlockingDeque<>(Runtime.getRuntime().availableProcessors() * 4)
-
-        );
+//        reconnectExecutorService = new ThreadPoolExecutor(
+//                Runtime.getRuntime().availableProcessors() * 2,
+//                Runtime.getRuntime().availableProcessors() * 4,
+//                5,
+//                TimeUnit.MINUTES,
+//                new LinkedBlockingDeque<>(Runtime.getRuntime().availableProcessors() * 4)
+//
+//        );
         scheduledExecutorService = Executors.newScheduledThreadPool(1);
         startReconnectService();
     }
@@ -99,13 +98,10 @@ public class Connector {
     public boolean connect(Connection conn) {
         String ip = conn.getIp();
         int port = conn.getPort();
-        int type = conn.getType();
         try {
-            // 若连接已存在就返回成功
-            if (connectionExists(ip, port)) return true;
             synchronized (this) {
                 // 获取锁后进行二次判断
-                if (connectionExists(ip, port)) return true;
+                if (connectionExists(ip, port)) return reconnectExistConnection(ip, port);
 
                 // 保存连接信息到列表
                 conn.setOnStatusChangeListener(new Connection.OnStatusChangeListener() {
@@ -121,16 +117,75 @@ public class Connector {
                         sseService.sendDeviceMsg(deviceInfo);
                     }
                 });
-                connectionMgr.saveConnection(ip, port, conn);
+                connectionMgr.saveConnection(conn);
                 conn.readyToConnect();
-                if (Params.DEVICE_TYPE_KEY_SCANNER == type)
-                    connectScanner(conn, ip, port);
-                else
-                    connectPLC(conn, ip, port);
+                doConnect(conn);
             }
         } catch (Exception e) {
             log.error("Netty连接异常", e);
             return false;
+        }
+        return true;
+    }
+
+
+    /**
+     * 重连已存在的连接，调用之前判断连接是否已经存在
+     *
+     * @return 重连结果
+     * @see #doReconnect(Connection)
+     */
+    private boolean reconnectExistConnection(String ip, int port) {
+        return doReconnect(connectionMgr.getConnection(ip, port));
+    }
+
+    /**
+     * 重连设备，需要设备至少连接过一次，无论是否成功只要保存了连接信息就OK
+     *
+     * @see #doConnect(Connection)
+     */
+    private void reconnect() {
+        ConcurrentHashMap<String, Connection> connections = connectionMgr.getConnections();
+        if (CollectionUtils.isEmpty(connections)) {
+            log.info("当前Netty连接列表为空，不进行重连操作...");
+            return;
+        }
+        Collection<Connection> connectionsList = connections.values();
+        for (Connection conn : connectionsList) {
+            doReconnect(conn);
+        }
+    }
+
+    /**
+     * 连接设备，根据类型自动判断
+     *
+     * @param conn 连接信息
+     * @throws InterruptedException
+     */
+    private void doConnect(Connection conn) throws InterruptedException {
+        String ip = conn.getIp();
+        int port = conn.getPort();
+        if (isScannerConn(conn))
+            connectScanner(conn, ip, port);
+        else
+            connectPLC(conn, ip, port);
+    }
+
+    /**
+     * 重连设备
+     *
+     * @param conn 连接信息
+     * @return 重连结果
+     * @see #doConnect(Connection)
+     */
+    private boolean doReconnect(Connection conn) {
+        if (null == conn) return false;
+        if (conn.isActive()) return true;
+        try {
+            log.info("当前连接已断开，尝试重连 => {}:{}...", conn.getIp(), conn.getPort());
+            doConnect(conn);
+        } catch (Exception e) {
+            log.error("Netty连接异常", e);
         }
         return true;
     }
@@ -144,8 +199,9 @@ public class Connector {
      */
     private void connectScanner(Connection conn, String ip, int port) throws InterruptedException {
         log.info("connect，当前正在连接扫码器 =>> {}", ip + ":" + port);
-        // 设置状态监听器
-        doScannerConnect(conn, ip, port);
+        Bootstrap client = fastBuildClient(conn);// 创建一个客户端）
+        ChannelFuture cf = client.connect(ip, port).sync(); // 发起连接
+        conn.nowActive(cf);
     }
 
     /**
@@ -170,45 +226,10 @@ public class Connector {
         scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
-                ConcurrentHashMap<String, Connection> connections = connectionMgr.getConnections();
-                if (CollectionUtils.isEmpty(connections)) {
-                    log.info("当前Netty连接列表为空，不进行重连操作...");
-                    return;
-                }
-                Collection<Connection> connectionsList = connections.values();
-                for (Connection conn : connectionsList) {
-                    if (null == conn) continue;
-                    // 连接状态若处于活跃则不操作
-                    if (conn.isActive()) continue;
-
-                    reconnectExecutorService.execute(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                String ip = conn.getIp();
-                                int port = conn.getPort();
-                                log.info("当前连接已断开，尝试重连 => {}:{}...", ip, port);
-                                if (isScannerConn(conn))
-                                    doScannerConnect(conn, ip, port);
-                                else
-                                    connectPLC(conn, ip, port);
-                            } catch (Exception e) {
-                                log.error("Netty连接异常", e);
-                            }
-                        }
-                    });
-                }
+                reconnect();
             }
         }, timeExecuteSec, timeExecuteSec, TimeUnit.SECONDS);
 
-    }
-
-    private void doScannerConnect(Connection conn, String ip, int port) throws InterruptedException {
-        // 创建一个客户端）
-        Bootstrap client = fastBuildClient(conn);
-        // 发起连接
-        ChannelFuture cf = client.connect(ip, port).sync();
-        conn.nowActive(cf);
     }
 
     private boolean isScannerConn(Connection conn) {
