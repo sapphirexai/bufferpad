@@ -98,34 +98,28 @@ public class Connector {
     public boolean connect(Connection conn) {
         String ip = conn.getIp();
         int port = conn.getPort();
-        try {
-            synchronized (this) {
-                // 获取锁后进行二次判断
-                if (connectionExists(ip, port)) return reconnectExistConnection(ip, port);
+        synchronized (this) {
+            // 获取锁后进行二次判断
+            if (connectionExists(ip, port)) return reconnectExistConnection(ip, port);
 
-                // 保存连接信息到列表
-                conn.setOnStatusChangeListener(new Connection.OnStatusChangeListener() {
-                    @Override
-                    public void onStatusChanged(Connection conn) {
-                        log.info("onStatusChanged，conn：{}", conn);
-                        sendSseMsg(conn);
-                    }
+            // 保存连接信息到列表
+            conn.setOnStatusChangeListener(new Connection.OnStatusChangeListener() {
+                @Override
+                public void onStatusChanged(Connection conn) {
+                    log.info("onStatusChanged，conn：{}", conn);
+                    sendSseMsg(conn);
+                }
 
-                    private void sendSseMsg(Connection conn) {
-                        DeviceInfoDTO deviceInfo = new DeviceInfoDTO();
-                        BeanUtils.copyProperties(conn, deviceInfo);
-                        sseService.sendDeviceMsg(deviceInfo);
-                    }
-                });
-                connectionMgr.saveConnection(conn);
-                conn.readyToConnect();
-                doConnect(conn);
-            }
-        } catch (Exception e) {
-            log.error("Netty连接异常", e);
-            return false;
+                private void sendSseMsg(Connection conn) {
+                    DeviceInfoDTO deviceInfo = new DeviceInfoDTO();
+                    BeanUtils.copyProperties(conn, deviceInfo);
+                    sseService.sendDeviceMsg(deviceInfo);
+                }
+            });
+            connectionMgr.saveConnection(conn);
+            conn.readyToConnect();
+            return doConnect(conn);
         }
-        return true;
     }
 
 
@@ -162,13 +156,13 @@ public class Connector {
      * @param conn 连接信息
      * @throws InterruptedException
      */
-    private void doConnect(Connection conn) throws InterruptedException {
+    private boolean doConnect(Connection conn) {
         String ip = conn.getIp();
         int port = conn.getPort();
         if (isScannerConn(conn))
-            connectScanner(conn, ip, port);
+            return connectScanner(conn, ip, port);
         else
-            connectPLC(conn, ip, port);
+            return connectPLC(conn, ip, port);
     }
 
     /**
@@ -197,11 +191,17 @@ public class Connector {
      * @param ip   IP地址
      * @param port 端口号
      */
-    private void connectScanner(Connection conn, String ip, int port) throws InterruptedException {
-        log.info("connect，当前正在连接扫码器 =>> {}", ip + ":" + port);
-        Bootstrap client = fastBuildClient(conn);// 创建一个客户端）
-        ChannelFuture cf = client.connect(ip, port).sync(); // 发起连接
-        conn.nowActive(cf);
+    private boolean connectScanner(Connection conn, String ip, int port) {
+        try {
+            log.info("connect，当前正在连接扫码器 =>> {}", ip + ":" + port);
+            Bootstrap client = fastBuildClient(conn);// 创建一个客户端）
+            ChannelFuture cf = client.connect(ip, port).sync(); // 发起连接
+            conn.nowActive(cf);
+            return true;
+        } catch (Exception e) {
+            log.error("Netty连接异常", e);
+            return false;
+        }
     }
 
     /**
@@ -211,14 +211,16 @@ public class Connector {
      * @param ip   IP地址
      * @param port 端口号
      */
-    private void connectPLC(Connection conn, String ip, int port) {
+    private boolean connectPLC(Connection conn, String ip, int port) {
         log.info("connect，当前正在连接PLC =>> {}", ip + ":" + port);
         MelsecMcNet melsecMcNet = new MelsecMcNet(ip, port);
         OperateResult connectResult = melsecMcNet.ConnectServer();
         if (connectResult.IsSuccess) {
             log.info("connect，当前正在连接PLC =>> 连接成功");
             conn.nowActive(melsecMcNet);
+            return true;
         }
+        return false;
     }
 
     public void startReconnectService() {
