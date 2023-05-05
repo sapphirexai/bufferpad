@@ -36,7 +36,7 @@
             width: '100px',
             height: '100px',
             backgroundColor:
-              devicesMessage && devicesMessage[0].status ? '#67c23a' : 'red',
+              devicesMessage && devicesMessage[1].status ? '#67c23a' : 'red',
             borderRadius: '50px'
           }"
         ></div>
@@ -328,6 +328,7 @@ export default {
         .then(res => {
           if (res.status === 200) {
             this.devicesMessage = res.data.data;
+            
           }
         })
         .catch(error => {
@@ -432,6 +433,11 @@ export default {
               this.ruleForm.qrCode = res.data.data;
 
             }
+          }
+          if(res.data.topic == "deviceStatus"){
+            if (Object.prototype.toString.call(res.data.data)=='[object Array]') {
+                this.devicesMessage = res.data.data
+            } 
           }
 
           
