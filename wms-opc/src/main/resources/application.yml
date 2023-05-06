@@ -6,19 +6,12 @@ mybatis-plus:
   mapper-locations: classpath*:mapper/**/*Mapper.xml
   configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
-
 #监控所有端点
 management:
   endpoints:
     web:
       exposure:
         include: '*'
-#    map-underscore-to-camel-case: true
-#    default-enum-type-handler: org.apache.ibatis.type.EnumTypeHandler
-#  global-config:
-#    db-config:
-#      logic-delete-value: 1
-#      logic-not-delete-value: 0
-#  type-handlers-package: cn.tpl.opc.typehandler
-#  type-enums-package: cn.tpl.opc.enums
-
+logging:
+  file:
+    name: D:\Java\@name@_logs\@name@_@env@.log
