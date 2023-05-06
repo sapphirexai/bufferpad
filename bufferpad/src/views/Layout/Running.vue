@@ -32,6 +32,7 @@
       >
         <p class="title">PLC状态:</p>
         <div
+        :class="{'blink':!devicesMessage || !devicesMessage[1].status}"
           :style="{
             width: '100px',
             height: '100px',
@@ -47,6 +48,7 @@
       >
         <p class="title">读码器连接状态:</p>
         <div
+        :class="{'blink':!devicesMessage || !devicesMessage[0].status}"
           :style="{
             width: '100px',
             height: '100px',
@@ -67,10 +69,11 @@
             <el-form-item prop="qrCode">
               <el-input
                 v-model="ruleForm.qrCode"
-                placeholder="缓冲垫编号"
+                placeholder="接收数据中..."
                 :disabled="!handle"
                 name="qrCode"
                 style="width: 100%; font-size: 20px;"
+                @keydown.enter.native="handleEnterKey($event)"
               ></el-input>
             </el-form-item>
           </el-form>
@@ -85,11 +88,11 @@
       </el-col>
 
       <el-col :span="4" style="height: 100%;">
-        <div class="card" style="flex-direction:column;">
+        <div class="card" style="flex-direction:column;height:100%;">
           <p class="title">使用次数</p>
           <div class="count" style="font-size: 50px;">
-            <i class="el-icon-top" style="color: green; font-size:36px ;"></i
-            >{{ useCount }}
+            <i class="el-icon-top" style="color: green; font-size:36px ;"></i>
+            {{ useCount }}
           </div>
         </div>
       </el-col>
@@ -111,19 +114,29 @@
       v-loading="loading"
       empty-text="数据等待中"
       element-loading-text="数据玩命加载中"
+      :cell-style="rowStyle"
+      :header-cell-style="rowStyle"
     >
       <el-table-column prop="id" label="缓冲垫编号" width="180">
       </el-table-column>
       <el-table-column prop="qrCode" label="缓存垫类型" width="180">
       </el-table-column>
-      <el-table-column prop="createdDate" label="第一次使用时间">
+      <el-table-column
+        prop="createdDate"
+        label="第一次使用时间"
+        :formatter="formatDate"
+      >
       </el-table-column>
-      <el-table-column prop="lastScanDate" label="最后一次使用时间">
+      <el-table-column
+        prop="lastScanDate"
+        label="最后一次使用时间"
+        :formatter="formatDate"
+      >
       </el-table-column>
       <el-table-column prop="workLine" label="最后一次使用位置">
       </el-table-column>
       <el-table-column prop="usedCount" label="当前使用次数"> </el-table-column>
-      <el-table-column prop="maxUseCount" label="剩余次数"> </el-table-column>
+      <el-table-column prop="maxUseCount" label="使用寿命"> </el-table-column>
     </el-table>
     <el-pagination
       @size-change="handleSizeChange"
@@ -131,8 +144,7 @@
       :current-page="currentPage"
       :page-sizes="pageSizes"
       :pages-size="pageSize"
-      :page-size="20"
-      :pager-count="7"
+      :pager-count="5"
       layout="total,sizes,prev, pager, next,jumper"
       :total="total"
     >
@@ -206,6 +218,18 @@
 /deep/ el-input .el-input__inner {
   background-color: rgba(255, 255, 255, 0.247);
 }
+
+.blink {
+        animation: blink 0.2s infinite steps(1);
+    }
+@keyframes blink {
+  0%, 50% {
+    opacity: 1;
+  }
+  51%, 100% {
+    opacity: 0;
+  }
+    }
 </style>
 <script>
 import { getPLCreadCodeStatus, postInfo, getPageInfo } from "../../api";
@@ -246,8 +270,8 @@ export default {
       useCount: "0",
       devicesMessage: "",
       loading: true,
-      pageSizes: [5, 10, 20],
-      pageSize: 5,
+      pageSizes: [8, 15, 20],
+      pageSize: 8,
       currentPage: 1,
       total: 0,
       Count: "0",
@@ -261,26 +285,45 @@ export default {
   },
   methods: {
     tableRowClassName({ row, rowIndex }) {
-      if (row.name === "1") {
+      if (row.usedCount === row.maxUseCount) {
         return "warning-row";
       }
       return "";
     },
 
+    formatDate(row, column, cellValue, index) {
+      //把传过来的日期进行回炉重造一下，又创建了一个js的 Date对象，进行重新构造，转为String字符串
+      //最终返回 s 就可以了
+      var s = new Date(cellValue).toLocaleString();
+      return s;
+      // 测试参数含义：不知道参数是什么含义的就打印出来
+      // console.log(row)     	//拿到一行的所有信息，要拿到具体信息,只需要row.XXX 就可以了
+      // console.log(column)  	//拿到列的信息
+      // console.log(cellValue) //拿到单元格数据，拿到时间 2022-03-18T01:46:08.000+00:00
+      // console.log(index)     //拿到索引
+    },
     addItem(flag) {
       if (flag) {
         //调用添加数据到数据库的api
         this.$refs["ruleForm"].validate(valid => {
           if (valid) {
-            postInfo(this.ProdLine, this.ruleForm.qrCode.trim()).then(res =>{
-              // console.log(res)
-              if (res.codeSuccess) {
-                this.$message.success("扫码成功");
-                this.handle = false;
-              } else {
-                alert(res.msg);
-              }
-            });
+            if (
+              this.devicesMessage[1].status &&
+              this.devicesMessage[0].status
+            ) {
+              postInfo(this.ProdLine, this.ruleForm.qrCode.trim()).then(res => {
+                // console.log(res)
+                if (res.codeSuccess) {
+                  this.$message.success("扫码成功");
+                  this.handle = false;
+                  this.InitpageInfo();
+                } else {
+                  alert(res.msg);
+                }
+              });
+            } else {
+              this.$message.error("设备状态错误");
+            }
           }
         });
       } else {
@@ -327,8 +370,11 @@ export default {
       getPLCreadCodeStatus(this.ProdLine)
         .then(res => {
           if (res.status === 200) {
-            this.devicesMessage = res.data.data;
-            
+            if (res.data.codeSuccess) {
+              this.devicesMessage = res.data.data;
+            } else {
+              alert(res.data.msg);
+            }
           }
         })
         .catch(error => {
@@ -395,14 +441,15 @@ export default {
         });
     },
     InitpageInfo() {
-      getPageInfo(1, 10)
+      getPageInfo(1, this.pageSize)
         .then(res => {
           if (res.status == 200) {
             let result = res.data.data.data;
             this.tableData = result.filter(item => {
               return item.workLine == this.ProdLine;
             });
-            this.total = this.tableData.length;
+
+            this.total = res.data.data.totalPage;
             this.loading = false;
           }
         })
@@ -422,43 +469,50 @@ export default {
     InitEventSourse() {
       this.events = new EventSourses(
         "https://gitlab.example.invalid:40570/sse/devicesStatus/" + this.ProdLine,
-        (res)=>{
-          console.log(res)
+        res => {
           if (res.data.topic == "cushionInfo") {
-            if (Object.prototype.toString.call(res.data.data)=='[object Object]') {
+            if (
+              Object.prototype.toString.call(res.data.data) == "[object Object]"
+            ) {
               this.ruleForm.qrCode = res.data.data.qrCode;
               this.useCount = res.data.data.usedCount;
               this.Count = res.data.data.maxUseCount;
+              this.InitpageInfo();
             } else {
               this.ruleForm.qrCode = res.data.data;
-
             }
           }
-          if(res.data.topic == "deviceStatus"){
-            if (Object.prototype.toString.call(res.data.data)=='[object Array]') {
-                this.devicesMessage = res.data.data
-            } 
+          if (res.data.topic == "deviceStatus") {
+            if (
+              Object.prototype.toString.call(res.data.data) == "[object Array]"
+            ) {
+              this.devicesMessage = res.data.data;
+            }
           }
-
-          
         }
       );
+    },
+    rowStyle() {
+      return "text-align:center";
+    },
+    handleEnterKey(event){
+      event.preventDefault();
     }
   },
   watch: {
     ProdLine: {
       handler(newval, oldval) {
         this.getPLCreadCodeStatus();
-        this.handleSizeChange(this.pageSize);
+        this.InitpageInfo();
       },
       immediate: true
     }
   },
-  mounted() {
+  async mounted() {
     // this.subscribeAll()
-    this.getPLCreadCodeStatus();
-    this.InitpageInfo();
-    this.InitEventSourse();
+    await this.getPLCreadCodeStatus();
+    await this.InitpageInfo();
+    await this.InitEventSourse();
   },
   beforeDestroy() {
     this.events.close();
