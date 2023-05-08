@@ -1,4 +1,5 @@
 import axios from 'axios'
+import router from '../router'
 //在开发环境中的测试 development
 if (process.env.NODE_ENV == 'development') {
     axios.defaults.baseURL = 'api'
@@ -21,7 +22,23 @@ axios.interceptors.request.use(
         return config
     }
 )
-
+  
+  // 添加响应拦截器
+  axios.interceptors.response.use(
+    response => {
+      // 响应成功处理逻辑
+      return response;
+    },
+    error => {
+      // 响应错误处理逻辑
+      if (error.response) {
+        // 根据状态码判断是否需要跳转到网络错误页面
+       
+          router.push('/networkError');
+      }
+      return Promise.reject(error);
+    }
+  );
 export function get(url, params) {
     return new Promise((resolve, reject) => {
         axios.get(url, {
