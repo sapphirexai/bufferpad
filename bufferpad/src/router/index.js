@@ -8,7 +8,7 @@ const router =  new Router({
   routes: [
     {
       path: '/',
-      name: 'Home ',
+      name: 'Home',
       component: Layout,
       redirect:'/index',
       children:[
@@ -23,6 +23,16 @@ const router =  new Router({
       }
       ]
     }, 
+    {
+ 
+      path: '/networkError',
+ 
+      component: require('../components/network_error.vue').default, 
+ 
+      name: 'networkError',
+ 
+      meta: { title: '网络异常' } 
+}
 
     
   ]

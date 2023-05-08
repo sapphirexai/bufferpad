@@ -37,7 +37,7 @@
             width: '100px',
             height: '100px',
             backgroundColor:
-              devicesMessage && devicesMessage[1].status ? '#67c23a' : 'red',
+              devicesMessage!==null && devicesMessage[1].status ? '#67c23a' : 'red',
             borderRadius: '50px'
           }"
         ></div>
@@ -53,7 +53,7 @@
             width: '100px',
             height: '100px',
             backgroundColor:
-              devicesMessage && devicesMessage[0].status ? '#67c23a' : 'red',
+              devicesMessage!==null && devicesMessage[0].status ? '#67c23a' : 'red',
             borderRadius: '50px'
           }"
         ></div>
@@ -268,7 +268,7 @@ export default {
       input: "",
       events: null,
       useCount: "0",
-      devicesMessage: "",
+      devicesMessage:[{type:0,status:0},{}],
       loading: true,
       pageSizes: [8, 15, 20],
       pageSize: 8,
@@ -303,6 +303,7 @@ export default {
       // console.log(index)     //拿到索引
     },
     addItem(flag) {
+     
       if (flag) {
         //调用添加数据到数据库的api
         this.$refs["ruleForm"].validate(valid => {
@@ -371,7 +372,9 @@ export default {
         .then(res => {
           if (res.status === 200) {
             if (res.data.codeSuccess) {
-              this.devicesMessage = res.data.data;
+              this.devicesMessage=res.data.data;
+             
+            
             } else {
               alert(res.data.msg);
             }
@@ -483,11 +486,13 @@ export default {
             }
           }
           if (res.data.topic == "deviceStatus") {
-            if (
-              Object.prototype.toString.call(res.data.data) == "[object Array]"
-            ) {
-              this.devicesMessage = res.data.data;
-            }
+                if(res.data.data.type==1){
+                  this.devicesMessage[1].status = res.data.data.status
+                }else{
+                  this.devicesMessage[0].status = res.data.data.status
+                }
+               
+                console.log(this.devicesMessage)
           }
         }
       );
@@ -508,11 +513,11 @@ export default {
       immediate: true
     }
   },
-  async mounted() {
+   mounted() {
     // this.subscribeAll()
-    await this.getPLCreadCodeStatus();
-    await this.InitpageInfo();
-    await this.InitEventSourse();
+    this.getPLCreadCodeStatus();
+     this.InitpageInfo();
+     this.InitEventSourse();
   },
   beforeDestroy() {
     this.events.close();
