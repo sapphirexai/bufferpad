@@ -6,6 +6,7 @@ import cn.tpl.opc.commons.dto.event.EventBusMsgPlcCmd;
 import cn.tpl.opc.commons.dto.result.CushionInfoDTO;
 import cn.tpl.opc.commons.dto.event.EventBusMsgCushionQrCode;
 import cn.tpl.opc.commons.dto.result.PageData;
+import cn.tpl.opc.commons.dto.result.SseMsgDTO;
 import cn.tpl.opc.commons.scheme.base.BasePageScheme;
 import cn.tpl.opc.entity.CushionInfoEntity;
 import cn.tpl.opc.mapper.CushionInfoEntityMapper;
@@ -71,6 +72,7 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
         if (maxUseCount <= usedCount) {
             log.warn("handleScannerData，缓冲垫使用次数已达极限，最大使用次数：{}，已使用次数：{}", maxUseCount, usedCount);
             EventBus.getDefault().post(new EventBusMsgPlcCmd(Constants.PLC_DATA_ADDRESS_D9001, 1, workLine));
+            sseService.sendMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, Constants.RESULT_MSG_CUSHION_USED_COUNT_REACHED_MAX, workLine));
             return ResultDTO.failure(Constants.RESULT_MSG_CUSHION_USED_COUNT_REACHED_MAX);
         }
         // 增加当前缓冲垫1次使用次数
@@ -83,6 +85,7 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
             return ResultDTO.success(onScanCodeSuccess(qrCode));
         }
 
+        sseService.sendMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, Constants.RESULT_MSG_CUSHION_ADD_USED_COUNT_FAILED, workLine));
         return ResultDTO.failure(Constants.RESULT_MSG_CUSHION_ADD_USED_COUNT_FAILED);
     }
 
