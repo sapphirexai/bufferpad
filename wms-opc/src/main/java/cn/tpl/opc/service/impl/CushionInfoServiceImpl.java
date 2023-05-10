@@ -55,6 +55,7 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
                 EventBus.getDefault().post(new EventBusMsgPlcCmd(Constants.PLC_DATA_ADDRESS_D9002, 1, workLine));
                 return ResultDTO.success(onScanCodeSuccess(qrCode));
             }
+            sseService.sendMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, Constants.RESULT_MSG_CUSHION_ADD_FAILED, workLine));
             return ResultDTO.failure(Constants.RESULT_MSG_CUSHION_ADD_FAILED);
         }
         //若当前与最后一次扫码时间相差不足一小时，则为无效扫码，不进行操作
