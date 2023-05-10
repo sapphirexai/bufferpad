@@ -510,6 +510,7 @@ export default {
       handler(newval, oldval) {
         this.getPLCreadCodeStatus();
         this.InitpageInfo();
+        this.InitEventSourse();
       },
       immediate: true
     },
