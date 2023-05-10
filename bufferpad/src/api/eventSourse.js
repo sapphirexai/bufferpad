@@ -17,7 +17,7 @@ class EventSources {
             let that = this;
 
             //实例化EventSource
-                this.eventSource = new EventSource(that.eventSourceUrl);
+                this.eventSource = new EventSource(that.eventSourceUrl,{ withCredentials: false });
             //EventSource打开
             this.eventSource.onopen = function () {
                 console.log('EventSource连接成功', that.eventSourceUrl);
@@ -51,7 +51,7 @@ class EventSources {
                 console.log('EventSource连接错误', error);
                 
                 this.close();
-                router.push('/networkError');
+                window.location.reload();
             }
         
         }

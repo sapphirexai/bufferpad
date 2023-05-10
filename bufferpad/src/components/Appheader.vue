@@ -1,5 +1,5 @@
 <template>
-    <div class="header">ToPro</div>
+    <div class="header">TOPRO</div>
   </template>
   
   <script>

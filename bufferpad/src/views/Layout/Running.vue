@@ -101,7 +101,7 @@
           <p class="title">剩余次数</p>
           <div class="count" style="font-size: 50px;">
             <i class="el-icon-bottom" style="color:red;font-size:36px "></i>
-            {{ Count - useCount <= 0 ? "0" : Count - useCount }}
+            {{RemainCount}}
           </div>
         </div>
       </el-col>
@@ -267,14 +267,14 @@ export default {
       tableData: [],
       input: "",
       events: null,
-      useCount: "0",
+      useCount: 0,
       devicesMessage:[{type:0,status:0},{}],
       loading: true,
       pageSizes: [8, 15, 20],
       pageSize: 8,
       currentPage: 1,
       total: 0,
-      Count: "0",
+      Count: 0,
       ruleForm: {
         qrCode: ""
       },
@@ -315,6 +315,8 @@ export default {
               postInfo(this.ProdLine, this.ruleForm.qrCode.trim()).then(res => {
                 // console.log(res)
                 if (res.codeSuccess) {
+                  this.Count = res.data.maxUseCount
+                  this.useCount = res.data.usedCount
                   this.$message.success("扫码成功");
                   this.handle = false;
                   this.InitpageInfo();
@@ -452,6 +454,7 @@ export default {
               return item.workLine == this.ProdLine;
             });
 
+
             this.total = res.data.data.totalPage;
             this.loading = false;
           }
@@ -477,10 +480,17 @@ export default {
             if (
               Object.prototype.toString.call(res.data.data) == "[object Object]"
             ) {
+              console.log(res)
+              if(res.codeSuccess){
+                
               this.ruleForm.qrCode = res.data.data.qrCode;
               this.useCount = res.data.data.usedCount;
               this.Count = res.data.data.maxUseCount;
               this.InitpageInfo();
+              }else{
+                alert(res.msg)
+              }
+              
             } else{
                  
               this.ruleForm.qrCode = res.data.data;
@@ -521,10 +531,21 @@ export default {
         resolve();
       }, 0);
     }).then(function() {
-      alert('扫码失败，请手动输入');
+      this.$message.error('扫码失败，请手动输入');
     });
   }
+},
+  RemainCount(newval,oldval){
+    console.log(newval)
+        if(newval===0){
+          alert('扫码次数达上限')
+        }
 }
+  },
+  computed:{
+      RemainCount(){
+        return this.Count-this.useCount
+      }
   },
    mounted() {
     // this.subscribeAll()
