@@ -33,8 +33,12 @@ axios.interceptors.request.use(
       // 响应错误处理逻辑
       if (error.response) {
         // 根据状态码判断是否需要跳转到网络错误页面
-       
-          router.push('/networkError');
+        if(error.response.status==500||error.response.status==502){
+            router.push('/networkError');
+        }
+          
+      }else{
+        router.push('/networkError');
       }
       return Promise.reject(error);
     }

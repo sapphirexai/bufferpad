@@ -1,3 +1,4 @@
+import router from '@/router'
 class EventSources {
     //构造函数
     constructor(url, onmessage) {
@@ -50,6 +51,7 @@ class EventSources {
                 console.log('EventSource连接错误', error);
                 
                 this.close();
+                router.push('/networkError');
             }
         
         }

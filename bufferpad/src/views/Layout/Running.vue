@@ -481,7 +481,8 @@ export default {
               this.useCount = res.data.data.usedCount;
               this.Count = res.data.data.maxUseCount;
               this.InitpageInfo();
-            } else {
+            } else{
+                 
               this.ruleForm.qrCode = res.data.data;
             }
           }
@@ -511,7 +512,18 @@ export default {
         this.InitpageInfo();
       },
       immediate: true
-    }
+    },
+    'ruleForm.qrCode': function(newVal, oldVal) {
+  if (newVal === 'NoRead') {
+    new Promise(function(resolve, reject) {
+      setTimeout(function() {
+        resolve();
+      }, 0);
+    }).then(function() {
+      alert('扫码失败，请手动输入');
+    });
+  }
+}
   },
    mounted() {
     // this.subscribeAll()
