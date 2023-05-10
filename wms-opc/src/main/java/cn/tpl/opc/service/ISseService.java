@@ -29,6 +29,8 @@ public interface ISseService {
      */
     <T> void sendMsg(ResultDTO<SseMsgDTO<T>> msg);
 
+    <T> void sendFailMsg(SseMsgDTO<T> msg, String reason);
+
     /**
      * 发送设备消息
      *

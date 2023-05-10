@@ -55,7 +55,7 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
                 EventBus.getDefault().post(new EventBusMsgPlcCmd(Constants.PLC_DATA_ADDRESS_D9002, 1, workLine));
                 return ResultDTO.success(onScanCodeSuccess(qrCode));
             }
-            sseService.sendMsg(ResultDTO.failure(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, null, workLine), Constants.RESULT_MSG_CUSHION_ADD_FAILED));
+            sseService.sendFailMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, null, workLine), Constants.RESULT_MSG_CUSHION_ADD_FAILED);
             return ResultDTO.failure(Constants.RESULT_MSG_CUSHION_ADD_FAILED);
         }
         //若当前与最后一次扫码时间相差不足一小时，则为无效扫码，不进行操作
@@ -63,7 +63,7 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
         long interval = System.currentTimeMillis() - lastScanDate.getTime();
         if (interval < Constants.SCANNER_EFFECTIVE_INTERVAL_MILLIS) {
             log.info("handleScannerData，无效扫码，不进行操作，当前扫码间隔：{}毫秒", interval);
-            sseService.sendMsg(ResultDTO.failure(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, cushionInfoEntity, workLine), Constants.RESULT_MSG_CUSHION_INVALID_SCAN));
+            sseService.sendFailMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, cushionInfoEntity, workLine), Constants.RESULT_MSG_CUSHION_INVALID_SCAN);
             return ResultDTO.failure(Constants.RESULT_MSG_CUSHION_INVALID_SCAN);
         }
 
@@ -74,7 +74,7 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
         if (maxUseCount <= usedCount) {
             log.warn("handleScannerData，缓冲垫使用次数已达极限，最大使用次数：{}，已使用次数：{}", maxUseCount, usedCount);
             EventBus.getDefault().post(new EventBusMsgPlcCmd(Constants.PLC_DATA_ADDRESS_D9001, 1, workLine));
-            sseService.sendMsg(ResultDTO.failure(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, cushionInfoEntity, workLine), Constants.RESULT_MSG_CUSHION_USED_COUNT_REACHED_MAX));
+            sseService.sendFailMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, cushionInfoEntity, workLine), Constants.RESULT_MSG_CUSHION_USED_COUNT_REACHED_MAX);
             return ResultDTO.failure(Constants.RESULT_MSG_CUSHION_USED_COUNT_REACHED_MAX);
         }
         // 增加当前缓冲垫1次使用次数
@@ -87,7 +87,7 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
             return ResultDTO.success(onScanCodeSuccess(qrCode));
         }
 
-        sseService.sendMsg(ResultDTO.failure(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, cushionInfoEntity, workLine), Constants.RESULT_MSG_CUSHION_ADD_USED_COUNT_FAILED));
+        sseService.sendFailMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, cushionInfoEntity, workLine), Constants.RESULT_MSG_CUSHION_ADD_USED_COUNT_FAILED);
         return ResultDTO.failure(Constants.RESULT_MSG_CUSHION_ADD_USED_COUNT_FAILED);
     }
 
