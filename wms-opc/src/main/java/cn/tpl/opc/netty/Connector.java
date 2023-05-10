@@ -117,7 +117,7 @@ public class Connector {
                 }
             });
             connectionMgr.saveConnection(conn);
-            conn.readyToConnect();
+//            conn.readyToConnect();
             return doConnect(conn);
         }
     }
