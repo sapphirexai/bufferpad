@@ -69,7 +69,7 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
 
         // 超次数PLC报警
         if (maxUseCount <= usedCount) {
-            log.info("handleScannerData，最大使用次数：{}，已使用次数：{}，已超次数：{}", maxUseCount, usedCount, usedCount - maxUseCount);
+            log.warn("handleScannerData，缓冲垫使用次数已达极限，最大使用次数：{}，已使用次数：{}", maxUseCount, usedCount);
             EventBus.getDefault().post(new EventBusMsgPlcCmd(Constants.PLC_DATA_ADDRESS_D9001, 1, workLine));
             return ResultDTO.failure(Constants.RESULT_MSG_CUSHION_USED_COUNT_REACHED_MAX);
         }
