@@ -48,10 +48,10 @@ public class SseServiceImpl implements ISseService {
     }
 
     @Override
-    public <T> void sendMsg(SseMsgDTO<T> msg) {
+    public <T> void sendMsg(ResultDTO<SseMsgDTO<T>> msg) {
         for (Map.Entry<String, SseEmitter> entry : SSE_CLIENTS.entrySet()) {
             String clientId = entry.getKey();
-            String workLine = String.valueOf(msg.getWorkLine());
+            String workLine = String.valueOf(msg.getData().getWorkLine());
             // 只给当前客户端ID与产线相同的业务推送消息
             if (!clientId.equals(workLine)) continue;
 
@@ -70,16 +70,16 @@ public class SseServiceImpl implements ISseService {
 
     @Override
     public void sendDeviceMsg(DeviceInfoDTO deviceInfo) {
-        sendMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_DEVICE_STATUS, deviceInfo, deviceInfo.getWorkLine()));
+        sendMsg(ResultDTO.success(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_DEVICE_STATUS, deviceInfo, deviceInfo.getWorkLine())));
     }
 
     @Override
     public void sendCushionMsg(CushionInfoDTO cushionInfo) {
         String qrCode = cushionInfo.getQrCode();
         if (StringUtils.isEmpty(qrCode)) {
-            sendMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, Constants.SCANNER_MSG_NO_READ, cushionInfo.getWorkLine()));
+            sendMsg(ResultDTO.failure(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, cushionInfo, cushionInfo.getWorkLine()), Constants.SCANNER_MSG_NO_READ));
             return;
         }
-        sendMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, cushionInfo, cushionInfo.getWorkLine()));
+        sendMsg(ResultDTO.success(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, cushionInfo, cushionInfo.getWorkLine())));
     }
 }

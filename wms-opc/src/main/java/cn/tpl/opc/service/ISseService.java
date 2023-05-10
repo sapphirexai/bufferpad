@@ -1,5 +1,6 @@
 package cn.tpl.opc.service;
 
+import cn.tpl.opc.commons.dto.ResultDTO;
 import cn.tpl.opc.commons.dto.result.CushionInfoDTO;
 import cn.tpl.opc.commons.dto.result.DeviceInfoDTO;
 import cn.tpl.opc.commons.dto.result.SseMsgDTO;
@@ -26,7 +27,7 @@ public interface ISseService {
      *
      * @param msg 消息
      */
-    <T> void sendMsg(SseMsgDTO<T> msg);
+    <T> void sendMsg(ResultDTO<SseMsgDTO<T>> msg);
 
     /**
      * 发送设备消息
