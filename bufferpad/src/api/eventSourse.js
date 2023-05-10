@@ -51,7 +51,7 @@ class EventSources {
                 console.log('EventSource连接错误', error);
                 
                 this.close();
-                window.location.reload();
+                this.$router.push('/networkError')
             }
         
         }

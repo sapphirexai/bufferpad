@@ -11,7 +11,7 @@
     methods: {
       // 点击重试按钮时刷新页面
       refresh() {
-        window.location.reload();
+        this.$router.replace('/')
       }
     }
   }

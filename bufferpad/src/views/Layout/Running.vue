@@ -537,7 +537,7 @@ export default {
 },
   RemainCount(newval,oldval){
     console.log(newval)
-        if(newval===0){
+        if(newval == 0){
           alert('扫码次数达上限')
         }
 }
