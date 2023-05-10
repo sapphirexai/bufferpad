@@ -63,6 +63,7 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
         long interval = System.currentTimeMillis() - lastScanDate.getTime();
         if (interval < Constants.SCANNER_EFFECTIVE_INTERVAL_MILLIS) {
             log.info("handleScannerData，无效扫码，不进行操作，当前扫码间隔：{}毫秒", interval);
+            sseService.sendMsg(ResultDTO.failure(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, cushionInfoEntity, workLine), Constants.RESULT_MSG_CUSHION_INVALID_SCAN));
             return ResultDTO.failure(Constants.RESULT_MSG_CUSHION_INVALID_SCAN);
         }
 

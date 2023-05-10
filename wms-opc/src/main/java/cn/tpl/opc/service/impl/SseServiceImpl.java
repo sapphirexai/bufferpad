@@ -77,7 +77,7 @@ public class SseServiceImpl implements ISseService {
     public void sendCushionMsg(CushionInfoDTO cushionInfo) {
         String qrCode = cushionInfo.getQrCode();
         if (StringUtils.isEmpty(qrCode)) {
-            sendMsg(ResultDTO.failure(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, cushionInfo, cushionInfo.getWorkLine()), Constants.SCANNER_MSG_NO_READ));
+            sendMsg(ResultDTO.failure(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, null, cushionInfo.getWorkLine()), Constants.SCANNER_MSG_NO_READ));
             return;
         }
         sendMsg(ResultDTO.success(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, cushionInfo, cushionInfo.getWorkLine())));
