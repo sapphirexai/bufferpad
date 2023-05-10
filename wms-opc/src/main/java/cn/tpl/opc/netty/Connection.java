@@ -97,7 +97,6 @@ public class Connection {
     private final Runnable connectionCheckTask = () -> {
         if (isActive()) {
             long resetInterval = connectionResetInterval.decrementAndGet();
-            log.info("connectionResetInterval：" + resetInterval);
             if (0 > resetInterval) nowDead();
         }
     };
