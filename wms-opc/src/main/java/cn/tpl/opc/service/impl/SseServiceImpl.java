@@ -57,7 +57,7 @@ public class SseServiceImpl implements ISseService {
 
             MSG_SERVICE.execute(() -> {
                 try {
-                    String fMsg = FastJsonUtils.toJSONString(ResultDTO.success(msg));
+                    String fMsg = FastJsonUtils.toJSONString(msg);
                     log.info("sendMsg，msgJson：{}", fMsg);
                     entry.getValue().send(fMsg);
                 } catch (Exception e) {
