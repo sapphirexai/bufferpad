@@ -321,7 +321,7 @@ export default {
                   this.handle = false;
                   this.InitpageInfo();
                 } else {
-                  alert(res.msg);
+                  this.$message.error(res.msg);
                 }
               });
             } else {
@@ -378,7 +378,7 @@ export default {
              
             
             } else {
-              alert(res.data.msg);
+              this.$message.error(res.data.msg);
             }
           }
         })
@@ -396,6 +396,7 @@ export default {
         });
     },
     handleSizeChange(val) {
+      this.pageSize  = val
       getPageInfo(this.currentPage, val)
         .then(res => {
           if (res.status == 200) {
@@ -474,26 +475,27 @@ export default {
     },
     InitEventSourse() {
       this.events = new EventSourses(
-        "https://gitlab.example.invalid:40570/sse/devicesStatus/" + this.ProdLine,
+        "http://localhost:9001/sse/devicesStatus/" + this.ProdLine,
         res => {
           if (res.data.topic == "cushionInfo") {
             if (
-              Object.prototype.toString.call(res.data.data) == "[object Object]"
+              res.data.data!==null
             ) {
               console.log(res)
-              if(res.codeSuccess){
-                
               this.ruleForm.qrCode = res.data.data.qrCode;
               this.useCount = res.data.data.usedCount;
               this.Count = res.data.data.maxUseCount;
               this.InitpageInfo();
-              }else{
-                alert(res.msg)
+              if(res.codeSuccess){
+                this.$message.success(res.msg)
+              }
+              else{
+                this.$message.error(res.msg)
               }
               
             } else{
-                 
-              this.ruleForm.qrCode = res.data.data;
+              this.ruleForm.qrCode = 'NoRead';
+              this.$message.error(res.msg)
             }
           }
           if (res.data.topic == "deviceStatus") {
@@ -531,14 +533,14 @@ export default {
         resolve();
       }, 0);
     }).then(function() {
-      this.$message.error('扫码失败，请手动输入');
+      alert('扫码失败，请手动输入');
     });
   }
 },
   RemainCount(newval,oldval){
     console.log(newval)
         if(newval == 0){
-          alert('扫码次数达上限')
+          this.$message.error('扫码次数达上限')
         }
 }
   },
