@@ -6,7 +6,7 @@ if (process.env.NODE_ENV == 'development') {
 }
 //在生产环境中的测试 production
 if (process.env.NODE_ENV == 'production') {
-    axios.defaults.baseURL = 'api'
+    axios.defaults.baseURL = 'http://localhost:9001'
    
     //重新启动
 }

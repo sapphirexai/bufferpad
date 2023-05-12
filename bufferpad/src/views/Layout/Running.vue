@@ -478,7 +478,7 @@ export default {
     },
     InitEventSourse() {
       this.events = new EventSourses(
-        "api/sse/devicesStatus/" + this.ProdLine,
+        "/sse/devicesStatus/" + this.ProdLine,
         res => {
           if (res.data.topic == "cushionInfo") {
             if (
