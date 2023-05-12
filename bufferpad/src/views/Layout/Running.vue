@@ -285,10 +285,12 @@ export default {
   },
   methods: {
     tableRowClassName({ row, rowIndex }) {
-      if (row.usedCount === row.maxUseCount) {
+      if (row.usedCount == row.maxUseCount) {
         return "warning-row";
+      }else{
+        return "";
       }
-      return "";
+      
     },
 
     formatDate(row, column, cellValue, index) {
@@ -322,6 +324,7 @@ export default {
                   this.InitpageInfo();
                 } else {
                   this.$message.error(res.msg);
+                  
                 }
               });
             } else {
@@ -447,7 +450,7 @@ export default {
         });
     },
     InitpageInfo() {
-      getPageInfo(1, this.pageSize)
+      getPageInfo(this.currentPage, this.pageSize)
         .then(res => {
           if (res.status == 200) {
             let result = res.data.data.data;
@@ -475,7 +478,7 @@ export default {
     },
     InitEventSourse() {
       this.events = new EventSourses(
-        "http://localhost:9001/sse/devicesStatus/" + this.ProdLine,
+        "api/sse/devicesStatus/" + this.ProdLine,
         res => {
           if (res.data.topic == "cushionInfo") {
             if (

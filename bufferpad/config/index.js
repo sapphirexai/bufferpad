@@ -12,7 +12,7 @@ module.exports = {
     assetsPublicPath: '/',
     proxyTable: {
       '/api': {
-        target: "http://localhost:9001", 
+        target: "https://gitlab.example.invalid:40570", 
         changeOrigin: true,
         ws: true,
         secure: false,
@@ -63,10 +63,11 @@ module.exports = {
     assetsSubDirectory: 'static',
     assetsPublicPath: '/',
     proxyTable: {
-      "/": {
+      "/api": {
         target: "http://localhost:9001", 
         changeOrigin: true,
         ws: true,
+        secure: false,
         pathRewrite: {
           '^/api': ''
         }
