@@ -12,7 +12,7 @@ if (process.env.NODE_ENV == 'production') {
 }
 // 还有一种环境 debug
 //响应超时的时间
-axios.defaults.timeout = 5000
+axios.defaults.timeout = 60000
 axios.defaults.withCredentials = true;
 
 //接口请求拦截
