@@ -478,7 +478,7 @@ export default {
     },
     InitEventSourse() {
       this.events = new EventSourses(
-        "/sse/devicesStatus/" + this.ProdLine,
+        "http://localhost:9001/sse/devicesStatus/" + this.ProdLine,
         res => {
           if (res.data.topic == "cushionInfo") {
             if (
