@@ -52,7 +52,7 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
             log.info("onQrCodeReceived，新增缓冲垫结果：[{}]", addResult);
             if (addResult) {
                 // 扫码成功PLC提示
-                EventBus.getDefault().post(new EventBusMsgPlcCmd(Constants.PLC_DATA_ADDRESS_D9002, 1, workLine));
+                EventBus.getDefault().post(new EventBusMsgPlcCmd(Constants.PLC_DATA_ADDRESS_D6602, 1, workLine));
                 return ResultDTO.success(onScanCodeSuccess(qrCode));
             }
             sseService.sendFailMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, null, workLine), Constants.RESULT_MSG_CUSHION_ADD_FAILED);
@@ -73,7 +73,7 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
         // 超次数PLC报警
         if (maxUseCount <= usedCount) {
             log.warn("handleScannerData，缓冲垫使用次数已达极限，最大使用次数：{}，已使用次数：{}", maxUseCount, usedCount);
-            EventBus.getDefault().post(new EventBusMsgPlcCmd(Constants.PLC_DATA_ADDRESS_D9001, 1, workLine));
+            EventBus.getDefault().post(new EventBusMsgPlcCmd(Constants.PLC_DATA_ADDRESS_D6601, 1, workLine));
             sseService.sendFailMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, cushionInfoEntity, workLine), Constants.RESULT_MSG_CUSHION_USED_COUNT_REACHED_MAX);
             return ResultDTO.failure(Constants.RESULT_MSG_CUSHION_USED_COUNT_REACHED_MAX);
         }
@@ -83,7 +83,7 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
         log.info("handleScannerData，增加缓冲垫已使用次数结果：[{}]", modifyResult);
         if (modifyResult) {
             // 扫码成功PLC提示
-            EventBus.getDefault().post(new EventBusMsgPlcCmd(Constants.PLC_DATA_ADDRESS_D9002, 1, workLine));
+            EventBus.getDefault().post(new EventBusMsgPlcCmd(Constants.PLC_DATA_ADDRESS_D6602, 1, workLine));
             return ResultDTO.success(onScanCodeSuccess(qrCode));
         }
 

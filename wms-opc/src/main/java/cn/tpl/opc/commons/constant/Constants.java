@@ -19,9 +19,9 @@ public final class Constants {
      * PLC数据交互地址
      */
     public static final String
-            PLC_DATA_ADDRESS_D9000 = "D9000",
-            PLC_DATA_ADDRESS_D9001 = "D9001",
-            PLC_DATA_ADDRESS_D9002 = "D9002";
+            PLC_DATA_ADDRESS_D6600 = "D6600",
+            PLC_DATA_ADDRESS_D6601 = "D6601",
+            PLC_DATA_ADDRESS_D6602 = "D6602";
 
     /**
      * 缓冲垫二维码前缀

@@ -52,7 +52,7 @@ public class MsgHandler extends ChannelInboundHandlerAdapter {
                     log.info("channelRead，扫码器未读到数据。");
                     EventBus.getDefault().post(new EventBusMsgCushionQrCode(null, workLine));
                     // 扫码失败PLC报警
-                    EventBus.getDefault().post(new EventBusMsgPlcCmd(Constants.PLC_DATA_ADDRESS_D9000, 1,workLine));
+                    EventBus.getDefault().post(new EventBusMsgPlcCmd(Constants.PLC_DATA_ADDRESS_D6600, 1,workLine));
                     return;
                 }
 
