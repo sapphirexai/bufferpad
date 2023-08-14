@@ -26,6 +26,14 @@ public class MsgHandler extends ChannelInboundHandlerAdapter {
     private static final String SCANNER_DATA_REGEX = "[\\x02-\\x03]";
 
     /**
+     * 矽瞻扫码器匹配正则，用于替换数据中自定义的帧头和帧尾
+     *
+     * @see Constants#SCANNER_XZ_STX
+     * @see Constants#SCANNER_XZ_ETX
+     */
+    private static final String XZ_SCANNER_DATA_REGEX = "[\\[][T][P][L][_][S|E][T][X][]]";
+
+    /**
      * 连接信息
      */
     private final Connection mConnection;
@@ -52,7 +60,7 @@ public class MsgHandler extends ChannelInboundHandlerAdapter {
                     log.info("channelRead，扫码器未读到数据。");
                     EventBus.getDefault().post(new EventBusMsgCushionQrCode(null, workLine));
                     // 扫码失败PLC报警
-                    EventBus.getDefault().post(new EventBusMsgPlcCmd(Constants.PLC_DATA_ADDRESS_D6600, 1,workLine));
+                    EventBus.getDefault().post(new EventBusMsgPlcCmd(Constants.PLC_DATA_ADDRESS_D6600, 1, workLine));
                     return;
                 }
 
@@ -61,6 +69,13 @@ public class MsgHandler extends ChannelInboundHandlerAdapter {
                     log.info("channelRead，扫码数据帧头匹配，*** 开始操作 ***。");
                     // 替换帧头和帧尾
                     String fMsg = oMsg.replaceAll(SCANNER_DATA_REGEX, "");
+                    EventBus.getDefault().post(new EventBusMsgCushionQrCode(fMsg, mConnection.getWorkLine()));
+                }
+
+                if (oMsg.startsWith(Constants.SCANNER_XZ_STX)) {
+                    log.info("channelRead，扫码数据帧头匹配，*** 开始操作 ***。");
+                    // 替换帧头和帧尾
+                    String fMsg = oMsg.replaceAll(XZ_SCANNER_DATA_REGEX, "");
                     EventBus.getDefault().post(new EventBusMsgCushionQrCode(fMsg, mConnection.getWorkLine()));
                 }
             }

@@ -56,6 +56,7 @@ public final class Constants {
      */
     public static final char SCANNER_MSG_STX = 0x02, SCANNER_MSG_ETX = 0x03;
 
+    public static final String SCANNER_XZ_STX = "[TPL_STX]", SCANNER_XZ_ETX = "[TPL_ETX]";
     /**
      * 扫码器消息
      * SCANNER_MSG_HEART_BEAT 心跳包
