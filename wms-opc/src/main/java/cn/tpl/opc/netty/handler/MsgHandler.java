@@ -1,9 +1,12 @@
 package cn.tpl.opc.netty.handler;
 
+import cn.tpl.opc.ApplicationContextAwareImpl;
 import cn.tpl.opc.commons.constant.Constants;
 import cn.tpl.opc.commons.dto.event.EventBusMsgCushionQrCode;
 import cn.tpl.opc.commons.dto.event.EventBusMsgPlcCmd;
+import cn.tpl.opc.entity.PLCAddrEntity;
 import cn.tpl.opc.netty.Connection;
+import cn.tpl.opc.service.IPLCAddrService;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -61,9 +64,11 @@ public class MsgHandler extends ChannelInboundHandlerAdapter {
 
                 if (oMsg.contains(Constants.SCANNER_MSG_NO_READ)) {
                     log.info("channelRead，扫码器未读到数据。");
-                    EventBus.getDefault().post(new EventBusMsgCushionQrCode(null, workLine));
+                    EventBus.getDefault().post(new EventBusMsgCushionQrCode(null, workLine, installSeq));
                     // 扫码失败PLC报警
-                    EventBus.getDefault().post(new EventBusMsgPlcCmd(Constants.PLC_DATA_ADDRESS_D6600, 1, workLine));
+                    if (Constants.SCANNER_SEQ_MAIN == installSeq)
+                        notifyPLC(Constants.PLC_ADDR_TYPE_SCAN_FAILED, installSeq, workLine);
+//                    EventBus.getDefault().post(new EventBusMsgPlcCmd(Constants.PLC_DATA_ADDRESS_D6600, 1, workLine));
                     return;
                 }
 
@@ -72,20 +77,34 @@ public class MsgHandler extends ChannelInboundHandlerAdapter {
                     log.info("channelRead，扫码数据帧头匹配，*** 开始操作 ***。");
                     // 替换帧头和帧尾
                     String fMsg = oMsg.replaceAll(SCANNER_DATA_REGEX, "");
-                    EventBus.getDefault().post(new EventBusMsgCushionQrCode(fMsg, mConnection.getWorkLine()));
+                    EventBus.getDefault().post(new EventBusMsgCushionQrCode(fMsg, mConnection.getWorkLine(), installSeq));
                 }
 
                 if (oMsg.startsWith(Constants.SCANNER_XZ_STX)) {
                     log.info("channelRead，扫码数据帧头匹配，*** 开始操作 ***。");
                     // 替换帧头和帧尾
                     String fMsg = oMsg.replaceAll(XZ_SCANNER_DATA_REGEX, "");
-                    EventBus.getDefault().post(new EventBusMsgCushionQrCode(fMsg, mConnection.getWorkLine()));
+                    EventBus.getDefault().post(new EventBusMsgCushionQrCode(fMsg, mConnection.getWorkLine(), installSeq));
                 }
             }
         } finally {
             // 使用完须释放资源
             ReferenceCountUtil.release(msg);
         }
+    }
+
+    /**
+     * 通知PLC
+     *
+     * @param plcAddrType PLC寄存器地址类型
+     * @param scannerSeq  扫码器安装顺序
+     * @param workLine    产线
+     */
+    private void notifyPLC(int plcAddrType, int scannerSeq, int workLine) {
+        IPLCAddrService ps = (IPLCAddrService) ApplicationContextAwareImpl.getBean("plcAddrService");
+        PLCAddrEntity plcAddr = ps.findByTypeAndScannerSeq(plcAddrType, scannerSeq);
+        if (null != plcAddr)
+            EventBus.getDefault().post(new EventBusMsgPlcCmd(plcAddr.getAddr(), Constants.DEFAULT_2_PLC_VAL, workLine));
     }
 
     /**

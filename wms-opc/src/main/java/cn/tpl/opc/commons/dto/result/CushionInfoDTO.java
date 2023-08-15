@@ -48,6 +48,12 @@ public class CushionInfoDTO extends AbsBaseDTO {
     private Integer workLine;
 
     /**
+     * 扫码器安装顺序
+     */
+    @Schema(description = "扫码器安装顺序")
+    private Integer scannerSeq;
+
+    /**
      * 最近一次扫码时间
      */
     @Schema(description = "最近一次扫码时间")

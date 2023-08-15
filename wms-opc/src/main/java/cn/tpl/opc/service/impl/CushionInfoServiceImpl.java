@@ -2,15 +2,17 @@ package cn.tpl.opc.service.impl;
 
 import cn.tpl.opc.commons.constant.Constants;
 import cn.tpl.opc.commons.dto.ResultDTO;
+import cn.tpl.opc.commons.dto.event.EventBusMsgCushionQrCode;
 import cn.tpl.opc.commons.dto.event.EventBusMsgPlcCmd;
 import cn.tpl.opc.commons.dto.result.CushionInfoDTO;
-import cn.tpl.opc.commons.dto.event.EventBusMsgCushionQrCode;
 import cn.tpl.opc.commons.dto.result.PageData;
 import cn.tpl.opc.commons.dto.result.SseMsgDTO;
 import cn.tpl.opc.commons.scheme.base.BasePageScheme;
 import cn.tpl.opc.entity.CushionInfoEntity;
+import cn.tpl.opc.entity.PLCAddrEntity;
 import cn.tpl.opc.mapper.CushionInfoEntityMapper;
 import cn.tpl.opc.service.ICushionInfoService;
+import cn.tpl.opc.service.IPLCAddrService;
 import cn.tpl.opc.service.ISseService;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -42,20 +44,22 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
     private CushionInfoEntityMapper cushionInfoEntityMapper;
     @Resource
     private ISseService sseService;
-
+    @Resource
+    private IPLCAddrService plcAddrService;
 
     @Override
-    public ResultDTO<CushionInfoDTO> onQrCodeReceived(Integer workLine, String qrCode) {
+    public ResultDTO<CushionInfoDTO> onQrCodeReceived(Integer workLine, Integer scannerSeq, String qrCode) {
         CushionInfoEntity cushionInfoEntity = findByQrCode(qrCode);
         if (null == cushionInfoEntity) {
             boolean addResult = add(workLine, qrCode);
             log.info("onQrCodeReceived，新增缓冲垫结果：[{}]", addResult);
             if (addResult) {
                 // 扫码成功PLC提示
-                EventBus.getDefault().post(new EventBusMsgPlcCmd(Constants.PLC_DATA_ADDRESS_D6602, 1, workLine));
-                return ResultDTO.success(onScanCodeSuccess(qrCode));
+                notifyPLC(Constants.PLC_ADDR_TYPE_SCAN_SUCCESS, scannerSeq, workLine);
+//                EventBus.getDefault().post(new EventBusMsgPlcCmd(Constants.PLC_DATA_ADDRESS_D6602, 1, workLine));
+                return ResultDTO.success(onScanCodeSuccess(qrCode, scannerSeq));
             }
-            sseService.sendFailMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, null, workLine), Constants.RESULT_MSG_CUSHION_ADD_FAILED);
+            sseService.sendFailMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, null, workLine, scannerSeq), Constants.RESULT_MSG_CUSHION_ADD_FAILED);
             return ResultDTO.failure(Constants.RESULT_MSG_CUSHION_ADD_FAILED);
         }
         //若当前与最后一次扫码时间相差不足一小时，则为无效扫码，不进行操作
@@ -63,7 +67,7 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
         long interval = System.currentTimeMillis() - lastScanDate.getTime();
         if (interval < Constants.SCANNER_EFFECTIVE_INTERVAL_MILLIS) {
             log.info("handleScannerData，无效扫码，不进行操作，当前扫码间隔：{}毫秒", interval);
-            sseService.sendFailMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, cushionInfoEntity, workLine), Constants.RESULT_MSG_CUSHION_INVALID_SCAN);
+            sseService.sendFailMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, cushionInfoEntity, workLine, scannerSeq), Constants.RESULT_MSG_CUSHION_INVALID_SCAN);
             return ResultDTO.failure(Constants.RESULT_MSG_CUSHION_INVALID_SCAN);
         }
 
@@ -73,8 +77,9 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
         // 超次数PLC报警
         if (maxUseCount <= usedCount) {
             log.warn("handleScannerData，缓冲垫使用次数已达极限，最大使用次数：{}，已使用次数：{}", maxUseCount, usedCount);
-            EventBus.getDefault().post(new EventBusMsgPlcCmd(Constants.PLC_DATA_ADDRESS_D6601, 1, workLine));
-            sseService.sendFailMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, cushionInfoEntity, workLine), Constants.RESULT_MSG_CUSHION_USED_COUNT_REACHED_MAX);
+            notifyPLC(Constants.PLC_ADDR_TYPE_SCAN_OVER_MAXIMUM, scannerSeq, workLine);
+//            EventBus.getDefault().post(new EventBusMsgPlcCmd(Constants.PLC_DATA_ADDRESS_D6601, 1, workLine));
+            sseService.sendFailMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, cushionInfoEntity, workLine, scannerSeq), Constants.RESULT_MSG_CUSHION_USED_COUNT_REACHED_MAX);
             return ResultDTO.failure(Constants.RESULT_MSG_CUSHION_USED_COUNT_REACHED_MAX);
         }
         // 增加当前缓冲垫1次使用次数
@@ -83,11 +88,12 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
         log.info("handleScannerData，增加缓冲垫已使用次数结果：[{}]", modifyResult);
         if (modifyResult) {
             // 扫码成功PLC提示
-            EventBus.getDefault().post(new EventBusMsgPlcCmd(Constants.PLC_DATA_ADDRESS_D6602, 1, workLine));
-            return ResultDTO.success(onScanCodeSuccess(qrCode));
+            notifyPLC(Constants.PLC_ADDR_TYPE_SCAN_SUCCESS, scannerSeq, workLine);
+//            EventBus.getDefault().post(new EventBusMsgPlcCmd(Constants.PLC_DATA_ADDRESS_D6602, 1, workLine));
+            return ResultDTO.success(onScanCodeSuccess(qrCode, scannerSeq));
         }
 
-        sseService.sendFailMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, cushionInfoEntity, workLine), Constants.RESULT_MSG_CUSHION_ADD_USED_COUNT_FAILED);
+        sseService.sendFailMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, cushionInfoEntity, workLine, scannerSeq), Constants.RESULT_MSG_CUSHION_ADD_USED_COUNT_FAILED);
         return ResultDTO.failure(Constants.RESULT_MSG_CUSHION_ADD_USED_COUNT_FAILED);
     }
 
@@ -95,14 +101,16 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
      * 缓冲垫扫码成功
      *
      * @param cushionQrCode 缓冲垫二维码
+     * @param scannerSeq    扫码器安装顺序
      */
-    private CushionInfoDTO onScanCodeSuccess(String cushionQrCode) {
+    private CushionInfoDTO onScanCodeSuccess(String cushionQrCode, Integer scannerSeq) {
         if (StringUtils.isEmpty(cushionQrCode)) return null;
         CushionInfoEntity cushionInfoEntity = findByQrCode(cushionQrCode);
         if (null == cushionInfoEntity) return null;
         log.info("onScanCodeSuccess");
         CushionInfoDTO cushionInfoDTO = new CushionInfoDTO();
         BeanUtils.copyProperties(cushionInfoEntity, cushionInfoDTO);
+        cushionInfoDTO.setScannerSeq(scannerSeq);
         sseService.sendCushionMsg(cushionInfoDTO);// 推送一条缓冲垫数据到客户端
         return cushionInfoDTO;
     }
@@ -110,12 +118,14 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
     /**
      * 缓冲垫扫码失败
      *
-     * @param workLine 产线
+     * @param workLine   产线
+     * @param scannerSeq 扫码器安装顺序
      */
-    private void onScanCodeFailed(int workLine) {
+    private void onScanCodeFailed(int workLine, int scannerSeq) {
         log.info("onScanCodeFailed");
         CushionInfoDTO cushionInfoDTO = new CushionInfoDTO();
         cushionInfoDTO.setWorkLine(workLine);
+        cushionInfoDTO.setScannerSeq(scannerSeq);
         sseService.sendCushionMsg(cushionInfoDTO);// 推送一条缓冲垫数据到客户端
     }
 
@@ -179,16 +189,30 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
         EventBus.getDefault().unregister(this);
     }
 
+    /**
+     * 通知PLC
+     *
+     * @param plcAddrType PLC寄存器地址类型
+     * @param scannerSeq  扫码器安装顺序
+     * @param workLine    产线
+     */
+    private void notifyPLC(int plcAddrType, int scannerSeq, int workLine) {
+        PLCAddrEntity plcAddr = plcAddrService.findByTypeAndScannerSeq(plcAddrType, scannerSeq);
+        if (null != plcAddr)
+            EventBus.getDefault().post(new EventBusMsgPlcCmd(plcAddr.getAddr(), Constants.DEFAULT_2_PLC_VAL, workLine));
+    }
+
     @SuppressWarnings("unused")
     @Subscribe(threadMode = ThreadMode.POSTING)
     public void onMessageEvent(EventBusMsgCushionQrCode event) {
         log.info("onMessageEvent，EventBusMsgCushionQrCode：{}", event);
         String qrCode = event.getQrCode();
         int workLine = event.getWorkLine();
+        int scannerSeq = event.getScannerSeq();
         if (StringUtils.isEmpty(qrCode)) {
-            onScanCodeFailed(workLine);
+            onScanCodeFailed(workLine, scannerSeq);
             return;
         }
-        onQrCodeReceived(workLine, qrCode);
+        onQrCodeReceived(workLine, scannerSeq, qrCode);
     }
 }

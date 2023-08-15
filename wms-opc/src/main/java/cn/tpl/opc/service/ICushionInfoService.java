@@ -17,11 +17,12 @@ public interface ICushionInfoService {
     /**
      * 收到来自扫码器或者人工输入的缓冲垫二维码时调用
      *
-     * @param workLine 产线
-     * @param qrCode   缓冲垫二维码
+     * @param workLine   产线
+     * @param qrCode     缓冲垫二维码
+     * @param scannerSeq 扫码器安装顺序
      * @return 对应缓冲垫数据
      */
-    ResultDTO<CushionInfoDTO> onQrCodeReceived(Integer workLine, String qrCode);
+    ResultDTO<CushionInfoDTO> onQrCodeReceived(Integer workLine, Integer scannerSeq, String qrCode);
 
     /**
      * 分页查询
@@ -34,9 +35,8 @@ public interface ICushionInfoService {
     /**
      * 新增缓冲垫
      *
-     *
      * @param workLine
-     * @param qrCode 缓冲垫二维码
+     * @param qrCode   缓冲垫二维码
      * @return 添加结果
      */
     boolean add(Integer workLine, String qrCode);

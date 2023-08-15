@@ -18,8 +18,11 @@ import lombok.ToString;
 public class EventBusMsgCushionQrCode extends AbsBaseDTO {
     private String qrCode;
     private int workLine;
-    public EventBusMsgCushionQrCode(String qrCode,int workLine) {
+    private int scannerSeq;
+
+    public EventBusMsgCushionQrCode(String qrCode, int workLine, int scannerSeq) {
         this.qrCode = qrCode;
         this.workLine = workLine;
+        this.scannerSeq = scannerSeq;
     }
 }

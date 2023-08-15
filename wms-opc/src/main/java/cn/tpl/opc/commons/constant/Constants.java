@@ -16,12 +16,25 @@ public final class Constants {
     public static final int WORK_LINE_ALL = 0;
 
     /**
-     * PLC数据交互地址
+     * 主扫码器安装顺序
      */
-    public static final String
-            PLC_DATA_ADDRESS_D6600 = "D6600",
-            PLC_DATA_ADDRESS_D6601 = "D6601",
-            PLC_DATA_ADDRESS_D6602 = "D6602";
+    public static final int SCANNER_SEQ_MAIN = 1;
+
+    /**
+     * 默认写入值PLC的值
+     */
+    public static final int DEFAULT_2_PLC_VAL = 1;
+
+    /**
+     * PLC地址类型
+     * PLC_ADDR_TYPE_SCAN_FAILED 扫码失败
+     * PLC_ADDR_TYPE_SCAN_OVER_MAXIMUM 扫码超过最大次数
+     * PLC_ADDR_TYPE_SCAN_SUCCESS 扫码成功
+     */
+    public static final int
+            PLC_ADDR_TYPE_SCAN_FAILED = 0,
+            PLC_ADDR_TYPE_SCAN_OVER_MAXIMUM = 1,
+            PLC_ADDR_TYPE_SCAN_SUCCESS = 2;
 
     /**
      * 缓冲垫二维码前缀

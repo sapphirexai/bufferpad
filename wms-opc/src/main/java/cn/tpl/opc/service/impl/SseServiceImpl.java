@@ -70,21 +70,22 @@ public class SseServiceImpl implements ISseService {
 
     @Override
     public <T> void sendFailMsg(SseMsgDTO<T> msg, String reason) {
-        sendMsg(ResultDTO.failure(msg, reason));
+        if (Constants.SCANNER_SEQ_MAIN == msg.getScannerSeq())
+            sendMsg(ResultDTO.failure(msg, reason));
     }
 
     @Override
     public void sendDeviceMsg(DeviceInfoDTO deviceInfo) {
-        sendMsg(ResultDTO.success(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_DEVICE_STATUS, deviceInfo, deviceInfo.getWorkLine())));
+        sendMsg(ResultDTO.success(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_DEVICE_STATUS, deviceInfo, deviceInfo.getWorkLine(), deviceInfo.getInstallSeq())));
     }
 
     @Override
     public void sendCushionMsg(CushionInfoDTO cushionInfo) {
         String qrCode = cushionInfo.getQrCode();
         if (StringUtils.isEmpty(qrCode)) {
-            sendFailMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, null, cushionInfo.getWorkLine()), Constants.SCANNER_MSG_NO_READ);
+            sendFailMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, null, cushionInfo.getWorkLine(), cushionInfo.getScannerSeq()), Constants.SCANNER_MSG_NO_READ);
             return;
         }
-        sendMsg(ResultDTO.success(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, cushionInfo, cushionInfo.getWorkLine())));
+        sendMsg(ResultDTO.success(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, cushionInfo, cushionInfo.getWorkLine(), cushionInfo.getScannerSeq())));
     }
 }
