@@ -61,4 +61,10 @@ public class DeviceInfoDTO extends AbsBaseDTO {
     @Schema(description = "产线")
     private Integer workLine;
 
+    /**
+     * 安装顺序
+     */
+    @Schema(description = "安装顺序")
+    private Integer installSeq;
+
 }

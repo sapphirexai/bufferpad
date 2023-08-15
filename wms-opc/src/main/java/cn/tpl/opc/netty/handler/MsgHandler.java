@@ -55,7 +55,10 @@ public class MsgHandler extends ChannelInboundHandlerAdapter {
                     onHearBeat();
                     return;
                 }
+
                 int workLine = mConnection.getWorkLine();
+                int installSeq = mConnection.getInstallSeq();
+
                 if (oMsg.contains(Constants.SCANNER_MSG_NO_READ)) {
                     log.info("channelRead，扫码器未读到数据。");
                     EventBus.getDefault().post(new EventBusMsgCushionQrCode(null, workLine));

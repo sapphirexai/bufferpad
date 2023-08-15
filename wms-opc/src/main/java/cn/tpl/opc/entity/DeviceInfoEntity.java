@@ -49,6 +49,11 @@ public class DeviceInfoEntity implements Serializable {
     private Integer workLine;
 
     /**
+     * 安装顺序，从1开始，不同类型的设备分别计算
+     */
+    private Integer installSeq;
+
+    /**
      * 创建时间
      */
     private Date createdDate;

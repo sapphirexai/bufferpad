@@ -1,11 +1,11 @@
 package cn.tpl.opc.controller;
 
-import cn.tpl.opc.commons.dto.ResultDTO;
+import cn.tpl.opc.entity.PLCAddrEntity;
 import cn.tpl.opc.service.INettyService;
+import cn.tpl.opc.service.IPLCAddrService;
 import com.alibaba.druid.stat.DruidStatManagerFacade;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -25,6 +25,14 @@ public class TestController {
 
     @Resource
     private INettyService nettyService;
+    @Resource
+    private IPLCAddrService plcAddrService;
+
+
+    @GetMapping("/testPLCAddr")
+    public PLCAddrEntity testPLCAddr() {
+        return plcAddrService.findByTypeAndScannerSeq(0, 1);
+    }
 
     @GetMapping("/testStr")
     public String testStr() {

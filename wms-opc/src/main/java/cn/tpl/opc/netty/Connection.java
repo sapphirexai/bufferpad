@@ -70,6 +70,11 @@ public class Connection {
     private Integer workLine;
 
     /**
+     * 安装顺序
+     */
+    private Integer installSeq;
+
+    /**
      * Netty连接之后产生的I/O操作通道
      */
     private volatile ChannelFuture channelFuture;
