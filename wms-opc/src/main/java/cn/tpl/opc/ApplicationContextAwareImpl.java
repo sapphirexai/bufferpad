@@ -26,7 +26,7 @@ public class ApplicationContextAwareImpl implements ApplicationContextAware {
      * @param beanName bean名称
      * @return bean对象
      */
-    public Object getBean(String beanName) {
+    public static Object getBean(String beanName) {
         return mContext.getBean(beanName);
     }
 }
