@@ -45,10 +45,12 @@ public final class Constants {
 
     /**
      * 缓冲垫默认最大使用次数
+     * CUSHION_DEFAULT_MAX_USE_CONT 通用最大次数
      * CUSHION_DEFAULT_MAX_USE_COUNT_P 二维码P开头
      * CUSHION_DEFAULT_MAX_USE_COUNT_T 二维码T开头
      */
     public static final int
+            CUSHION_DEFAULT_MAX_USE_CONT = 600,
             CUSHION_DEFAULT_MAX_USE_COUNT_P = 100,
             CUSHION_DEFAULT_MAX_USE_COUNT_T = 150;
 

@@ -151,14 +151,14 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
         // 二维码为空直接返回失败
         if (StringUtils.isEmpty(qrCode)) return false;
 
-        int maxUseCount = Constants.CUSHION_DEFAULT_MAX_USE_COUNT_P;
-        if (qrCode.startsWith(Constants.CUSHION_QR_CODE_PREFIX_T))
-            maxUseCount = Constants.CUSHION_DEFAULT_MAX_USE_COUNT_T;
+//        int maxUseCount = Constants.CUSHION_DEFAULT_MAX_USE_COUNT_P;
+//        if (qrCode.startsWith(Constants.CUSHION_QR_CODE_PREFIX_T))
+//            maxUseCount = Constants.CUSHION_DEFAULT_MAX_USE_COUNT_T;
 
         CushionInfoEntity cushionInfoEntity = new CushionInfoEntity();
         cushionInfoEntity.setWorkLine(workLine);
         cushionInfoEntity.setQrCode(qrCode);
-        cushionInfoEntity.setMaxUseCount(maxUseCount);
+        cushionInfoEntity.setMaxUseCount(Constants.CUSHION_DEFAULT_MAX_USE_CONT);
         cushionInfoEntity.setUsedCount(Constants.CUSHION_ADD_DEFAULT_USED_COUNT);
         cushionInfoEntity.setLastScanDate(new Date());
         return cushionInfoEntityMapper.insert(cushionInfoEntity) > 0;
