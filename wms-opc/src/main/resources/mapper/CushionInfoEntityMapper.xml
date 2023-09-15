@@ -47,6 +47,7 @@
         select
         <include refid="Base_Column_List"/>
         from cushion_info
+        order by last_scan_date desc
     </select>
 
     <delete id="deleteByPrimaryKey" parameterType="java.lang.Long">

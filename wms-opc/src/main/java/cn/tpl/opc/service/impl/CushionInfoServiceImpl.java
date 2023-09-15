@@ -62,12 +62,14 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
             sseService.sendFailMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, null, workLine, scannerSeq), Constants.RESULT_MSG_CUSHION_ADD_FAILED);
             return ResultDTO.failure(Constants.RESULT_MSG_CUSHION_ADD_FAILED);
         }
-        //若当前与最后一次扫码时间相差不足一小时，则为无效扫码，不进行操作
+        //若当前与最后一次扫码时间相差不足2小时，则为无效扫码，不进行记录操作
         Date lastScanDate = cushionInfoEntity.getLastScanDate();
         long interval = System.currentTimeMillis() - lastScanDate.getTime();
         if (interval < Constants.SCANNER_EFFECTIVE_INTERVAL_MILLIS) {
             log.info("handleScannerData，无效扫码，不进行操作，当前扫码间隔：{}毫秒", interval);
             sseService.sendFailMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, cushionInfoEntity, workLine, scannerSeq), Constants.RESULT_MSG_CUSHION_INVALID_SCAN);
+            // 扫码成功PLC提示
+            notifyPLC(Constants.PLC_ADDR_TYPE_SCAN_SUCCESS, scannerSeq, workLine);
             return ResultDTO.failure(Constants.RESULT_MSG_CUSHION_INVALID_SCAN);
         }
 
