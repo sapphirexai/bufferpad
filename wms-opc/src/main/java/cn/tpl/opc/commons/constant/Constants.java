@@ -62,7 +62,7 @@ public final class Constants {
     /**
      * 扫码器有效扫码间隔
      */
-    public static final int SCANNER_EFFECTIVE_INTERVAL_MILLIS = 60 * 60 * 1000;
+    public static final int SCANNER_EFFECTIVE_INTERVAL_MILLIS = 2 * 60 * 60 * 1000;
 
     /**
      * 扫码器数据
