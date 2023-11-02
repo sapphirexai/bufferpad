@@ -30,6 +30,7 @@ import org.springframework.util.CollectionUtils;
 import javax.annotation.Resource;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Author: Luo GuoWen
@@ -169,6 +170,13 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
     @Override
     public CushionInfoEntity findByQrCode(String qrCode) {
         return cushionInfoEntityMapper.findByQrCode(qrCode);
+    }
+
+    @Override
+    public List<CushionInfoDTO> listByQrCode(String qrCode) {
+        List<CushionInfoEntity> cushionInfos = cushionInfoEntityMapper.listByQrCode(qrCode);
+        if (CollectionUtils.isEmpty(cushionInfos)) return null;
+        return cushionInfos.stream().map(this::cushionInfo2DTO).collect(Collectors.toList());
     }
 
     @Override

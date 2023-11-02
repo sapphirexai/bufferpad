@@ -5,6 +5,8 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.util.List;
+
 @Mapper
 public interface CushionInfoEntityMapper {
     /**
@@ -56,6 +58,8 @@ public interface CushionInfoEntityMapper {
     int updateByPrimaryKey(CushionInfoEntity record);
 
     CushionInfoEntity findByQrCode(String qrCode);
+
+    List<CushionInfoEntity> listByQrCode(String qrCode);
 
     int modifyUsedCountByQrCode(CushionInfoEntity cushionInfo);
 

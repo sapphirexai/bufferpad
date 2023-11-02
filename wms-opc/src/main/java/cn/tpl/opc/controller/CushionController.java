@@ -13,6 +13,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import java.util.List;
 
 /**
  * Author: Luo GuoWen
@@ -33,6 +34,22 @@ public class CushionController {
         try {
             log.debug("cushionsPage，scheme：{}", scheme);
             return ResultDTO.success(cushionInfoService.listByPage(scheme));
+        } catch (Exception e) {
+            return ResultDTO.exception(e);
+        }
+    }
+
+    @Operation(summary = "通过二维码模糊查询缓冲垫列表")
+    @GetMapping("/cushions/{qrCode}")
+    public ResultDTO<List<CushionInfoDTO>> listByQrCode(@Parameter(description = "二维码")
+                                                        @PathVariable String qrCode) {
+        try {
+            log.info("listByQrCode，qrCode：{}", qrCode);
+
+            if (StringUtils.isEmpty(qrCode))
+                return ResultDTO.failure("缓冲垫编码不能为空！");
+
+            return ResultDTO.success(cushionInfoService.listByQrCode(qrCode));
         } catch (Exception e) {
             return ResultDTO.exception(e);
         }

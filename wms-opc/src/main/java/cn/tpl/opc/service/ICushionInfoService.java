@@ -6,6 +6,8 @@ import cn.tpl.opc.commons.dto.result.PageData;
 import cn.tpl.opc.commons.scheme.base.BasePageScheme;
 import cn.tpl.opc.entity.CushionInfoEntity;
 
+import java.util.List;
+
 /**
  * Author: Luo GuoWen
  * Email: luoguowen123@qq.com
@@ -48,6 +50,14 @@ public interface ICushionInfoService {
      * @return 对应缓冲垫信息
      */
     CushionInfoEntity findByQrCode(String qrCode);
+
+    /**
+     * 根据二维码模糊查找缓冲垫
+     *
+     * @param qrCode 缓冲垫二维码
+     * @return 对应缓冲垫列表信息
+     */
+    List<CushionInfoDTO> listByQrCode(String qrCode);
 
     /**
      * 修改已使用次数
