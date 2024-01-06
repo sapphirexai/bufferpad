@@ -17,10 +17,10 @@ import lombok.ToString;
 @ToString
 public class EventBusMsgCushionQrCode extends AbsBaseDTO {
     private String qrCode;
-    private int workLine;
-    private int scannerSeq;
+    private Integer workLine;
+    private Integer scannerSeq;
 
-    public EventBusMsgCushionQrCode(String qrCode, int workLine, int scannerSeq) {
+    public EventBusMsgCushionQrCode(String qrCode, Integer workLine, Integer scannerSeq) {
         this.qrCode = qrCode;
         this.workLine = workLine;
         this.scannerSeq = scannerSeq;

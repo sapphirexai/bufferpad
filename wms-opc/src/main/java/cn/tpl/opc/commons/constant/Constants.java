@@ -30,11 +30,15 @@ public final class Constants {
      * PLC_ADDR_TYPE_SCAN_FAILED 扫码失败
      * PLC_ADDR_TYPE_SCAN_OVER_MAXIMUM 扫码超过最大次数
      * PLC_ADDR_TYPE_SCAN_SUCCESS 扫码成功
+     * PLC_ADDR_TYPE_RE_SCAN_OVER_MAXIMUM 重新扫码超过最大次数
+     * PLC_ADDR_TYPE_RE_SCAN_SUCCESS 重新扫码成功
      */
     public static final int
             PLC_ADDR_TYPE_SCAN_FAILED = 0,
             PLC_ADDR_TYPE_SCAN_OVER_MAXIMUM = 1,
-            PLC_ADDR_TYPE_SCAN_SUCCESS = 2;
+            PLC_ADDR_TYPE_SCAN_SUCCESS = 2,
+            PLC_ADDR_TYPE_RE_SCAN_OVER_MAXIMUM = 3,
+            PLC_ADDR_TYPE_RE_SCAN_SUCCESS = 4;
 
     /**
      * 缓冲垫二维码前缀
@@ -45,12 +49,14 @@ public final class Constants {
 
     /**
      * 缓冲垫默认最大使用次数
+     * 宁波甬强默认600次
+     * 汕头超声默认500次
      * CUSHION_DEFAULT_MAX_USE_CONT 通用最大次数
      * CUSHION_DEFAULT_MAX_USE_COUNT_P 二维码P开头
      * CUSHION_DEFAULT_MAX_USE_COUNT_T 二维码T开头
      */
     public static final int
-            CUSHION_DEFAULT_MAX_USE_CONT = 600,
+            CUSHION_DEFAULT_MAX_USE_CONT = 500,
             CUSHION_DEFAULT_MAX_USE_COUNT_P = 100,
             CUSHION_DEFAULT_MAX_USE_COUNT_T = 150;
 
@@ -107,4 +113,5 @@ public final class Constants {
             RESULT_MSG_CUSHION_ADD_USED_COUNT_FAILED = "增加缓冲垫使用次数失败！",
             RESULT_MSG_CUSHION_USED_COUNT_REACHED_MAX = "使用次数已达到最大次数！",
             RESULT_MSG_CUSHION_INVALID_SCAN = "扫码间隔时间不足1小时，无效扫码！";
+
 }

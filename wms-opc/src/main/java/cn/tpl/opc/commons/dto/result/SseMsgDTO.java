@@ -31,14 +31,14 @@ public class SseMsgDTO<T> extends AbsBaseDTO {
     /**
      * 产线
      */
-    private int workLine;
+    private Integer workLine;
 
     /**
      * 扫码器安装顺序
      */
-    private int scannerSeq;
+    private Integer scannerSeq;
 
-    public SseMsgDTO(String topic, T data, int workLine, Integer scannerSeq) {
+    public SseMsgDTO(String topic, T data, Integer workLine, Integer scannerSeq) {
         this.topic = topic;
         this.data = data;
         this.workLine = workLine;

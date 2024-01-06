@@ -1,10 +1,9 @@
 package cn.tpl.opc.entity;
 
+import lombok.Data;
+
 import java.io.Serializable;
 import java.util.Date;
-
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
 
 /**
  * Author: Luo GuoWen
@@ -38,6 +37,11 @@ public class CushionInfoEntity implements Serializable {
      * 产线
      */
     private Integer workLine;
+
+    /**
+     * 当前扫码器来源的安装顺序
+     */
+    private Integer scannerSeq;
 
     /**
      * 最近一次扫码时间

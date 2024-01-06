@@ -61,4 +61,17 @@ public final class Params {
             NETTY_CONNECTION_VAL_STATUS_DISCONNECTED = "未连接",
             NETTY_CONNECTION_VAL_STATUS_ACTIVE = "活跃中";
 
+
+    /**
+     * 扫码器安装顺序
+     */
+    public static final int
+            SCANNER_SEQ_KEY_1 = 1,
+            SCANNER_SEQ_KEY_2 = 2;
+    /**
+     * 扫码器安装顺序对应位置
+     */
+    public static final String
+            SCANNER_SEQ_VAL_1 = "(上)",
+            SCANNER_SEQ_VAL_2 = "(下)";
 }
