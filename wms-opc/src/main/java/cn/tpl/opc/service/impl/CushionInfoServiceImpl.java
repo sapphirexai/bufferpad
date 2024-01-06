@@ -76,9 +76,9 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
 
     /**
      * 二维码收到时的处理
-     * 由于手动补码时没有扫码器的安装顺序，所以把所有扫码器的状态给到PLC
-     *
-     * @return
+     * 由于手动补码时没有scannerSeq
+     * 如果当前缓冲垫存在且已经记录scannerSeq就用缓冲垫的scannerSeq
+     * 否则把所有扫码器的状态给到PLC
      */
     @Override
     public ResultDTO<CushionInfoDTO> onQrCodeReceived(Integer workLine, Integer scannerSeq, String qrCode) {
@@ -97,6 +97,9 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
             sseService.sendFailMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, null, workLine, scannerSeq), Constants.RESULT_MSG_CUSHION_ADD_FAILED);
             return ResultDTO.failure(Constants.RESULT_MSG_CUSHION_ADD_FAILED);
         }
+
+        Integer cushionScannerSeq = cushionInfoEntity.getScannerSeq();
+
         //若当前与最后一次扫码时间相差不足2小时，则为无效扫码，不进行记录操作
         Date lastScanDate = cushionInfoEntity.getLastScanDate();
         long interval = System.currentTimeMillis() - lastScanDate.getTime();
@@ -104,10 +107,14 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
             log.info("handleScannerData，无效扫码，不进行操作，当前扫码间隔：{}毫秒", interval);
             sseService.sendFailMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, cushionInfoEntity, workLine, scannerSeq), Constants.RESULT_MSG_CUSHION_INVALID_SCAN);
             // 扫码成功PLC提示
-            if (null == scannerSeq)
-                notifyAllScannersSates2PLC(Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS, workLine);
-            else
+            if (null == scannerSeq) {
+                if (null == cushionScannerSeq)
+                    notifyAllScannersSates2PLC(Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS, workLine);
+                else
+                    notifyPLC(Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS, cushionScannerSeq, workLine);
+            } else {
                 notifyPLC(Constants.PLC_ADDR_TYPE_SCAN_SUCCESS, scannerSeq, workLine);
+            }
 
             return ResultDTO.failure(Constants.RESULT_MSG_CUSHION_INVALID_SCAN);
         }
@@ -118,10 +125,15 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
         // 超次数PLC报警
         if (maxUseCount <= usedCount) {
             log.warn("handleScannerData，缓冲垫使用次数已达极限，最大使用次数：{}，已使用次数：{}", maxUseCount, usedCount);
-            if (null == scannerSeq)
-                notifyAllScannersSates2PLC(Constants.PLC_ADDR_TYPE_RE_SCAN_OVER_MAXIMUM, workLine);
-            else
+            if (null == scannerSeq) {
+                if (null == cushionScannerSeq)
+                    notifyAllScannersSates2PLC(Constants.PLC_ADDR_TYPE_RE_SCAN_OVER_MAXIMUM, workLine);
+                else
+                    notifyPLC(Constants.PLC_ADDR_TYPE_RE_SCAN_OVER_MAXIMUM, cushionScannerSeq, workLine);
+            } else {
                 notifyPLC(Constants.PLC_ADDR_TYPE_SCAN_OVER_MAXIMUM, scannerSeq, workLine);
+            }
+
             sseService.sendFailMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, cushionInfoEntity, workLine, scannerSeq), Constants.RESULT_MSG_CUSHION_USED_COUNT_REACHED_MAX);
             return ResultDTO.failure(Constants.RESULT_MSG_CUSHION_USED_COUNT_REACHED_MAX);
         }
@@ -131,10 +143,14 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
         log.info("handleScannerData，增加缓冲垫已使用次数结果：[{}]", modifyResult);
         if (modifyResult) {
             // 扫码成功PLC提示
-            if (null == scannerSeq)
-                notifyAllScannersSates2PLC(Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS, workLine);
-            else
+            if (null == scannerSeq) {
+                if (null == cushionScannerSeq)
+                    notifyAllScannersSates2PLC(Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS, workLine);
+                else
+                    notifyPLC(Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS, cushionScannerSeq, workLine);
+            } else {
                 notifyPLC(Constants.PLC_ADDR_TYPE_SCAN_SUCCESS, scannerSeq, workLine);
+            }
             return ResultDTO.success(onScanCodeSuccess(qrCode, scannerSeq));
         }
 
