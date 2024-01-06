@@ -108,6 +108,7 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
             sseService.sendFailMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, cushionInfoEntity, workLine, scannerSeq), Constants.RESULT_MSG_CUSHION_INVALID_SCAN);
             // 扫码成功PLC提示
             if (null == scannerSeq) {
+                // 补码逻辑
                 if (null == cushionScannerSeq)
                     notifyAllScannersSates2PLC(Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS, workLine);
                 else
@@ -126,6 +127,7 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
         if (maxUseCount <= usedCount) {
             log.warn("handleScannerData，缓冲垫使用次数已达极限，最大使用次数：{}，已使用次数：{}", maxUseCount, usedCount);
             if (null == scannerSeq) {
+                // 补码逻辑
                 if (null == cushionScannerSeq)
                     notifyAllScannersSates2PLC(Constants.PLC_ADDR_TYPE_RE_SCAN_OVER_MAXIMUM, workLine);
                 else
@@ -144,6 +146,7 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
         if (modifyResult) {
             // 扫码成功PLC提示
             if (null == scannerSeq) {
+                // 补码逻辑
                 if (null == cushionScannerSeq)
                     notifyAllScannersSates2PLC(Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS, workLine);
                 else
