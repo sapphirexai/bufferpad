@@ -71,6 +71,7 @@ public class Connector {
 //        );
         scheduledExecutorService = Executors.newScheduledThreadPool(2);
         startReconnectService();
+        startPLCHeartbeatService();
     }
 
     private Bootstrap fastBuildClient(Connection connection) {
@@ -221,7 +222,6 @@ public class Connector {
         if (operateResult.IsSuccess) {
             log.info("connectPLC，当前正在连接PLC =>> 连接成功");
             conn.nowActive(melsecMcNet);
-            startPLCHeartbeatService(conn);
             return true;
         }
         log.error("connectPLC，当前正在连接PLC =>> 连接失败，当前连接地址===》{}:{}", ip, port);
@@ -230,17 +230,31 @@ public class Connector {
         return false;
     }
 
-    private void startPLCHeartbeatService(Connection conn) {
+    private void startPLCHeartbeatService() {
         long timeExecuteSec = 2L;// 执行时间，单位：秒
         scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
-                sendPLCHeartBeat(conn);
+                sendPLCHeartBeat();
             }
         }, timeExecuteSec, timeExecuteSec, TimeUnit.SECONDS);
     }
 
-    private void sendPLCHeartBeat(Connection conn) {
+    private void sendPLCHeartBeat() {
+        ConcurrentHashMap<String, Connection> connections = connectionMgr.getConnections();
+        if (CollectionUtils.isEmpty(connections)) {
+            log.info("sendPLCHeartBeat，当前Netty连接列表为空，不进行心跳发送操作...");
+            return;
+        }
+        Collection<Connection> connectionsList = connections.values();
+        for (Connection conn : connectionsList) {
+            if (conn.getType() == Params.DEVICE_TYPE_KEY_PLC) {
+                doSendPLCHeartBeat(conn);
+            }
+        }
+    }
+
+    private void doSendPLCHeartBeat(Connection conn) {
         PLCAddrEntity plcAddr = plcAddrService.findByTypeAndScannerSeq(Constants.PLC_ADDR_TYPE_HEART_BEAT, conn.getInstallSeq());
         if (null != plcAddr) {
             log.info("sendPLCHeartBeat，正在发送PLC心跳包...");
