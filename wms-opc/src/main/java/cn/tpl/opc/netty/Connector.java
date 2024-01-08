@@ -2,12 +2,17 @@ package cn.tpl.opc.netty;
 
 import HslCommunication.Core.Types.OperateResult;
 import HslCommunication.Profinet.Melsec.MelsecMcNet;
+import cn.tpl.opc.commons.constant.Constants;
 import cn.tpl.opc.commons.constant.Params;
+import cn.tpl.opc.commons.dto.event.EventBusMsgPlcCmd;
 import cn.tpl.opc.commons.dto.result.DeviceInfoDTO;
+import cn.tpl.opc.entity.PLCAddrEntity;
 import cn.tpl.opc.netty.handler.HeartbeatHandler;
 import cn.tpl.opc.netty.handler.MsgHandler;
 import cn.tpl.opc.service.ICushionInfoService;
+import cn.tpl.opc.service.IPLCAddrService;
 import cn.tpl.opc.service.ISseService;
+import cn.tpl.opc.service.impl.PLCAddrServiceImpl;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -18,6 +23,7 @@ import io.netty.handler.codec.string.StringEncoder;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.CharsetUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.greenrobot.eventbus.EventBus;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
@@ -41,6 +47,8 @@ public class Connector {
     private ICushionInfoService cushionInfoService;
     @Resource
     private ISseService sseService;
+    @Resource
+    private IPLCAddrService plcAddrService;
 
     /**
      * 重连线程池
@@ -61,7 +69,7 @@ public class Connector {
 //                new LinkedBlockingDeque<>(Runtime.getRuntime().availableProcessors() * 4)
 //
 //        );
-        scheduledExecutorService = Executors.newScheduledThreadPool(1);
+        scheduledExecutorService = Executors.newScheduledThreadPool(2);
         startReconnectService();
     }
 
@@ -207,18 +215,37 @@ public class Connector {
      * @param port 端口号
      */
     private boolean connectPLC(Connection conn, String ip, int port) {
-        log.info("connect，当前正在连接PLC =>> {}", ip + ":" + port);
+        log.info("connectPLC，当前正在连接PLC =>> {}", ip + ":" + port);
         MelsecMcNet melsecMcNet = new MelsecMcNet(ip, port);
         OperateResult operateResult = melsecMcNet.ConnectServer();
         if (operateResult.IsSuccess) {
-            log.info("connect，当前正在连接PLC =>> 连接成功");
+            log.info("connectPLC，当前正在连接PLC =>> 连接成功");
             conn.nowActive(melsecMcNet);
+            startPLCHeartbeatService(conn);
             return true;
         }
-        log.error("connectPLC，连接PLC失败");
+        log.error("connectPLC，当前正在连接PLC =>> 连接失败，当前连接地址===》{}:{}", ip, port);
         log.error("connectPLC，ErrorCode：{}", operateResult.ErrorCode);
         log.error("connectPLC，ErrorMsg：{}", operateResult.Message);
         return false;
+    }
+
+    private void startPLCHeartbeatService(Connection conn) {
+        long timeExecuteSec = 2L;// 执行时间，单位：秒
+        scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
+            @Override
+            public void run() {
+                sendPLCHeartBeat(conn);
+            }
+        }, timeExecuteSec, timeExecuteSec, TimeUnit.SECONDS);
+    }
+
+    private void sendPLCHeartBeat(Connection conn) {
+        PLCAddrEntity plcAddr = plcAddrService.findByTypeAndScannerSeq(Constants.PLC_ADDR_TYPE_HEART_BEAT, conn.getInstallSeq());
+        if (null != plcAddr) {
+            log.info("sendPLCHeartBeat，正在发送PLC心跳包...");
+            EventBus.getDefault().post(new EventBusMsgPlcCmd(plcAddr.getAddr(), Constants.HEARTBEAT_2_PLC_VAL, conn.getWorkLine()));
+        }
     }
 
     public void startReconnectService() {
@@ -229,7 +256,6 @@ public class Connector {
                 reconnect();
             }
         }, timeExecuteSec, timeExecuteSec, TimeUnit.SECONDS);
-
     }
 
     private boolean isScannerConn(Connection conn) {

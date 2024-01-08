@@ -213,15 +213,17 @@ public class Connection {
         log.info("onMessageEvent，EventBusMsgPlcCmd：{}", event);
         if (null == melsecMcNet) return;
         if (workLine != event.getWorkLine()) return;
-
-        OperateResult operateResult = melsecMcNet.Write(event.getAddress(), event.getCmd());
+        String addr = event.getAddress();
+        int cmd = event.getCmd();
+        log.info("onMessageEvent，当前正向PLC写入命令 =>> Address：{}，Cmd：{}", addr, cmd);
+        OperateResult operateResult = melsecMcNet.Write(addr, cmd);
         if (!operateResult.IsSuccess) {
-            log.error("onMessageEvent，写入PLC命令失败");
+            log.error("onMessageEvent，当前正向PLC写入命令 =>> 写入失败，当前命令地址：{}，值：{}", addr, cmd);
             log.error("onMessageEvent，ErrorCode：{}", operateResult.ErrorCode);
             log.error("onMessageEvent，ErrorMsg：{}", operateResult.Message);
 //            nowDead();// 关闭PLC连接等待重连
         }
-
+        log.info("onMessageEvent，当前正向PLC写入命令 =>> 写入成功");
 //        if (isDead()) nowActive(melsecMcNet);
     }
 }

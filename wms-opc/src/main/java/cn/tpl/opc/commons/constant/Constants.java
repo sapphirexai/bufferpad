@@ -21,9 +21,12 @@ public final class Constants {
     public static final int SCANNER_SEQ_MAIN = 1;
 
     /**
-     * 默认写入值PLC的值
+     * HEARTBEAT_2_PLC_VAL 给PLC的心跳值
+     * DEFAULT_2_PLC_VAL 默认写入值PLC的值
      */
-    public static final int DEFAULT_2_PLC_VAL = 1;
+    public static final int
+            HEARTBEAT_2_PLC_VAL = 0,
+            DEFAULT_2_PLC_VAL = 1;
 
     /**
      * PLC地址类型
@@ -32,13 +35,15 @@ public final class Constants {
      * PLC_ADDR_TYPE_SCAN_SUCCESS 扫码成功
      * PLC_ADDR_TYPE_RE_SCAN_OVER_MAXIMUM 重新扫码超过最大次数
      * PLC_ADDR_TYPE_RE_SCAN_SUCCESS 重新扫码成功
+     * PLC_ADDR_TYPE_RE_SCAN_SUCCESS 心跳
      */
     public static final int
             PLC_ADDR_TYPE_SCAN_FAILED = 0,
             PLC_ADDR_TYPE_SCAN_OVER_MAXIMUM = 1,
             PLC_ADDR_TYPE_SCAN_SUCCESS = 2,
             PLC_ADDR_TYPE_RE_SCAN_OVER_MAXIMUM = 3,
-            PLC_ADDR_TYPE_RE_SCAN_SUCCESS = 4;
+            PLC_ADDR_TYPE_RE_SCAN_SUCCESS = 4,
+            PLC_ADDR_TYPE_HEART_BEAT = 5;
 
     /**
      * 缓冲垫默认最大使用次数
