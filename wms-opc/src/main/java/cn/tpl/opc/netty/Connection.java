@@ -214,12 +214,14 @@ public class Connection {
         if (null == melsecMcNet) return;
         if (workLine != event.getWorkLine()) return;
 
-        OperateResult result = melsecMcNet.Write(event.getAddress(), event.getCmd());
-        if (!result.IsSuccess) {
-            nowDead();
-            return;
+        OperateResult operateResult = melsecMcNet.Write(event.getAddress(), event.getCmd());
+        if (!operateResult.IsSuccess) {
+            log.error("onMessageEvent，写入PLC命令失败");
+            log.error("onMessageEvent，ErrorCode：{}", operateResult.ErrorCode);
+            log.error("onMessageEvent，ErrorMsg：{}", operateResult.Message);
+//            nowDead();// 关闭PLC连接等待重连
         }
 
-        if (isDead()) nowActive(melsecMcNet);
+//        if (isDead()) nowActive(melsecMcNet);
     }
 }

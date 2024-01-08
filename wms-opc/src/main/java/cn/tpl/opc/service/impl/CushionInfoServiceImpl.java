@@ -282,7 +282,7 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
      * @param scannerSeq  扫码器安装顺序
      * @param workLine    产线
      */
-    private void notifyPLC(int plcAddrType, int scannerSeq, int workLine) {
+    private void notifyPLC(Integer plcAddrType, Integer scannerSeq, Integer workLine) {
         PLCAddrEntity plcAddr = plcAddrService.findByTypeAndScannerSeq(plcAddrType, scannerSeq);
         if (null != plcAddr)
             EventBus.getDefault().post(new EventBusMsgPlcCmd(plcAddr.getAddr(), Constants.DEFAULT_2_PLC_VAL, workLine));

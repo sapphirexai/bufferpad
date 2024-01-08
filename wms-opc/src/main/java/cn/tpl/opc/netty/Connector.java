@@ -209,12 +209,15 @@ public class Connector {
     private boolean connectPLC(Connection conn, String ip, int port) {
         log.info("connect，当前正在连接PLC =>> {}", ip + ":" + port);
         MelsecMcNet melsecMcNet = new MelsecMcNet(ip, port);
-        OperateResult connectResult = melsecMcNet.ConnectServer();
-        if (connectResult.IsSuccess) {
+        OperateResult operateResult = melsecMcNet.ConnectServer();
+        if (operateResult.IsSuccess) {
             log.info("connect，当前正在连接PLC =>> 连接成功");
             conn.nowActive(melsecMcNet);
             return true;
         }
+        log.error("connectPLC，连接PLC失败");
+        log.error("connectPLC，ErrorCode：{}", operateResult.ErrorCode);
+        log.error("connectPLC，ErrorMsg：{}", operateResult.Message);
         return false;
     }
 
