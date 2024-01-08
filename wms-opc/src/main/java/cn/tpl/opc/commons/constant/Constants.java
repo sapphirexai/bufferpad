@@ -41,24 +41,13 @@ public final class Constants {
             PLC_ADDR_TYPE_RE_SCAN_SUCCESS = 4;
 
     /**
-     * 缓冲垫二维码前缀
-     */
-    public static final String
-            CUSHION_QR_CODE_PREFIX_P = "P",
-            CUSHION_QR_CODE_PREFIX_T = "T";
-
-    /**
      * 缓冲垫默认最大使用次数
      * 宁波甬强默认600次
      * 汕头超声默认500次
      * CUSHION_DEFAULT_MAX_USE_CONT 通用最大次数
-     * CUSHION_DEFAULT_MAX_USE_COUNT_P 二维码P开头
-     * CUSHION_DEFAULT_MAX_USE_COUNT_T 二维码T开头
      */
     public static final int
-            CUSHION_DEFAULT_MAX_USE_CONT = 500,
-            CUSHION_DEFAULT_MAX_USE_COUNT_P = 100,
-            CUSHION_DEFAULT_MAX_USE_COUNT_T = 150;
+            CUSHION_DEFAULT_MAX_USE_CONT = 500;
 
     /**
      * 新增缓冲垫时默认已使用次数
