@@ -18,7 +18,7 @@ public final class Constants {
     /**
      * 主扫码器安装顺序
      */
-    public static final int SCANNER_SEQ_MAIN = 1;
+    public static final Integer SCANNER_SEQ_MAIN = 1;
 
     /**
      * HEARTBEAT_2_PLC_VAL 给PLC的心跳值

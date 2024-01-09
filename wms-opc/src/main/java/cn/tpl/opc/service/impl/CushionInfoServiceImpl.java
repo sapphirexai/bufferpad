@@ -185,7 +185,7 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
      * @param workLine   产线
      * @param scannerSeq 扫码器安装顺序
      */
-    private void onScanCodeFailed(int workLine, int scannerSeq) {
+    private void onScanCodeFailed(Integer workLine, Integer scannerSeq) {
         log.info("onScanCodeFailed");
         CushionInfoDTO cushionInfoDTO = new CushionInfoDTO();
         cushionInfoDTO.setWorkLine(workLine);
@@ -293,8 +293,8 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
     public void onMessageEvent(EventBusMsgCushionQrCode event) {
         log.info("onMessageEvent，EventBusMsgCushionQrCode：{}", event);
         String qrCode = event.getQrCode();
-        int workLine = event.getWorkLine();
-        int scannerSeq = event.getScannerSeq();
+        Integer workLine = event.getWorkLine();
+        Integer scannerSeq = event.getScannerSeq();
         if (StringUtils.isEmpty(qrCode)) {
             onScanCodeFailed(workLine, scannerSeq);
             return;

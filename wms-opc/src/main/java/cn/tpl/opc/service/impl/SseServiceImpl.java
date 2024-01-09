@@ -70,8 +70,7 @@ public class SseServiceImpl implements ISseService {
 
     @Override
     public <T> void sendFailMsg(SseMsgDTO<T> msg, String reason) {
-        if (Constants.SCANNER_SEQ_MAIN == msg.getScannerSeq())
-            sendMsg(ResultDTO.failure(msg, reason));
+        sendMsg(ResultDTO.failure(msg, reason));
     }
 
     @Override
