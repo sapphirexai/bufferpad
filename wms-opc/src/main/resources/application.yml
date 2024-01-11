@@ -1,7 +1,6 @@
 spring:
   profiles:
     active: @env@
-
 mybatis-plus:
   mapper-locations: classpath*:mapper/**/*Mapper.xml
   configuration:
@@ -12,6 +11,3 @@ management:
     web:
       exposure:
         include: '*'
-logging:
-  file:
-    name: D:\Java\@name@_logs\@name@_@env@.log

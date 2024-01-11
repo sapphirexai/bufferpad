@@ -1,5 +1,8 @@
 server:
   port: 9001
+logging:
+  file:
+    name: D:\Java\@name@_logs\@name@_@env@.log
 spring:
   application:
     name: wms-opc
