@@ -3,7 +3,6 @@ package cn.tpl.opc.commons.dto.event;
 import cn.tpl.opc.commons.dto.base.AbsBaseDTO;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.ToString;
 
 /**
  * Author: Luo GuoWen
@@ -14,7 +13,6 @@ import lombok.ToString;
  */
 @EqualsAndHashCode(callSuper = true)
 @Data
-@ToString
 public class EventBusMsgCushionQrCode extends AbsBaseDTO {
     private String qrCode;
     private Integer workLine;

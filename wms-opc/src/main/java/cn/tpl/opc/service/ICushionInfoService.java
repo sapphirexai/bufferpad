@@ -61,10 +61,12 @@ public interface ICushionInfoService {
     /**
      * 修改已使用次数
      *
-     * @param qrCode 缓冲垫二维码
-     * @param scannerSeq
-     * @param count  已使用次数
+     * @param qrCode     缓冲垫二维码
+     * @param scannerSeq 扫码器安装顺序
+     * @param count      已使用次数
      * @return 修改结果
      */
     boolean modifyUsedCountByQrCode(String qrCode, Integer scannerSeq, Integer count);
+
+    boolean modifyOpenCountByQrCode(String qrCode, Integer openCount);
 }

@@ -5,6 +5,7 @@ import cn.tpl.opc.commons.constant.Params;
 import cn.tpl.opc.commons.dto.ResultDTO;
 import cn.tpl.opc.commons.dto.event.EventBusMsgCushionQrCode;
 import cn.tpl.opc.commons.dto.event.EventBusMsgPlcCmd;
+import cn.tpl.opc.commons.dto.event.EventBusMsgReadOpenCountFromPLC;
 import cn.tpl.opc.commons.dto.result.CushionInfoDTO;
 import cn.tpl.opc.commons.dto.result.PageData;
 import cn.tpl.opc.commons.dto.result.SseMsgDTO;
@@ -266,6 +267,15 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
     }
 
     @Override
+    public boolean modifyOpenCountByQrCode(String qrCode, Integer openCount) {
+        if (null == openCount) return false;
+        CushionInfoEntity cushionInfo = new CushionInfoEntity();
+        cushionInfo.setQrCode(qrCode);
+        cushionInfo.setOpenCount(openCount);
+        return cushionInfoEntityMapper.modifyOpenCountByQrCode(cushionInfo) > 0;
+    }
+
+    @Override
     public void afterPropertiesSet() {
         EventBus.getDefault().register(this);
     }
@@ -286,6 +296,23 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
         PLCAddrEntity plcAddr = plcAddrService.findByTypeAndScannerSeq(plcAddrType, scannerSeq);
         if (null != plcAddr)
             EventBus.getDefault().post(new EventBusMsgPlcCmd(plcAddr.getAddr(), Constants.DEFAULT_2_PLC_VAL, workLine));
+    }
+
+    /**
+     * 从PLC读取开口数
+     *
+     * @param qrCode      缓冲垫二维码
+     * @param plcAddrType plc地址类型
+     * @param scannerSeq  扫码器安装顺序
+     * @param workLine    产线
+     */
+    private void readOpenCountFromPLC(String qrCode, Integer plcAddrType, Integer scannerSeq, Integer workLine) {
+        // TODO: 2024/1/11 根据不同的缓冲垫位置来源读取
+        PLCAddrEntity plcAddr = plcAddrService.findByTypeAndScannerSeq(plcAddrType, scannerSeq);
+        if (null != plcAddr) {
+            EventBus.getDefault().post(new EventBusMsgReadOpenCountFromPLC(qrCode, plcAddr.getAddr(), workLine));
+        }
+
     }
 
     @SuppressWarnings("unused")

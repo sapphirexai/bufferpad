@@ -43,7 +43,11 @@ public final class Constants {
             PLC_ADDR_TYPE_SCAN_SUCCESS = 2,
             PLC_ADDR_TYPE_RE_SCAN_OVER_MAXIMUM = 3,
             PLC_ADDR_TYPE_RE_SCAN_SUCCESS = 4,
-            PLC_ADDR_TYPE_HEART_BEAT = 5;
+            PLC_ADDR_TYPE_HEART_BEAT = 5,
+            PLC_ADDR_TYPE_SCAN_SUCCESS_OPEN_COUNT_UP = 6,
+            PLC_ADDR_TYPE_RE_SCAN_SUCCESS_OPEN_COUNT_UP = 7,
+            PLC_ADDR_TYPE_SCAN_SUCCESS_OPEN_COUNT_DOWN = 8,
+            PLC_ADDR_TYPE_RE_SCAN_SUCCESS_OPEN_COUNT_DOWN = 9;
 
     /**
      * 缓冲垫默认最大使用次数

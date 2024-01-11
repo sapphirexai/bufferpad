@@ -63,5 +63,7 @@ public interface CushionInfoEntityMapper {
 
     int modifyUsedCountByQrCode(CushionInfoEntity cushionInfo);
 
+    int modifyOpenCountByQrCode(CushionInfoEntity cushionInfo);
+
     IPage<CushionInfoEntity> listByPage(Page<CushionInfoEntity> page);
 }

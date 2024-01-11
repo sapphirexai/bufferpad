@@ -1,13 +1,16 @@
 package cn.tpl.opc.netty;
 
 import HslCommunication.Core.Types.OperateResult;
+import HslCommunication.Core.Types.OperateResultExOne;
 import HslCommunication.Profinet.Melsec.MelsecMcNet;
+import cn.tpl.opc.ApplicationContextAwareImpl;
 import cn.tpl.opc.commons.constant.Constants;
 import cn.tpl.opc.commons.constant.Params;
 import cn.tpl.opc.commons.dto.event.EventBusMsgPlcCmd;
+import cn.tpl.opc.commons.dto.event.EventBusMsgReadOpenCountFromPLC;
+import cn.tpl.opc.service.ICushionInfoService;
 import io.netty.channel.ChannelFuture;
 import lombok.Data;
-import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -25,7 +28,6 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 @Data
 @Slf4j
-@ToString
 public class Connection {
     /**
      * 主键ID
@@ -109,7 +111,7 @@ public class Connection {
     }
 
 //    /**
-//     * 参数初始化完毕后，首次连接之前调用
+//     * 参数初始化完毕后, 首次连接之前调用
 //     */
 //    public void readyToConnect() {
 //        if (Params.DEVICE_TYPE_KEY_SCANNER == type)
@@ -148,7 +150,7 @@ public class Connection {
      */
     public synchronized void nowActive(ChannelFuture cf) {
         if (isActive()) {
-            log.info("nowActive，连接已活不做操作");
+            log.info("nowActive, 连接已活不做操作");
             return;
         }
 
@@ -167,7 +169,7 @@ public class Connection {
      */
     public synchronized void nowActive(MelsecMcNet melsecMcNet) {
         if (isActive()) {
-            log.info("nowActive，连接已活不做操作");
+            log.info("nowActive, 连接已活不做操作");
             return;
         }
 
@@ -182,7 +184,7 @@ public class Connection {
      */
     public synchronized void nowDead() {
         if (isDead()) {
-            log.info("nowDead，连接已死不做操作");
+            log.info("nowDead, 连接已死不做操作");
             return;
         }
 
@@ -209,20 +211,49 @@ public class Connection {
 
     @Subscribe(threadMode = ThreadMode.POSTING)
     public void onMessageEvent(EventBusMsgPlcCmd event) {
-        log.info("onMessageEvent，EventBusMsgPlcCmd：{}", event);
+        log.info("onMessageEvent, EventBusMsgPlcCmd: {}", event);
         if (null == melsecMcNet) return;
-        if (workLine != event.getWorkLine()) return;
+        if (!workLine.equals(event.getWorkLine())) return;
         String addr = event.getAddress();
         int cmd = event.getCmd();
-        log.info("onMessageEvent，当前正向PLC写入命令 =>> Address：{}，Cmd：{}", addr, cmd);
+        log.info("onMessageEvent, writing cmd to PLC =>> Address: {}, Cmd: {}", addr, cmd);
         OperateResult operateResult = melsecMcNet.Write(addr, cmd);
         if (!operateResult.IsSuccess) {
-            log.error("onMessageEvent，当前正向PLC写入命令 =>> 写入失败，当前命令地址：{}，值：{}", addr, cmd);
-            log.error("onMessageEvent，ErrorCode：{}", operateResult.ErrorCode);
-            log.error("onMessageEvent，ErrorMsg：{}", operateResult.Message);
+            log.error("onMessageEvent, writing cmd to PLC =>> failed, address: {}, cmd: {}", addr, cmd);
+            log.error("onMessageEvent, ErrorCode: {}", operateResult.ErrorCode);
+            log.error("onMessageEvent, ErrorMsg: {}", operateResult.Message);
 //            nowDead();// 关闭PLC连接等待重连
         }
-        log.info("onMessageEvent，当前正向PLC写入命令 =>> 写入成功");
+        log.info("onMessageEvent, writing cmd to PLC =>> success");
 //        if (isDead()) nowActive(melsecMcNet);
+    }
+
+    @Subscribe(threadMode = ThreadMode.POSTING)
+    public void onMessageEvent(EventBusMsgReadOpenCountFromPLC event) {
+        log.info("onMessageEvent, EventBusMsgReadOpenCountFromPLC: {}", event);
+        if (null == melsecMcNet) return;
+        if (!workLine.equals(event.getWorkLine())) return;
+        String addr = event.getAddress();
+        log.info("onMessageEvent, reading from PLC =>> Address: {}", addr);
+        OperateResultExOne<Integer> operateResult = melsecMcNet.ReadInt32(addr);
+        if (!operateResult.IsSuccess) {
+            log.error("onMessageEvent, reading from PLC =>> failed, address: {}", addr);
+            log.error("onMessageEvent, ErrorCode: {}", operateResult.ErrorCode);
+            log.error("onMessageEvent, ErrorMsg: {}", operateResult.Message);
+        }
+
+        Integer content = operateResult.Content;
+        if (null == content) {
+            log.error("onMessageEvent, reading from PLC =>> openCount is null");
+            return;
+        }
+        ICushionInfoService cs = (ICushionInfoService) ApplicationContextAwareImpl.getBean("cushionInfoService");
+        boolean result = cs.modifyOpenCountByQrCode(event.getQrCode(), content);
+        log.info("onMessageEvent, reading from PLC =>> success");
+        if (result) {
+            log.info("onMessageEvent, reading from PLC =>> modify openCount success");
+            return;
+        }
+        log.info("onMessageEvent, reading from PLC =>> modify openCount failed");
     }
 }
