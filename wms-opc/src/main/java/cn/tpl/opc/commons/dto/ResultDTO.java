@@ -17,7 +17,6 @@ import org.apache.commons.lang3.StringUtils;
 @EqualsAndHashCode(callSuper = true)
 @Data
 @ToString
-@Schema(description = "响应结构数据实体类")
 public final class ResultDTO<T> extends AbsBaseDTO {
     private ResultDTO() {
     }
