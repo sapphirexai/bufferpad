@@ -2,11 +2,10 @@ stages:
   - build
   - deploy
 variables:
-  APP: "opc"
-  APP_VERSION: "-0.0.1.-SNAPSHOT"
-  APP_PATH: "/target/$APP$APP_VERSION.jar"
+  APP: "opc-0.0.1.-SNAPSHOT"
+  APP_PATH: "/target/$APP.jar"
   DEPLOY_PATH: "/home/gitlab-runner/application/wms-opc/"
-  DEPLOY_APP_PATH: "$DEPLOY_PATH$APP$APP_VERSION.jar"
+  DEPLOY_APP_PATH: "$DEPLOY_PATH$APP.jar"
   BASH: "reboot_app.sh "
   ENV: "test"
 #build过程
