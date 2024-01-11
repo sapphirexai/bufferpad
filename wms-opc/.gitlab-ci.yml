@@ -3,7 +3,7 @@ stages:
   - deploy
 variables:
   APP: "opc-0.0.1.-SNAPSHOT"
-  APP_PATH: "/target/$APP.jar"
+  APP_PATH: "target/$APP.jar"
   DEPLOY_PATH: "/home/gitlab-runner/application/wms-opc/"
   DEPLOY_APP_PATH: "$DEPLOY_PATH$APP.jar"
   BASH: "reboot_app.sh "
