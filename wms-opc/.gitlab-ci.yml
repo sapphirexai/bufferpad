@@ -4,7 +4,7 @@ stages:
 variables:
   APP: "opc"
   APP_VERSION: "-0.0.1.-SNAPSHOT"
-  APP_PATH: "$APP/target/$APP$APP_VERSION.jar"
+  APP_PATH: "target/$APP$APP_VERSION.jar"
   DEPLOY_PATH: "/home/gitlab-runner/application/wms-opc/"
   DEPLOY_APP_PATH: "$DEPLOY_PATH$APP$APP_VERSION.jar"
   BASH: "reboot_app.sh "
@@ -20,7 +20,7 @@ build:
     - cp $APP_PATH $DEPLOY_APP_PATH
   #分支
   only:
-    - master
+    - main
 #发布过程
 deploy:
   stage: deploy
