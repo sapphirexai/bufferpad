@@ -28,6 +28,6 @@ deploy:
     - $ENV
   script:
     - echo "======== Deploy ========="
-    - bash $BASH$APP
+    - bash $BASH$APP$APP_VERSION
   dependencies:
     - build
