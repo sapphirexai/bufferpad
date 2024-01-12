@@ -51,24 +51,11 @@ public class Connector {
     private IPLCAddrService plcAddrService;
 
     /**
-     * 重连线程池
-     */
-//    private final ExecutorService reconnectExecutorService;
-
-    /**
      * 定时执行器
      */
     private final ScheduledExecutorService scheduledExecutorService;
 
     {
-//        reconnectExecutorService = new ThreadPoolExecutor(
-//                Runtime.getRuntime().availableProcessors() * 2,
-//                Runtime.getRuntime().availableProcessors() * 4,
-//                5,
-//                TimeUnit.MINUTES,
-//                new LinkedBlockingDeque<>(Runtime.getRuntime().availableProcessors() * 4)
-//
-//        );
         scheduledExecutorService = Executors.newScheduledThreadPool(2);
         startReconnectService();
         startPLCHeartbeatService();
@@ -126,7 +113,6 @@ public class Connector {
                 }
             });
             connectionMgr.saveConnection(conn);
-//            conn.readyToConnect();
             return doConnect(conn);
         }
     }
