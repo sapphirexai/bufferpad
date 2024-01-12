@@ -10,6 +10,7 @@ import cn.tpl.opc.commons.dto.result.CushionInfoDTO;
 import cn.tpl.opc.commons.dto.result.PageData;
 import cn.tpl.opc.commons.dto.result.SseMsgDTO;
 import cn.tpl.opc.commons.scheme.base.BasePageScheme;
+import cn.tpl.opc.commons.scheme.request.ModifyCushionInfoScheme;
 import cn.tpl.opc.entity.CushionInfoEntity;
 import cn.tpl.opc.entity.DeviceInfoEntity;
 import cn.tpl.opc.entity.OpcConfigEntity;
@@ -275,6 +276,11 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
         cushionInfo.setQrCode(qrCode);
         cushionInfo.setOpenCount(openCount);
         return cushionInfoEntityMapper.modifyOpenCountByQrCode(cushionInfo) > 0;
+    }
+
+    @Override
+    public boolean modifyMaxUseCountByIds(ModifyCushionInfoScheme scheme) {
+        return cushionInfoEntityMapper.modifyMaxUseCountByIds(scheme) > 0;
     }
 
     @Override

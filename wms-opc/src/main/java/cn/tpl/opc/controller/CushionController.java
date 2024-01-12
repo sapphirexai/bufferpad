@@ -4,12 +4,14 @@ import cn.tpl.opc.commons.dto.ResultDTO;
 import cn.tpl.opc.commons.dto.result.CushionInfoDTO;
 import cn.tpl.opc.commons.dto.result.PageData;
 import cn.tpl.opc.commons.scheme.base.BasePageScheme;
+import cn.tpl.opc.commons.scheme.request.ModifyCushionInfoScheme;
 import cn.tpl.opc.service.ICushionInfoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -63,7 +65,7 @@ public class CushionController {
             @Parameter(description = "二维码")
             @PathVariable("qrCode") String qrCode) {
         try {
-            log.debug("manualCushionInfo，workLine：{}，qrCode：{}", workLine, qrCode);
+            log.info("manualCushionInfo, workLine：{}, qrCode: {}", workLine, qrCode);
 
             if (null == workLine)
                 return ResultDTO.failure("产线不能为空！");
@@ -71,6 +73,28 @@ public class CushionController {
             if (StringUtils.isEmpty(qrCode))
                 return ResultDTO.failure("缓冲垫编码不能为空！");
             return cushionInfoService.onQrCodeReceived(workLine, null, qrCode);
+        } catch (Exception e) {
+            return ResultDTO.exception(e);
+        }
+    }
+
+    @Operation(summary = "修改缓冲垫信息")
+    @PostMapping("/cushions")
+    public ResultDTO<?> modifyCushionInfo(
+            @Parameter(description = "修改缓冲垫信息协议")
+            @RequestBody ModifyCushionInfoScheme scheme) {
+        try {
+            log.info("modifyCushionInfo, scheme => {}", scheme);
+            Integer maxUseCount = scheme.getMaxUseCount();
+            if (null == maxUseCount)
+                return ResultDTO.failure("最大使用次数不能为空!");
+
+            List<Long> ids = scheme.getIds();
+            if (CollectionUtils.isEmpty(ids))
+                return ResultDTO.failure("需修改的缓冲垫ID不能为空!");
+
+            boolean result = cushionInfoService.modifyMaxUseCountByIds(scheme);
+            return result ? ResultDTO.success() : ResultDTO.failure(null);
         } catch (Exception e) {
             return ResultDTO.exception(e);
         }

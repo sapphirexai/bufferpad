@@ -1,9 +1,11 @@
 package cn.tpl.opc.mapper;
 
+import cn.tpl.opc.commons.scheme.request.ModifyCushionInfoScheme;
 import cn.tpl.opc.entity.CushionInfoEntity;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
@@ -64,6 +66,8 @@ public interface CushionInfoEntityMapper {
     int modifyUsedCountByQrCode(CushionInfoEntity cushionInfo);
 
     int modifyOpenCountByQrCode(CushionInfoEntity cushionInfo);
+
+    int modifyMaxUseCountByIds(@Param("data") ModifyCushionInfoScheme scheme);
 
     IPage<CushionInfoEntity> listByPage(Page<CushionInfoEntity> page);
 }

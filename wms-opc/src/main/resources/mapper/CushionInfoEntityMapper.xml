@@ -236,4 +236,13 @@
         </set>
         where qr_code = #{qrCode,jdbcType=VARCHAR}
     </update>
+
+    <update id="modifyMaxUseCountByIds" parameterType="cn.tpl.opc.commons.scheme.request.ModifyCushionInfoScheme">
+        update cushion_info
+        set max_use_count = #{data.maxUseCount}
+        where id in
+        <foreach collection="data.ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
 </mapper>
