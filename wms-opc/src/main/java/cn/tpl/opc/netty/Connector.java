@@ -94,6 +94,8 @@ public class Connector {
     public boolean connect(Connection conn) {
         String ip = conn.getIp();
         int port = conn.getPort();
+        if (connectionExists(ip, port)) return reconnectExistConnection(ip, port);
+
         synchronized (this) {
             // 获取锁后进行二次判断
             if (connectionExists(ip, port)) return reconnectExistConnection(ip, port);
