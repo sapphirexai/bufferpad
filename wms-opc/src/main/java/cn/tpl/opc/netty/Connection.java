@@ -97,15 +97,15 @@ public class Connection {
      */
     private final ScheduledExecutorService connectionCheckService = Executors.newScheduledThreadPool(1);
 
-    /**
-     * 连接检查任务
-     */
-    private final Runnable connectionCheckTask = () -> {
-        if (isActive()) {
-            long resetInterval = connectionResetInterval.decrementAndGet();
-            if (0 > resetInterval) nowDead();
-        }
-    };
+//    /**
+//     * 连接检查任务
+//     */
+//    private final Runnable connectionCheckTask = () -> {
+//        if (isActive()) {
+//            long resetInterval = connectionResetInterval.decrementAndGet();
+//            if (0 > resetInterval) nowDead();
+//        }
+//    };
 
     public Connection() {
     }
@@ -150,11 +150,15 @@ public class Connection {
      */
     public synchronized void nowActive(ChannelFuture cf) {
         if (isActive()) {
-            log.info("nowActive, 连接已活不做操作");
+            log.info("nowActive, already activated, no operation next");
             return;
         }
 
-        status = Params.NETTY_CONNECTION_KEY_STATUS_ACTIVE;
+        if (cf.isSuccess()) {
+            log.info("nowActive, activated, set status active");
+            status = Params.NETTY_CONNECTION_KEY_STATUS_ACTIVE;
+        }
+
         resetConnectionResetInterval();
         setChannelFuture(cf);
 
