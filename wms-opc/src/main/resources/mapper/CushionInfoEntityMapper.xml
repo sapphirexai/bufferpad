@@ -50,7 +50,7 @@
         select
         <include refid="Base_Column_List"/>
         from cushion_info
-        where qr_code like concat(#{qrCode}, '%')
+        where qr_code like concat('%', #{qrCode}, '%')
     </select>
 
     <select id="listByPage" resultMap="BaseResultMap">
