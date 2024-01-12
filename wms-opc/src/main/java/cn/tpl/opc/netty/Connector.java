@@ -184,7 +184,7 @@ public class Connector {
     private boolean doReconnect(Connection conn) {
         if (null == conn) return false;
         if (conn.isActive()) return true;
-        log.info("doReconnect, reconnecting => {}:{}...", conn.getIp(), conn.getPort());
+        log.info("doReconnect, reconnecting, ip => {}:{}...", conn.getIp(), conn.getPort());
         return doConnect(conn);
     }
 
