@@ -78,7 +78,7 @@ public class CushionController {
         }
     }
 
-    @Operation(summary = "修改缓冲垫信息")
+    @Operation(summary = "批量修改缓冲垫信息")
     @PostMapping("/cushions")
     public ResultDTO<?> modifyCushionInfo(
             @Parameter(description = "修改缓冲垫信息协议")
