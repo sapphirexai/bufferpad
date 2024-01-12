@@ -1,5 +1,6 @@
 package cn.tpl.opc.service.impl;
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.tpl.opc.commons.constant.Constants;
 import cn.tpl.opc.commons.constant.Params;
 import cn.tpl.opc.commons.dto.ResultDTO;
@@ -210,17 +211,7 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
 
     private CushionInfoDTO cushionInfo2DTO(CushionInfoEntity cushionInfo) {
         CushionInfoDTO cushionInfoDTO = new CushionInfoDTO();
-        BeanUtils.copyProperties(cushionInfo, cushionInfoDTO);
-        Integer scannerSeq = cushionInfoDTO.getScannerSeq();
-        System.out.println("当前缓冲垫getScannerSeq：" + cushionInfo.getScannerSeq());
-        if (null != scannerSeq) {
-            String qrCode = cushionInfo.getQrCode();
-            if (Params.SCANNER_SEQ_KEY_1 == scannerSeq)
-                qrCode += Params.SCANNER_SEQ_VAL_1;
-            if (Params.SCANNER_SEQ_KEY_2 == scannerSeq)
-                qrCode += Params.SCANNER_SEQ_VAL_2;
-            cushionInfoDTO.setQrCode(qrCode);
-        }
+        BeanUtil.copyProperties(cushionInfo, cushionInfoDTO);
         return cushionInfoDTO;
     }
 
@@ -254,6 +245,13 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
     @Override
     public List<CushionInfoDTO> listByQrCode(String qrCode) {
         List<CushionInfoEntity> cushionInfos = cushionInfoEntityMapper.listByQrCode(qrCode);
+        if (CollectionUtils.isEmpty(cushionInfos)) return null;
+        return cushionInfos.stream().map(this::cushionInfo2DTO).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<CushionInfoDTO> listByIds(List<Long> ids) {
+        List<CushionInfoEntity> cushionInfos = cushionInfoEntityMapper.listByIds(ids);
         if (CollectionUtils.isEmpty(cushionInfos)) return null;
         return cushionInfos.stream().map(this::cushionInfo2DTO).collect(Collectors.toList());
     }

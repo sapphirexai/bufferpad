@@ -1,11 +1,16 @@
 package cn.tpl.opc.controller;
 
+import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.date.DateUtil;
+import cn.tpl.opc.commons.constant.Params;
 import cn.tpl.opc.commons.dto.ResultDTO;
 import cn.tpl.opc.commons.dto.result.CushionInfoDTO;
+import cn.tpl.opc.commons.dto.result.ExportCushionInfoDTO;
 import cn.tpl.opc.commons.dto.result.PageData;
 import cn.tpl.opc.commons.scheme.base.BasePageScheme;
 import cn.tpl.opc.commons.scheme.request.ModifyCushionInfoScheme;
 import cn.tpl.opc.service.ICushionInfoService;
+import cn.tpl.opc.util.EasyExcelUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -15,6 +20,9 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletResponse;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -95,6 +103,49 @@ public class CushionController {
 
             boolean result = cushionInfoService.modifyMaxUseCountByIds(scheme);
             return result ? ResultDTO.success() : ResultDTO.failure(null);
+        } catch (Exception e) {
+            return ResultDTO.exception(e);
+        }
+    }
+
+    @Operation(summary = "批量导出缓冲垫信息")
+    @GetMapping("/cushions/excel")
+    public ResultDTO<Boolean> exportCushions(
+            @Parameter(hidden = true) HttpServletResponse response,
+            @Parameter(description = "需要导出的缓冲垫ID列表")
+            @RequestParam List<Long> ids) {
+        try {
+            log.info("exportCushions, ids => {}", ids);
+            if (CollectionUtils.isEmpty(ids))
+                return ResultDTO.failure("需导出的缓冲垫ID不能为空!");
+
+            List<CushionInfoDTO> cushionInfos = cushionInfoService.listByIds(ids);
+            if (CollectionUtils.isEmpty(cushionInfos)) return ResultDTO.failure("无对应数据!");
+
+            List<ExportCushionInfoDTO> exportDatas = new ArrayList<>();
+            for (CushionInfoDTO data : cushionInfos) {
+                ExportCushionInfoDTO exportData = new ExportCushionInfoDTO();
+                BeanUtil.copyProperties(data, exportData);
+                Integer scannerSeq = data.getScannerSeq();
+                String position = "";
+                if (null != scannerSeq) {
+                    if (Params.SCANNER_SEQ_KEY_1 == data.getScannerSeq())
+                        position = Params.SCANNER_SEQ_VAL_1;
+                    if (Params.SCANNER_SEQ_KEY_2 == data.getScannerSeq())
+                        position = Params.SCANNER_SEQ_VAL_2;
+                }
+                exportData.setCreatedDate(DateUtil.formatDateTime(data.getCreatedDate()));
+                exportData.setLastScanDate(DateUtil.formatDateTime(data.getLastScanDate()));
+                exportData.setPosition(position);
+
+                exportDatas.add(exportData);
+            }
+            String fileType = ".xls";
+            String fileName = "缓冲垫_" + DateUtil.now() + fileType;
+            response.setContentType(fileType + "; charset=UTF-8");
+            response.setHeader("Content-Disposition", "attachment;filename=" + new String(fileName.getBytes(StandardCharsets.UTF_8), StandardCharsets.ISO_8859_1));
+            EasyExcelUtils.export(response.getOutputStream(), exportDatas, ExportCushionInfoDTO.class);
+            return ResultDTO.success();
         } catch (Exception e) {
             return ResultDTO.exception(e);
         }

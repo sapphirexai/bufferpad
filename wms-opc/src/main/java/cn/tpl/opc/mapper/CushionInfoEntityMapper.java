@@ -70,4 +70,6 @@ public interface CushionInfoEntityMapper {
     int modifyMaxUseCountByIds(@Param("data") ModifyCushionInfoScheme scheme);
 
     IPage<CushionInfoEntity> listByPage(Page<CushionInfoEntity> page);
+
+    List<CushionInfoEntity> listByIds(@Param("ids") List<Long> ids);
 }

@@ -48,6 +48,6 @@ public final class Params {
      * 扫码器安装顺序对应位置
      */
     public static final String
-            SCANNER_SEQ_VAL_1 = "(上)",
-            SCANNER_SEQ_VAL_2 = "(下)";
+            SCANNER_SEQ_VAL_1 = "上",
+            SCANNER_SEQ_VAL_2 = "下";
 }

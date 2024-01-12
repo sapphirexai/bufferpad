@@ -61,6 +61,14 @@ public interface ICushionInfoService {
     List<CushionInfoDTO> listByQrCode(String qrCode);
 
     /**
+     * 根据ID列表查找对应缓冲垫
+     *
+     * @param ids 缓冲垫ID
+     * @return 对应缓冲垫列表信息
+     */
+    List<CushionInfoDTO> listByIds(List<Long> ids);
+
+    /**
      * 修改已使用次数
      *
      * @param qrCode     缓冲垫二维码
@@ -73,4 +81,5 @@ public interface ICushionInfoService {
     boolean modifyOpenCountByQrCode(String qrCode, Integer openCount);
 
     boolean modifyMaxUseCountByIds(ModifyCushionInfoScheme scheme);
+
 }
