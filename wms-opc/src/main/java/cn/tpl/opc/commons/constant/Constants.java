@@ -16,11 +16,6 @@ public final class Constants {
     public static final int WORK_LINE_ALL = 0;
 
     /**
-     * 主扫码器安装顺序
-     */
-    public static final Integer SCANNER_SEQ_MAIN = 1;
-
-    /**
      * HEARTBEAT_2_PLC_VAL 给PLC的心跳值
      * DEFAULT_2_PLC_VAL 默认写入值PLC的值
      */
@@ -36,6 +31,10 @@ public final class Constants {
      * PLC_ADDR_TYPE_RE_SCAN_OVER_MAXIMUM 重新扫码超过最大次数
      * PLC_ADDR_TYPE_RE_SCAN_SUCCESS 重新扫码成功
      * PLC_ADDR_TYPE_RE_SCAN_SUCCESS 心跳
+     * PLC_ADDR_TYPE_SCAN_SUCCESS_OPEN_COUNT_UP 上缓冲垫扫码成功开口数
+     * PLC_ADDR_TYPE_RE_SCAN_SUCCESS_OPEN_COUNT_UP 上缓冲垫重新扫码成功开口数
+     * PLC_ADDR_TYPE_SCAN_SUCCESS_OPEN_COUNT_DOWN 下缓冲垫扫码成功开口数
+     * PLC_ADDR_TYPE_RE_SCAN_SUCCESS_OPEN_COUNT_DOWN 下缓冲垫重新扫码成功开口数
      */
     public static final int
             PLC_ADDR_TYPE_SCAN_FAILED = 0,

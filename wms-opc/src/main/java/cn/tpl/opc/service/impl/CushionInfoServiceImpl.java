@@ -61,17 +61,18 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
     /**
      * 将当前所有扫码器的状态通知给PLC
      *
+     * @param qrCode      缓冲垫二维码
      * @param plcAddrType PLC地址类型
      * @param workLine    产线
      */
-    private void notifyAllScannersSates2PLC(int plcAddrType, int workLine) {
+    private void notifyAllScannersSates2PLC(String qrCode, int plcAddrType, Integer workLine) {
         List<DeviceInfoEntity> deviceInfoEntities = deviceService.listDeviceInfoByType(0);
         if (CollectionUtils.isEmpty(deviceInfoEntities)) return;
 
         for (DeviceInfoEntity deviceInfo : deviceInfoEntities) {
             Integer installSeq = deviceInfo.getInstallSeq();
             if (null == installSeq) continue;
-            notifyPLC(plcAddrType, installSeq, workLine);
+            notifyPLC(qrCode, plcAddrType, installSeq, workLine);
         }
     }
 
@@ -90,9 +91,10 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
             if (addResult) {
                 // 扫码成功PLC提示
                 if (null == scannerSeq)
-                    notifyAllScannersSates2PLC(Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS, workLine);
+                    notifyAllScannersSates2PLC(qrCode, Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS, workLine);
                 else
-                    notifyPLC(Constants.PLC_ADDR_TYPE_SCAN_SUCCESS, scannerSeq, workLine);
+                    notifyPLC(qrCode, Constants.PLC_ADDR_TYPE_SCAN_SUCCESS, scannerSeq, workLine);
+
                 return ResultDTO.success(onScanCodeSuccess(qrCode, scannerSeq));
             }
             sseService.sendFailMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, null, workLine, scannerSeq), Constants.RESULT_MSG_CUSHION_ADD_FAILED);
@@ -111,11 +113,11 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
             if (null == scannerSeq) {
                 // 补码逻辑
                 if (null == cushionScannerSeq)
-                    notifyAllScannersSates2PLC(Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS, workLine);
+                    notifyAllScannersSates2PLC(qrCode, Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS, workLine);
                 else
-                    notifyPLC(Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS, cushionScannerSeq, workLine);
+                    notifyPLC(qrCode, Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS, cushionScannerSeq, workLine);
             } else {
-                notifyPLC(Constants.PLC_ADDR_TYPE_SCAN_SUCCESS, scannerSeq, workLine);
+                notifyPLC(qrCode, Constants.PLC_ADDR_TYPE_SCAN_SUCCESS, scannerSeq, workLine);
             }
 
             return ResultDTO.failure(Constants.RESULT_MSG_CUSHION_INVALID_SCAN);
@@ -130,11 +132,11 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
             if (null == scannerSeq) {
                 // 补码逻辑
                 if (null == cushionScannerSeq)
-                    notifyAllScannersSates2PLC(Constants.PLC_ADDR_TYPE_RE_SCAN_OVER_MAXIMUM, workLine);
+                    notifyAllScannersSates2PLC(qrCode, Constants.PLC_ADDR_TYPE_RE_SCAN_OVER_MAXIMUM, workLine);
                 else
-                    notifyPLC(Constants.PLC_ADDR_TYPE_RE_SCAN_OVER_MAXIMUM, cushionScannerSeq, workLine);
+                    notifyPLC(qrCode, Constants.PLC_ADDR_TYPE_RE_SCAN_OVER_MAXIMUM, cushionScannerSeq, workLine);
             } else {
-                notifyPLC(Constants.PLC_ADDR_TYPE_SCAN_OVER_MAXIMUM, scannerSeq, workLine);
+                notifyPLC(qrCode, Constants.PLC_ADDR_TYPE_SCAN_OVER_MAXIMUM, scannerSeq, workLine);
             }
 
             sseService.sendFailMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, cushionInfoEntity, workLine, scannerSeq), Constants.RESULT_MSG_CUSHION_USED_COUNT_REACHED_MAX);
@@ -149,11 +151,11 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
             if (null == scannerSeq) {
                 // 补码逻辑
                 if (null == cushionScannerSeq)
-                    notifyAllScannersSates2PLC(Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS, workLine);
+                    notifyAllScannersSates2PLC(qrCode, Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS, workLine);
                 else
-                    notifyPLC(Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS, cushionScannerSeq, workLine);
+                    notifyPLC(qrCode, Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS, cushionScannerSeq, workLine);
             } else {
-                notifyPLC(Constants.PLC_ADDR_TYPE_SCAN_SUCCESS, scannerSeq, workLine);
+                notifyPLC(qrCode, Constants.PLC_ADDR_TYPE_SCAN_SUCCESS, scannerSeq, workLine);
             }
             return ResultDTO.success(onScanCodeSuccess(qrCode, scannerSeq));
         }
@@ -286,33 +288,61 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
     }
 
     /**
-     * 通知PLC
+     * 通知PLC扫码结果
      *
+     * @param qrCode      缓冲垫二维码
      * @param plcAddrType PLC寄存器地址类型
      * @param scannerSeq  扫码器安装顺序
      * @param workLine    产线
      */
-    private void notifyPLC(Integer plcAddrType, Integer scannerSeq, Integer workLine) {
+    private void notifyPLC(String qrCode, Integer plcAddrType, Integer scannerSeq, Integer workLine) {
+        if (null == plcAddrType) return;
+
         PLCAddrEntity plcAddr = plcAddrService.findByTypeAndScannerSeq(plcAddrType, scannerSeq);
-        if (null != plcAddr)
-            EventBus.getDefault().post(new EventBusMsgPlcCmd(plcAddr.getAddr(), Constants.DEFAULT_2_PLC_VAL, workLine));
+        if (null == plcAddr) return;
+
+        EventBus.getDefault().post(new EventBusMsgPlcCmd(plcAddr.getAddr(), Constants.DEFAULT_2_PLC_VAL, workLine));
+
+        if (Constants.PLC_ADDR_TYPE_SCAN_SUCCESS == plcAddrType)
+            readOpenCountFromPLC(false, qrCode, scannerSeq, workLine);
+
+        if (Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS == plcAddrType)
+            readOpenCountFromPLC(true, qrCode, scannerSeq, workLine);
     }
 
     /**
      * 从PLC读取开口数
      *
-     * @param qrCode      缓冲垫二维码
-     * @param plcAddrType plc地址类型
-     * @param scannerSeq  扫码器安装顺序
-     * @param workLine    产线
+     * @param isReScan   是否为重新扫码
+     * @param qrCode     缓冲垫二维码
+     * @param scannerSeq 扫码器安装顺序
+     * @param workLine   产线
      */
-    private void readOpenCountFromPLC(String qrCode, Integer plcAddrType, Integer scannerSeq, Integer workLine) {
-        // TODO: 2024/1/11 根据不同的缓冲垫位置来源读取
-        PLCAddrEntity plcAddr = plcAddrService.findByTypeAndScannerSeq(plcAddrType, scannerSeq);
-        if (null != plcAddr) {
-            EventBus.getDefault().post(new EventBusMsgReadOpenCountFromPLC(qrCode, plcAddr.getAddr(), workLine));
+    private void readOpenCountFromPLC(boolean isReScan, String qrCode, Integer scannerSeq, Integer workLine) {
+        // 根据不同的缓冲垫位置来源读取
+        log.info("readOpenCountFromPLC, isReScan => {}, seq => {}", isReScan, scannerSeq);
+        if (null == scannerSeq) return;
+
+        Integer plcAddrType = null;
+        if (Params.SCANNER_SEQ_KEY_1 == scannerSeq) {
+            plcAddrType = Constants.PLC_ADDR_TYPE_SCAN_SUCCESS_OPEN_COUNT_UP;
+            if (isReScan)
+                plcAddrType = Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS_OPEN_COUNT_UP;
         }
 
+        if (Params.SCANNER_SEQ_KEY_2 == scannerSeq) {
+            plcAddrType = Constants.PLC_ADDR_TYPE_SCAN_SUCCESS_OPEN_COUNT_DOWN;
+            if (isReScan)
+                plcAddrType = Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS_OPEN_COUNT_DOWN;
+        }
+
+        if (null == plcAddrType) return;
+
+        PLCAddrEntity plcAddr = plcAddrService.findByTypeAndScannerSeq(plcAddrType, scannerSeq);
+
+        if (null == plcAddr) return;
+
+        EventBus.getDefault().post(new EventBusMsgReadOpenCountFromPLC(qrCode, plcAddr.getAddr(), workLine));
     }
 
     @SuppressWarnings("unused")

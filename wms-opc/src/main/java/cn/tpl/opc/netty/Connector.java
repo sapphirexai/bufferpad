@@ -244,10 +244,10 @@ public class Connector {
 
     private void doSendPLCHeartBeat(Connection conn) {
         PLCAddrEntity plcAddr = plcAddrService.findByTypeAndScannerSeq(Constants.PLC_ADDR_TYPE_HEART_BEAT, conn.getInstallSeq());
-        if (null != plcAddr) {
-            log.info("sendPLCHeartBeat, sending heartbeat...");
-            EventBus.getDefault().post(new EventBusMsgPlcCmd(plcAddr.getAddr(), Constants.HEARTBEAT_2_PLC_VAL, conn.getWorkLine()));
-        }
+        if (null == plcAddr) return;
+
+        log.info("sendPLCHeartBeat, sending heartbeat...");
+        EventBus.getDefault().post(new EventBusMsgPlcCmd(plcAddr.getAddr(), Constants.HEARTBEAT_2_PLC_VAL, conn.getWorkLine()));
     }
 
     public void startReconnectService() {

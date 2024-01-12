@@ -66,7 +66,7 @@ public class MsgHandler extends ChannelInboundHandlerAdapter {
                     log.info("channelRead, no read");
                     EventBus.getDefault().post(new EventBusMsgCushionQrCode(null, workLine, installSeq));
                     // 扫码失败PLC报警
-//                    if (Constants.SCANNER_SEQ_MAIN == installSeq)
+//                    if (Params.SCANNER_SEQ_KEY_1 == installSeq)
                     notifyPLC(Constants.PLC_ADDR_TYPE_SCAN_FAILED, installSeq, workLine);
                     return;
                 }
@@ -102,8 +102,9 @@ public class MsgHandler extends ChannelInboundHandlerAdapter {
     private void notifyPLC(Integer plcAddrType, Integer scannerSeq, Integer workLine) {
         IPLCAddrService ps = (IPLCAddrService) ApplicationContextAwareImpl.getBean("plcAddrService");
         PLCAddrEntity plcAddr = ps.findByTypeAndScannerSeq(plcAddrType, scannerSeq);
-        if (null != plcAddr)
-            EventBus.getDefault().post(new EventBusMsgPlcCmd(plcAddr.getAddr(), Constants.DEFAULT_2_PLC_VAL, workLine));
+        if (null == plcAddr) return;
+
+        EventBus.getDefault().post(new EventBusMsgPlcCmd(plcAddr.getAddr(), Constants.DEFAULT_2_PLC_VAL, workLine));
     }
 
     /**

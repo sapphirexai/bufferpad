@@ -42,6 +42,12 @@ public class CushionInfoDTO extends AbsBaseDTO {
     private Integer usedCount;
 
     /**
+     * 开口数
+     */
+    @Schema(description = "开口数")
+    private Integer openCount;
+
+    /**
      * 产线
      */
     @Schema(description = "产线")

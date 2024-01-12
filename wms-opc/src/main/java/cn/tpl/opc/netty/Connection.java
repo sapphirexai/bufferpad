@@ -235,8 +235,11 @@ public class Connection {
     @Subscribe(threadMode = ThreadMode.POSTING)
     public void onMessageEvent(EventBusMsgReadOpenCountFromPLC event) {
         log.info("onMessageEvent, EventBusMsgReadOpenCountFromPLC: {}", event);
+
         if (null == melsecMcNet) return;
+
         if (!workLine.equals(event.getWorkLine())) return;
+
         String addr = event.getAddress();
         log.info("onMessageEvent, reading from PLC =>> Address: {}", addr);
         OperateResultExOne<Integer> operateResult = melsecMcNet.ReadInt32(addr);
