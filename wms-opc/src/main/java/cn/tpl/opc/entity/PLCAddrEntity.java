@@ -1,5 +1,6 @@
 package cn.tpl.opc.entity;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 import lombok.Data;
@@ -18,6 +19,7 @@ public class PLCAddrEntity implements Serializable {
      *
      * @mbg.generated Tue Aug 15 10:48:40 CST 2023
      */
+    @Serial
     private static final long serialVersionUID = 1L;
     /**
      * 主键ID
