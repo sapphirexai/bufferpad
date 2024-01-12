@@ -226,9 +226,10 @@ public class Connection {
             log.error("onMessageEvent, writing cmd to PLC =>> failed, address: {}, cmd: {}", addr, cmd);
             log.error("onMessageEvent, ErrorCode: {}", operateResult.ErrorCode);
             log.error("onMessageEvent, ErrorMsg: {}", operateResult.Message);
-//            nowDead();// 关闭PLC连接等待重连
+            return;
         }
         log.info("onMessageEvent, writing cmd to PLC =>> success");
+        //            nowDead();// 关闭PLC连接等待重连
 //        if (isDead()) nowActive(melsecMcNet);
     }
 
@@ -247,6 +248,7 @@ public class Connection {
             log.error("onMessageEvent, reading from PLC =>> failed, address: {}", addr);
             log.error("onMessageEvent, ErrorCode: {}", operateResult.ErrorCode);
             log.error("onMessageEvent, ErrorMsg: {}", operateResult.Message);
+            return;
         }
 
         Integer content = operateResult.Content;
