@@ -243,7 +243,7 @@ public class Connector {
     private void sendPLCHeartBeat() {
         ConcurrentHashMap<String, Connection> connections = connectionMgr.getConnections();
         if (CollectionUtils.isEmpty(connections)) {
-            log.info("sendPLCHeartBeat, no connections，skip heartbeat...");
+            log.info("sendPLCHeartBeat, no connections, skip heartbeat...");
             return;
         }
         Collection<Connection> connectionsList = connections.values();
