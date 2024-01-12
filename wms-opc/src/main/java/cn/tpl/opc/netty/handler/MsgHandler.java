@@ -52,7 +52,7 @@ public class MsgHandler extends ChannelInboundHandlerAdapter {
         try {
             if (in.isReadable()) {
                 String oMsg = in.toString(CharsetUtil.UTF_8);
-                log.info("channelRead，收到原始数据：{}", oMsg);
+                log.info("channelRead, read success, data => {}", oMsg);
                 // 如果是心跳包，则不做操作
                 if (oMsg.contains(Constants.SCANNER_MSG_HEART_BEAT)) {
                     onHearBeat();
@@ -63,7 +63,7 @@ public class MsgHandler extends ChannelInboundHandlerAdapter {
                 int installSeq = mConnection.getInstallSeq();
 
                 if (oMsg.contains(Constants.SCANNER_MSG_NO_READ)) {
-                    log.info("channelRead，扫码器未读到数据。");
+                    log.info("channelRead, no read");
                     EventBus.getDefault().post(new EventBusMsgCushionQrCode(null, workLine, installSeq));
                     // 扫码失败PLC报警
 //                    if (Constants.SCANNER_SEQ_MAIN == installSeq)
@@ -73,14 +73,14 @@ public class MsgHandler extends ChannelInboundHandlerAdapter {
 
                 // 帧头匹配就进行下一步操作
                 if (oMsg.startsWith(String.valueOf(Constants.SCANNER_MSG_STX))) {
-                    log.info("channelRead，扫码数据帧头匹配，*** 开始操作 ***。");
+                    log.info("channelRead, scanner data matched, *** START ***");
                     // 替换帧头和帧尾
                     String fMsg = oMsg.replaceAll(SCANNER_DATA_REGEX, "");
                     EventBus.getDefault().post(new EventBusMsgCushionQrCode(fMsg, mConnection.getWorkLine(), installSeq));
                 }
 
                 if (oMsg.startsWith(Constants.SCANNER_XZ_STX)) {
-                    log.info("channelRead，扫码数据帧头匹配，*** 开始操作 ***。");
+                    log.info("channelRead, scanner data matched, *** START ***");
                     // 替换帧头和帧尾
                     String fMsg = oMsg.replaceAll(XZ_SCANNER_DATA_REGEX, "");
                     EventBus.getDefault().post(new EventBusMsgCushionQrCode(fMsg, mConnection.getWorkLine(), installSeq));
@@ -110,7 +110,7 @@ public class MsgHandler extends ChannelInboundHandlerAdapter {
      * 收到心跳时
      */
     protected void onHearBeat() {
-        log.info("onHearBeat，来自扫码器的心跳");
+        log.info("onHearBeat, heartbeat from scanner");
         mConnection.resetConnectionResetInterval();
     }
 
