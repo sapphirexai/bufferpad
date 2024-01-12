@@ -37,7 +37,7 @@ public class HeartbeatHandler extends ChannelInboundHandlerAdapter {
                 // 为了防止服务端关闭当前连接，手动发送一个心跳包
                 String hb = Constants.SCANNER_MSG_STX + Constants.SCANNER_MSG_HEART_BEAT + Constants.SCANNER_MSG_ETX;
                 ctx.channel().writeAndFlush(Unpooled.unreleasableBuffer(Unpooled.copiedBuffer(hb.getBytes(CharsetUtil.UTF_8))).duplicate());
-                log.info("userEventTriggered，成功向目标发送心跳包{}，当前连接 => {}:{}", hb, mConnection.getIp(), mConnection.getPort());
+                log.info("userEventTriggered，send heartbeat success {}, ip => {}:{}", hb, mConnection.getIp(), mConnection.getPort());
             } else {
                 super.userEventTriggered(ctx, event);
             }
@@ -46,21 +46,21 @@ public class HeartbeatHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        log.info("与目标建立连接成功，当前连接 => {}:{}", mConnection.getIp(), mConnection.getPort());
+        log.info("channelActive, connect success, ip => {}:{}", mConnection.getIp(), mConnection.getPort());
         super.channelActive(ctx);
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         super.channelInactive(ctx);
-        log.warn("channelInactive, 服务端主动关闭了连接....");
+        log.warn("channelInactive, connection closed....");
         onConnectionClosed();
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         super.exceptionCaught(ctx, cause);
-        log.error("exceptionCaught, Netty连接中异常捕获：", cause);
+        log.error("exceptionCaught, connection exception => ", cause);
         onConnectionClosed();
     }
 
