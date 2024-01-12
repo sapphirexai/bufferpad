@@ -141,7 +141,7 @@ public class CushionController {
                 exportDatas.add(exportData);
             }
             String fileType = ".xls";
-            String fileName = "缓冲垫_" + DateUtil.now() + fileType;
+            String fileName = "CushionInfo_" + DateUtil.now() + fileType;
             response.setContentType(fileType + "; charset=UTF-8");
             response.setHeader("Content-Disposition", "attachment;filename=" + new String(fileName.getBytes(StandardCharsets.UTF_8), StandardCharsets.ISO_8859_1));
             EasyExcelUtils.export(response.getOutputStream(), exportDatas, ExportCushionInfoDTO.class);
