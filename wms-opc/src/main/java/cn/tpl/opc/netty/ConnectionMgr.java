@@ -58,6 +58,10 @@ public class ConnectionMgr {
         CONNECTIONS.put(targetKey(connection.getIp(), connection.getPort()), connection);
     }
 
+    public void removeConnection(Connection connection) {
+        removeConnection(connection.getIp(), connection.getPort());
+    }
+
     public void removeConnection(String ip, Integer port) {
         CONNECTIONS.remove(targetKey(ip, port));
     }
