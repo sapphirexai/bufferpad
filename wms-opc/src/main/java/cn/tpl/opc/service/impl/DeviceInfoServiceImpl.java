@@ -26,12 +26,12 @@ public class DeviceInfoServiceImpl implements IDeviceInfoService {
     private DeviceInfoEntityMapper deviceInfoEntityMapper;
 
     public boolean deleteById(Long id) {
-        return deviceInfoEntityMapper.deleteById(id) > 0;
+        return deviceInfoEntityMapper.deleteByPrimaryKey(id) > 0;
     }
 
     @Override
     public DeviceInfoDTO findById(Long id) {
-        return deviceInfo2DTO(deviceInfoEntityMapper.selectById(id));
+        return deviceInfo2DTO(deviceInfoEntityMapper.selectByPrimaryKey(id));
     }
 
     @Override
