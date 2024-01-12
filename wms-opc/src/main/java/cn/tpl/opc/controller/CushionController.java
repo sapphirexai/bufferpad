@@ -109,11 +109,11 @@ public class CushionController {
     }
 
     @Operation(summary = "批量导出缓冲垫信息")
-    @GetMapping("/cushions/excel")
+    @PostMapping("/cushions/excel")
     public ResultDTO<Boolean> exportCushions(
             @Parameter(hidden = true) HttpServletResponse response,
             @Parameter(description = "需要导出的缓冲垫ID列表")
-            @RequestParam List<Long> ids) {
+            @RequestBody List<Long> ids) {
         try {
             log.info("exportCushions, ids => {}", ids);
             if (CollectionUtils.isEmpty(ids))
