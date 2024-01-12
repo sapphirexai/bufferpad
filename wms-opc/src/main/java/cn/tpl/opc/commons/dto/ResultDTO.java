@@ -16,7 +16,6 @@ import org.apache.commons.lang3.StringUtils;
  */
 @EqualsAndHashCode(callSuper = true)
 @Data
-@ToString
 public final class ResultDTO<T> extends AbsBaseDTO {
     private ResultDTO() {
     }
@@ -85,6 +84,10 @@ public final class ResultDTO<T> extends AbsBaseDTO {
      */
     public boolean isCodeSuccess() {
         return EResultCode.SUCCESS.getCode() == this.getCode();
+    }
+
+    public static <T> ResultDTO<T> success() {
+        return new ResultDTO<>();
     }
 
     public static <T> ResultDTO<T> success(T data) {

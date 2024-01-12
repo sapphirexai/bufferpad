@@ -63,11 +63,26 @@ public class ConnectionMgr {
     }
 
     public void removeConnection(String ip, Integer port) {
+        disconnect(ip, port);
         CONNECTIONS.remove(targetKey(ip, port));
     }
 
     public void removeAllConnections() {
+        disconnectAll();
         CONNECTIONS.clear();
+    }
+
+    public void disconnect(String ip, Integer port) {
+        Connection connection = getConnection(ip, port);
+        if (null == connection) return;
+        connection.nowDead();
+    }
+
+    public void disconnectAll() {
+        for (Connection connection : CONNECTIONS.values()) {
+            if (null == connection) continue;
+            connection.nowDead();
+        }
     }
 
     public EventLoopGroup getWorker() {

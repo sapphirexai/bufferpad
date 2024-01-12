@@ -4,16 +4,14 @@ import cn.tpl.opc.commons.dto.ResultDTO;
 import cn.tpl.opc.commons.dto.result.DeviceInfoDTO;
 import cn.tpl.opc.commons.dto.result.PageData;
 import cn.tpl.opc.commons.scheme.base.BasePageScheme;
+import cn.tpl.opc.netty.ConnectionMgr;
 import cn.tpl.opc.service.IDeviceInfoService;
 import cn.tpl.opc.service.INettyService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import java.util.List;
@@ -33,6 +31,9 @@ public class DeviceController {
 
     @Resource
     private IDeviceInfoService deviceInfoService;
+
+    @Resource
+    private ConnectionMgr connectionMgr;
 
     @Operation(summary = "分页查询设备列表，用于设备配置相关")
     @GetMapping("/devicesPage")
@@ -70,6 +71,60 @@ public class DeviceController {
     public ResultDTO<List<DeviceInfoDTO>> scannerConnections() {
         try {
             return nettyService.connectScanners();
+        } catch (Exception e) {
+            return ResultDTO.exception(e);
+        }
+    }
+
+    @Operation(summary = "通过设备ID删除指定设备的连接")
+    @DeleteMapping("/connection/{id}")
+    public ResultDTO<?> removeConnection(
+            @Parameter(description = "设备ID")
+            @PathVariable("id") Long id) {
+        try {
+            log.info("removeConnection, removing connection, id => {}", id);
+
+            if (null == id)
+                return ResultDTO.failure("设备ID不能为空！");
+
+            DeviceInfoDTO deviceInfoDTO = deviceInfoService.findById(id);
+            if (null == deviceInfoDTO) return ResultDTO.failure("无此设备！");
+
+            String ip = deviceInfoDTO.getIp();
+            Integer port = deviceInfoDTO.getPort();
+            log.info("removeConnection, removing connection, ip => {}:{}", ip, port);
+            connectionMgr.removeConnection(deviceInfoDTO.getIp(), deviceInfoDTO.getPort());
+            log.info("removeConnection, removing connection => success");
+            return ResultDTO.success();
+        } catch (Exception e) {
+            return ResultDTO.exception(e);
+        }
+    }
+
+    @Operation(summary = "通过设备ID删除指定设备数据和对应连接")
+    @DeleteMapping("{id}")
+    public ResultDTO<?> deleteDevice(
+            @Parameter(description = "设备ID")
+            @PathVariable("id") Long id) {
+        try {
+            log.info("deleteDevice, deleting deviceInfo, id => {}", id);
+
+            if (null == id)
+                return ResultDTO.failure("设备ID不能为空！");
+
+            DeviceInfoDTO deviceInfoDTO = deviceInfoService.findById(id);
+            if (null == deviceInfoDTO) return ResultDTO.failure("无此设备！");
+
+            boolean result = deviceInfoService.deleteById(id);
+            if (result) {
+                String ip = deviceInfoDTO.getIp();
+                Integer port = deviceInfoDTO.getPort();
+                log.info("deleteDevice, removing connection, ip => {}:{}", ip, port);
+                connectionMgr.removeConnection(deviceInfoDTO.getIp(), deviceInfoDTO.getPort());
+                log.info("deleteDevice, removing connection => success");
+            }
+
+            return result ? ResultDTO.success() : ResultDTO.failure("删除失败！");
         } catch (Exception e) {
             return ResultDTO.exception(e);
         }

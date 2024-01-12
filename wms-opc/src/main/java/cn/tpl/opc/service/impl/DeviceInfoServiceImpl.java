@@ -25,6 +25,15 @@ public class DeviceInfoServiceImpl implements IDeviceInfoService {
     @Resource
     private DeviceInfoEntityMapper deviceInfoEntityMapper;
 
+    public boolean deleteById(Long id) {
+        return deviceInfoEntityMapper.deleteById(id) > 0;
+    }
+
+    @Override
+    public DeviceInfoDTO findById(Long id) {
+        return deviceInfo2DTO(deviceInfoEntityMapper.selectById(id));
+    }
+
     @Override
     public List<DeviceInfoEntity> listDeviceInfoByType(Integer type) {
         return deviceInfoEntityMapper.listDeviceInfoByType(type);
@@ -51,6 +60,7 @@ public class DeviceInfoServiceImpl implements IDeviceInfoService {
     }
 
     private DeviceInfoDTO deviceInfo2DTO(DeviceInfoEntity deviceInfo) {
+        if (null == deviceInfo) return null;
         DeviceInfoDTO deviceInfoDTO = new DeviceInfoDTO();
         BeanUtils.copyProperties(deviceInfo, deviceInfoDTO);
         return deviceInfoDTO;

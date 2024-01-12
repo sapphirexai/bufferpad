@@ -15,6 +15,22 @@ import java.util.List;
  */
 public interface IDeviceInfoService {
     /**
+     * 根据ID删除设备信息
+     *
+     * @param id 设备ID
+     * @return 删除结果
+     */
+    boolean deleteById(Long id);
+
+    /**
+     * 通过ID查找设备
+     *
+     * @param id 设备ID
+     * @return 设备信息
+     */
+    DeviceInfoDTO findById(Long id);
+
+    /**
      * 根据类型查询设备信息列表
      *
      * @param type 类型
