@@ -150,7 +150,7 @@ public class Connector {
     private void reconnect() {
         ConcurrentHashMap<String, Connection> connections = connectionMgr.getConnections();
         if (CollectionUtils.isEmpty(connections)) {
-            log.info("当前Netty连接列表为空，不进行重连操作...");
+            log.info("reconnect, no necctions, skip reconnection...");
             return;
         }
         Collection<Connection> connectionsList = connections.values();
@@ -184,7 +184,7 @@ public class Connector {
     private boolean doReconnect(Connection conn) {
         if (null == conn) return false;
         if (conn.isActive()) return true;
-        log.info("当前连接已断开，尝试重连 => {}:{}...", conn.getIp(), conn.getPort());
+        log.info("doReconnect, reconnecting => {}:{}...", conn.getIp(), conn.getPort());
         return doConnect(conn);
     }
 
@@ -197,13 +197,13 @@ public class Connector {
      */
     private boolean connectScanner(Connection conn, String ip, int port) {
         try {
-            log.info("connect，当前正在连接扫码器 =>> {}", ip + ":" + port);
+            log.info("connect，connecting scanner =>> {}", ip + ":" + port);
             Bootstrap client = fastBuildClient(conn);// 创建一个客户端）
             ChannelFuture cf = client.connect(ip, port).sync(); // 发起连接
             conn.nowActive(cf);
             return true;
         } catch (Exception e) {
-            log.error("Netty连接异常", e);
+            log.error("connect, error", e);
             return false;
         }
     }
@@ -216,17 +216,17 @@ public class Connector {
      * @param port 端口号
      */
     private boolean connectPLC(Connection conn, String ip, int port) {
-        log.info("connectPLC，当前正在连接PLC =>> {}", ip + ":" + port);
+        log.info("connectPLC, connecting PLC =>> {}", ip + ":" + port);
         MelsecMcNet melsecMcNet = new MelsecMcNet(ip, port);
         OperateResult operateResult = melsecMcNet.ConnectServer();
         if (operateResult.IsSuccess) {
-            log.info("connectPLC，当前正在连接PLC =>> 连接成功");
+            log.info("connectPLC, connecting PLC =>> success");
             conn.nowActive(melsecMcNet);
             return true;
         }
-        log.error("connectPLC，当前正在连接PLC =>> 连接失败，当前连接地址===》{}:{}", ip, port);
-        log.error("connectPLC，ErrorCode：{}", operateResult.ErrorCode);
-        log.error("connectPLC，ErrorMsg：{}", operateResult.Message);
+        log.error("connectPLC, connecting PLC =>> failed, ip =>>{}:{}", ip, port);
+        log.error("connectPLC, ErrorCode：{}", operateResult.ErrorCode);
+        log.error("connectPLC, ErrorMsg：{}", operateResult.Message);
         return false;
     }
 
@@ -243,7 +243,7 @@ public class Connector {
     private void sendPLCHeartBeat() {
         ConcurrentHashMap<String, Connection> connections = connectionMgr.getConnections();
         if (CollectionUtils.isEmpty(connections)) {
-            log.info("sendPLCHeartBeat，当前Netty连接列表为空，不进行心跳发送操作...");
+            log.info("sendPLCHeartBeat, no connections，skip heartbeat...");
             return;
         }
         Collection<Connection> connectionsList = connections.values();
@@ -257,7 +257,7 @@ public class Connector {
     private void doSendPLCHeartBeat(Connection conn) {
         PLCAddrEntity plcAddr = plcAddrService.findByTypeAndScannerSeq(Constants.PLC_ADDR_TYPE_HEART_BEAT, conn.getInstallSeq());
         if (null != plcAddr) {
-            log.info("sendPLCHeartBeat，正在发送PLC心跳包...");
+            log.info("sendPLCHeartBeat, sending heartbeat...");
             EventBus.getDefault().post(new EventBusMsgPlcCmd(plcAddr.getAddr(), Constants.HEARTBEAT_2_PLC_VAL, conn.getWorkLine()));
         }
     }
@@ -274,19 +274,6 @@ public class Connector {
 
     private boolean isScannerConn(Connection conn) {
         return Params.DEVICE_TYPE_KEY_SCANNER == conn.getType();
-    }
-
-    /**
-     * 连接被迫关闭时调用
-     *
-     * @param ip   目标IP地址
-     * @param port 目标端口
-     */
-    public void onConnectionClosed(String ip, int port) {
-        Connection conn = connectionMgr.getConnection(ip, port);
-        if (null == conn) return;
-
-        conn.nowDead();
     }
 
     /**
