@@ -29,12 +29,12 @@ public class ConnectionMgr {
     private static final EventLoopGroup WORKER = new NioEventLoopGroup();
 
 
-    public String targetKey(String ip, int port) {
+    public String targetKey(String ip, Integer port) {
         return ip + CONNECTION_KEY_DIVIDER + port;
     }
 
 
-    public Connection getConnection(String ip, int port) {
+    public Connection getConnection(String ip, Integer port) {
         return getConnection(targetKey(ip, port));
     }
 
@@ -56,6 +56,14 @@ public class ConnectionMgr {
 
     public void saveConnection(Connection connection) {
         CONNECTIONS.put(targetKey(connection.getIp(), connection.getPort()), connection);
+    }
+
+    public void removeConnection(String ip, Integer port) {
+        CONNECTIONS.remove(targetKey(ip, port));
+    }
+
+    public void removeAllConnections() {
+        CONNECTIONS.clear();
     }
 
     public EventLoopGroup getWorker() {

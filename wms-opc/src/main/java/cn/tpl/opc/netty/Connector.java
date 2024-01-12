@@ -63,7 +63,7 @@ public class Connector {
 
     private Bootstrap fastBuildClient(Connection connection) {
         String ip = connection.getIp();
-        int port = connection.getPort();
+        Integer port = connection.getPort();
         Bootstrap client = new Bootstrap();
         client.group(connectionMgr.getWorker())
                 .channel(NioSocketChannel.class)
@@ -93,7 +93,7 @@ public class Connector {
      */
     public boolean connect(Connection conn) {
         String ip = conn.getIp();
-        int port = conn.getPort();
+        Integer port = conn.getPort();
         if (connectionExists(ip, port)) return reconnectExistConnection(ip, port);
 
         synchronized (this) {
@@ -126,7 +126,7 @@ public class Connector {
      * @return 重连结果
      * @see #doReconnect(Connection)
      */
-    private boolean reconnectExistConnection(String ip, int port) {
+    private boolean reconnectExistConnection(String ip, Integer port) {
         return doReconnect(connectionMgr.getConnection(ip, port));
     }
 
@@ -155,7 +155,7 @@ public class Connector {
      */
     private boolean doConnect(Connection conn) {
         String ip = conn.getIp();
-        int port = conn.getPort();
+        Integer port = conn.getPort();
         if (isScannerConn(conn))
             return connectScanner(conn, ip, port);
         else
@@ -183,7 +183,7 @@ public class Connector {
      * @param ip   IP地址
      * @param port 端口号
      */
-    private boolean connectScanner(Connection conn, String ip, int port) {
+    private boolean connectScanner(Connection conn, String ip, Integer port) {
         try {
             log.info("connect，connecting scanner => {}", ip + ":" + port);
             Bootstrap client = fastBuildClient(conn);// 创建一个客户端）
@@ -203,7 +203,7 @@ public class Connector {
      * @param ip   IP地址
      * @param port 端口号
      */
-    private boolean connectPLC(Connection conn, String ip, int port) {
+    private boolean connectPLC(Connection conn, String ip, Integer port) {
         log.info("connectPLC, connecting PLC => {}", ip + ":" + port);
         MelsecMcNet melsecMcNet = new MelsecMcNet(ip, port);
         OperateResult operateResult = melsecMcNet.ConnectServer();
@@ -271,7 +271,7 @@ public class Connector {
      * @param port 端口号
      * @return true 已存在，false 不存在
      */
-    private boolean connectionExists(String ip, int port) {
+    private boolean connectionExists(String ip, Integer port) {
         return null != connectionMgr.getConnection(ip, port);
     }
 }
