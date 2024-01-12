@@ -104,7 +104,7 @@ public class Connector {
             conn.setOnStatusChangeListener(new Connection.OnStatusChangeListener() {
                 @Override
                 public void onStatusChanged(Connection conn) {
-                    log.info("onStatusChanged，conn：{}", conn);
+                    log.info("onStatusChanged，conn => {}", conn);
                     sendSseMsg(conn);
                 }
 
@@ -185,7 +185,7 @@ public class Connector {
      */
     private boolean connectScanner(Connection conn, String ip, int port) {
         try {
-            log.info("connect，connecting scanner =>> {}", ip + ":" + port);
+            log.info("connect，connecting scanner => {}", ip + ":" + port);
             Bootstrap client = fastBuildClient(conn);// 创建一个客户端）
             ChannelFuture cf = client.connect(ip, port).sync(); // 发起连接
             conn.nowActive(cf);
@@ -204,15 +204,15 @@ public class Connector {
      * @param port 端口号
      */
     private boolean connectPLC(Connection conn, String ip, int port) {
-        log.info("connectPLC, connecting PLC =>> {}", ip + ":" + port);
+        log.info("connectPLC, connecting PLC => {}", ip + ":" + port);
         MelsecMcNet melsecMcNet = new MelsecMcNet(ip, port);
         OperateResult operateResult = melsecMcNet.ConnectServer();
         if (operateResult.IsSuccess) {
-            log.info("connectPLC, connecting PLC =>> success");
+            log.info("connectPLC, connecting PLC => success");
             conn.nowActive(melsecMcNet);
             return true;
         }
-        log.error("connectPLC, connecting PLC =>> failed, ip =>>{}:{}", ip, port);
+        log.error("connectPLC, connecting PLC => failed, ip =>{}:{}", ip, port);
         log.error("connectPLC, ErrorCode：{}", operateResult.ErrorCode);
         log.error("connectPLC, ErrorMsg：{}", operateResult.Message);
         return false;
