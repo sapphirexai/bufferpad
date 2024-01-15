@@ -17,6 +17,7 @@ else
   newPid=$(pgrep -f "$app.jar")
   if [ -n "$newPid" ]; then
     echo "$app is running again, its new pid is $newPid"
+    echo ps -ef | grep java | grep "$app.jar" | awk '{print $2}'
   else
     echo "$app reboot failed"
   fi
