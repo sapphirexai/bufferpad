@@ -8,7 +8,7 @@ else
   pid=$(pgrep -f "$app.jar")
   if [ -n "$pid" ]; then
     echo "Killing $app"
-    pgrep -f $app.jar | xargs kill
+    kill -9 $pid
     echo "$app is dead"
   else
     echo "$app is not running"
