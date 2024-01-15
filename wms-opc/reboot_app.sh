@@ -8,7 +8,7 @@ else
   pid=$(pgrep -f "$app.jar")
   if [ -n "$pid" ]; then
     echo "Killing $app"
-    ps -ef | grep java | grep $app.jar | awk '{print $2}' | xargs kill
+    ps -ef | grep java | grep "$app.jar" | awk '{print $2}' | xargs kill
     echo "$app is dead"
   else
     echo "$app is not running"
