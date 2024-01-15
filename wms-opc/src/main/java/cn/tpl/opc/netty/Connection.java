@@ -154,7 +154,8 @@ public class Connection {
             return;
         }
 
-        if (cf.channel().isWritable()) {
+        if (cf.isSuccess()) {
+            cf.channel().write("test");
             log.info("nowActive, activated, set status active");
             status = Params.NETTY_CONNECTION_KEY_STATUS_ACTIVE;
         }
