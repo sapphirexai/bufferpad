@@ -156,6 +156,8 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
                     notifyAllScannersSates2PLC(qrCode, Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS, workLine);
                 else
                     notifyPLC(qrCode, Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS, cushionScannerSeq, workLine);
+
+                return ResultDTO.success(onScanCodeSuccess(qrCode, cushionScannerSeq));
             } else {
                 notifyPLC(qrCode, Constants.PLC_ADDR_TYPE_SCAN_SUCCESS, scannerSeq, workLine);
             }
