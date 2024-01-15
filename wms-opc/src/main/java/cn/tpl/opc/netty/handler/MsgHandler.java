@@ -119,6 +119,7 @@ public class MsgHandler extends ChannelInboundHandlerAdapter {
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         super.exceptionCaught(ctx, cause);
         log.error("exceptionCaught, connection exception => ", cause);
+        ctx.close();
         onConnectionClosed();
     }
 
