@@ -1,5 +1,6 @@
 package cn.tpl.opc.service.impl;
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.tpl.opc.commons.dto.result.DeviceInfoDTO;
 import cn.tpl.opc.commons.dto.result.PageData;
 import cn.tpl.opc.commons.scheme.base.BasePageScheme;
@@ -8,7 +9,6 @@ import cn.tpl.opc.mapper.DeviceInfoEntityMapper;
 import cn.tpl.opc.service.IDeviceInfoService;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -62,7 +62,7 @@ public class DeviceInfoServiceImpl implements IDeviceInfoService {
     private DeviceInfoDTO deviceInfo2DTO(DeviceInfoEntity deviceInfo) {
         if (null == deviceInfo) return null;
         DeviceInfoDTO deviceInfoDTO = new DeviceInfoDTO();
-        BeanUtils.copyProperties(deviceInfo, deviceInfoDTO);
+        BeanUtil.copyProperties(deviceInfo, deviceInfoDTO);
         return deviceInfoDTO;
     }
 }

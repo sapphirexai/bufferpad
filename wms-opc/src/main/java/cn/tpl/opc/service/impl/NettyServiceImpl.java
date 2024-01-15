@@ -1,5 +1,6 @@
 package cn.tpl.opc.service.impl;
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.tpl.opc.commons.constant.Constants;
 import cn.tpl.opc.commons.constant.Params;
 import cn.tpl.opc.commons.dto.ResultDTO;
@@ -12,7 +13,6 @@ import cn.tpl.opc.netty.MsgBus;
 import cn.tpl.opc.service.IDeviceInfoService;
 import cn.tpl.opc.service.INettyService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -71,8 +71,8 @@ public class NettyServiceImpl implements INettyService {
     private DeviceInfoDTO device2DTO(DeviceInfoEntity deviceInfo) {
         DeviceInfoDTO deviceInfoDTO = new DeviceInfoDTO();
         Connection connection = new Connection();
-        BeanUtils.copyProperties(deviceInfo, connection);
-        BeanUtils.copyProperties(deviceInfo, deviceInfoDTO);
+        BeanUtil.copyProperties(deviceInfo, connection);
+        BeanUtil.copyProperties(deviceInfo, deviceInfoDTO);
         boolean isActive = connector.connect(connection);
         if (isActive)
             deviceInfoDTO.setStatus(Params.NETTY_CONNECTION_KEY_STATUS_ACTIVE);
@@ -81,7 +81,7 @@ public class NettyServiceImpl implements INettyService {
 
     private DeviceInfoDTO connection2DeviceDTO(Connection connection) {
         DeviceInfoDTO deviceInfoDTO = new DeviceInfoDTO();
-        BeanUtils.copyProperties(connection, deviceInfoDTO);
+        BeanUtil.copyProperties(connection, deviceInfoDTO);
         return deviceInfoDTO;
     }
 }

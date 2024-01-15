@@ -29,7 +29,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Service;
@@ -180,7 +179,7 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
         if (null == cushionInfoEntity) return null;
         log.info("onScanCodeSuccess");
         CushionInfoDTO cushionInfoDTO = new CushionInfoDTO();
-        BeanUtils.copyProperties(cushionInfoEntity, cushionInfoDTO);
+        BeanUtil.copyProperties(cushionInfoEntity, cushionInfoDTO);
         cushionInfoDTO.setScannerSeq(scannerSeq);
         sseService.sendCushionMsg(cushionInfoDTO);// 推送一条缓冲垫数据到客户端
         return cushionInfoDTO;

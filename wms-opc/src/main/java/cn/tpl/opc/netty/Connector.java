@@ -2,6 +2,7 @@ package cn.tpl.opc.netty;
 
 import HslCommunication.Core.Types.OperateResult;
 import HslCommunication.Profinet.Melsec.MelsecMcNet;
+import cn.hutool.core.bean.BeanUtil;
 import cn.tpl.opc.commons.constant.Constants;
 import cn.tpl.opc.commons.constant.Params;
 import cn.tpl.opc.commons.dto.event.EventBusMsgPlcCmd;
@@ -24,7 +25,6 @@ import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.CharsetUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.greenrobot.eventbus.EventBus;
-import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
@@ -110,7 +110,7 @@ public class Connector {
 
                 private void sendSseMsg(Connection conn) {
                     DeviceInfoDTO deviceInfo = new DeviceInfoDTO();
-                    BeanUtils.copyProperties(conn, deviceInfo);
+                    BeanUtil.copyProperties(conn, deviceInfo);
                     sseService.sendDeviceMsg(deviceInfo);
                 }
             });
