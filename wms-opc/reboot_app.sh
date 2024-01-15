@@ -15,5 +15,6 @@ else
   fi
   sudo nohup java -jar /home/gitlab-runner/application/wms-opc/$app.jar >/home/gitlab-runner/application/wms-opc/$app-running.log 2>&1 &
   echo "### RESULT ###"
-  echo pgrep -fa "$app.jar"
+  result=$(pgrep -fa "$app.jar")
+  echo $result
 fi
