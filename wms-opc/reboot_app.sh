@@ -8,13 +8,11 @@ else
   pid=$(pgrep -f "$app.jar")
   if [ -n "$pid" ]; then
     echo "Killing $app"
-    ps -ef | grep java | grep "$app.jar" | awk '{print $2}' | xargs kill
+    pgrep -f "$app.jar" | xargs kill
     echo "$app is dead"
   else
     echo "$app is not running"
   fi
-  sudo nohup java -jar /home/gitlab-runner/application/wms-opc/$app.jar >/home/gitlab-runner/application/wms-opc/$app-running.log 2>&1 &
-  echo "### RESULT ###"
-  result=$(pgrep -fa "$app.jar")
-  echo $result
+  sudo nohup java -jar /home/gitlab-runner/application/wms-opc/$app.jar >/dev/null 2>&1 &
+  echo "### START SUCCESS ###"
 fi
