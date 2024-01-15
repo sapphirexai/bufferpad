@@ -14,11 +14,6 @@ else
     echo "$app is not running"
   fi
   sudo nohup java -jar /home/gitlab-runner/application/wms-opc/$app.jar >/home/gitlab-runner/application/wms-opc/$app-running.log 2>&1 &
-  newPid=$(pgrep -f "$app.jar")
-  if [ -n "$newPid" ]; then
-    echo "$app is running again, its new pid is $newPid"
-    echo ps -ef | grep java | grep "$app.jar" | awk '{print $2}'
-  else
-    echo "$app reboot failed"
-  fi
+  echo "### RESULT ###"
+  echo pgrep -fa "$app.jar"
 fi
