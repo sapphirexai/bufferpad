@@ -115,19 +115,4 @@ public class MsgHandler extends ChannelInboundHandlerAdapter {
         mConnection.resetConnectionResetInterval();
     }
 
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        super.exceptionCaught(ctx, cause);
-        log.error("exceptionCaught, connection exception => ", cause);
-        ctx.close();
-        onConnectionClosed();
-    }
-
-    /**
-     * 连接被迫关闭时调用
-     */
-    private void onConnectionClosed() {
-        log.info("onConnectionClosed");
-        mConnection.nowDead();
-    }
 }
