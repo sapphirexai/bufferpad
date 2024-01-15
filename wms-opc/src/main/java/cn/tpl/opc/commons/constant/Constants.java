@@ -11,6 +11,11 @@ public final class Constants {
     }
 
     /**
+     * NETTY连接超时时间，单位：毫秒
+     */
+    public static final int NETTY_CONNECT_TIMEOUT_MILLIS = 3500;
+
+    /**
      * 产线，全部
      */
     public static final int WORK_LINE_ALL = 0;

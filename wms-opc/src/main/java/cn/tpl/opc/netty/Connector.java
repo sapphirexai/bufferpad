@@ -67,6 +67,7 @@ public class Connector {
         Bootstrap client = new Bootstrap();
         client.group(connectionMgr.getWorker())
                 .channel(NioSocketChannel.class)
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, Constants.NETTY_CONNECT_TIMEOUT_MILLIS)
                 .option(ChannelOption.SO_KEEPALIVE, true)
                 .handler(new ChannelInitializer<SocketChannel>() {
                     @Override
@@ -189,7 +190,7 @@ public class Connector {
             Bootstrap client = fastBuildClient(conn);// 创建一个客户端）
             ChannelFuture cf = client.connect(ip, port).sync(); // 发起连接
             conn.nowActive(cf);
-            return true;
+            return conn.isActive();
         } catch (Exception e) {
             log.error("connect, error", e);
             return false;
