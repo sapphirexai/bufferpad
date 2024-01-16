@@ -75,7 +75,7 @@ public class Connector {
                         // 添加一个编码处理器，对数据编码为UTF-8格式
                         sc.pipeline().addLast(new StringEncoder(CharsetUtil.UTF_8));
                         // 配置如果对应时间内未触发写事件，就会触发写闲置事件
-                        sc.pipeline().addLast(new IdleStateHandler(0, 30, 0, TimeUnit.SECONDS));
+                        sc.pipeline().addLast(new IdleStateHandler(0, 3, 0, TimeUnit.SECONDS));
                         // 添加一个入站处理器，对收到的数据进行处理
                         sc.pipeline().addLast(new MsgHandler(connection));
                         // 添加心跳处理器
