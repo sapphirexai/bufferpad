@@ -234,10 +234,8 @@ public class Connector {
 
     private void sendPLCHeartBeat() {
         ConcurrentHashMap<String, Connection> connections = connectionMgr.getConnections();
-        if (CollectionUtils.isEmpty(connections)) {
-            log.info("sendPLCHeartBeat, no connections, skip heartbeat...");
-            return;
-        }
+        if (CollectionUtils.isEmpty(connections)) return;
+
         Collection<Connection> connectionsList = connections.values();
         for (Connection conn : connectionsList) {
             if (conn.getType() == Params.DEVICE_TYPE_KEY_PLC) {
