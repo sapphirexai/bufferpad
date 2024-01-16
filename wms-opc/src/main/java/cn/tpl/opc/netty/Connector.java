@@ -16,6 +16,7 @@ import cn.tpl.opc.service.ISseService;
 import cn.tpl.opc.service.impl.PLCAddrServiceImpl;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.socket.SocketChannel;
@@ -190,8 +191,18 @@ public class Connector {
         try {
             log.info("connect，connecting scanner => {}", ip + ":" + port);
             Bootstrap client = fastBuildClient(conn);// 创建一个客户端）
-            ChannelFuture cf = client.connect(ip, port).sync();// 发起连接
-            conn.nowActive(cf);
+            ChannelFuture cf = client.connect(ip, port).addListener(new ChannelFutureListener() {
+                @Override
+                public void operationComplete(ChannelFuture future) throws Exception {
+                    Throwable cause = future.cause();
+                    if (cause != null) {
+                        log.info("connect，error => {}", cause);
+                    }
+                    if (future.isSuccess())
+                        conn.nowActive(future);
+                }
+            }).sync();// 发起连接
+//            conn.nowActive(cf);
             return conn.isActive();
         } catch (Exception e) {
             log.error("connect, error", e);
