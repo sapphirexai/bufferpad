@@ -9,7 +9,7 @@ import cn.tpl.opc.commons.constant.Params;
 import cn.tpl.opc.commons.dto.event.EventBusMsgPlcCmd;
 import cn.tpl.opc.commons.dto.event.EventBusMsgReadOpenCountFromPLC;
 import cn.tpl.opc.service.ICushionInfoService;
-import cn.tpl.opc.util.PLCUtils;
+import cn.tpl.opc.util.NetUtils;
 import io.netty.channel.ChannelFuture;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -205,7 +205,7 @@ public class Connection {
 
         if (null == melsecMcNet) return;
 
-        if (PLCUtils.pingPLCFailed(melsecMcNet)) return;
+        if (NetUtils.pingFailed(melsecMcNet.getIpAddress())) return;
 
         if (!workLine.equals(event.getWorkLine())) return;
         String addr = event.getAddress();
@@ -228,7 +228,7 @@ public class Connection {
 
         if (null == melsecMcNet) return;
 
-        if (PLCUtils.pingPLCFailed(melsecMcNet)) return;
+        if (NetUtils.pingFailed(melsecMcNet.getIpAddress())) return;
 
         if (!workLine.equals(event.getWorkLine())) return;
 

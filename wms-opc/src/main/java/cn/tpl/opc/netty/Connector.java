@@ -12,7 +12,7 @@ import cn.tpl.opc.netty.handler.HeartbeatHandler;
 import cn.tpl.opc.netty.handler.MsgHandler;
 import cn.tpl.opc.service.IPLCAddrService;
 import cn.tpl.opc.service.ISseService;
-import cn.tpl.opc.util.PLCUtils;
+import cn.tpl.opc.util.NetUtils;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelInitializer;
@@ -170,7 +170,7 @@ public class Connector {
     private boolean doReconnect(Connection conn) {
         if (null == conn) return false;
         if (conn.isActive()) return true;
-        log.info("doReconnect, reconnecting, ip => {}:{}...", conn.getIp(), conn.getPort());
+        log.info("doReconnect, reconnecting...");
         return doConnect(conn);
     }
 
@@ -184,6 +184,8 @@ public class Connector {
     private boolean connectScanner(Connection conn, String ip, Integer port) {
         try {
             log.info("connect, connecting scanner => {}", ip + ":" + port);
+            if (NetUtils.pingFailed(ip)) return false;
+
             fastBuildClient(conn)// 创建一个客户端）
                     .connect(ip, port)
                     .addListener(ChannelFutureListener.CLOSE_ON_FAILURE)
@@ -209,10 +211,9 @@ public class Connector {
      */
     private boolean connectPLC(Connection conn, String ip, Integer port) {
         log.info("connectPLC, connecting PLC => {}", ip + ":" + port);
+        if (NetUtils.pingFailed(ip)) return false;
+
         MelsecMcNet melsecMcNet = new MelsecMcNet(ip, port);
-
-        if (PLCUtils.pingPLCFailed(melsecMcNet)) return false;
-
         OperateResult operateResult = melsecMcNet.ConnectServer();
         if (operateResult.IsSuccess) {
             log.info("connectPLC, connecting PLC => success");
