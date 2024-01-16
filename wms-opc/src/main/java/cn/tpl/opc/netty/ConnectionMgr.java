@@ -18,27 +18,22 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 @Component("connectionMgr")
 public class ConnectionMgr {
-    private static final String CONNECTION_KEY_DIVIDER = "_";
+//    private static final String CONNECTION_KEY_DIVIDER = "_";
 
     /**
      * 用于保存已连接的通道对象
      */
     // TODO: 2023/4/6 前期先这样用于测试，后面优化存放
-    private static final ConcurrentHashMap<String, Connection> CONNECTIONS = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<Long, Connection> CONNECTIONS = new ConcurrentHashMap<>();
 
     private static final EventLoopGroup WORKER = new NioEventLoopGroup();
 
 
-    public String targetKey(String ip, Integer port) {
-        return ip + CONNECTION_KEY_DIVIDER + port;
-    }
+//    public String targetKey(String ip, Integer port) {
+//        return ip + CONNECTION_KEY_DIVIDER + port;
+//    }
 
-
-    public Connection getConnection(String ip, Integer port) {
-        return getConnection(targetKey(ip, port));
-    }
-
-    public ConcurrentHashMap<String, Connection> getConnections() {
+    public ConcurrentHashMap<Long, Connection> getConnections() {
         return CONNECTIONS;
     }
 
@@ -50,40 +45,40 @@ public class ConnectionMgr {
         return connByWorkLine;
     }
 
-    private Connection getConnection(String key) {
+    public boolean connectionExists(Long key) {
+        return CONNECTIONS.containsKey(key);
+    }
+
+    public Connection getConnection(Long key) {
         return CONNECTIONS.get(key);
     }
 
     public void saveConnection(Connection connection) {
-        CONNECTIONS.put(targetKey(connection.getIp(), connection.getPort()), connection);
+        CONNECTIONS.put(connection.getId(), connection);
     }
 
-    public void removeConnection(Connection connection) {
-        removeConnection(connection.getIp(), connection.getPort());
+    public void removeConnection(Long id) {
+        disconnect(id);
+        CONNECTIONS.remove(id);
     }
 
-    public void removeConnection(String ip, Integer port) {
-        disconnect(ip, port);
-        CONNECTIONS.remove(targetKey(ip, port));
-    }
+//    public void removeAllConnections() {
+//        disconnectAll();
+//        CONNECTIONS.clear();
+//    }
 
-    public void removeAllConnections() {
-        disconnectAll();
-        CONNECTIONS.clear();
-    }
-
-    public void disconnect(String ip, Integer port) {
-        Connection connection = getConnection(ip, port);
+    public void disconnect(Long id) {
+        Connection connection = getConnection(id);
         if (null == connection) return;
         connection.nowDead();
     }
 
-    public void disconnectAll() {
-        for (Connection connection : CONNECTIONS.values()) {
-            if (null == connection) continue;
-            connection.nowDead();
-        }
-    }
+//    public void disconnectAll() {
+//        for (Connection connection : CONNECTIONS.values()) {
+//            if (null == connection) continue;
+//            connection.nowDead();
+//        }
+//    }
 
     public EventLoopGroup getWorker() {
         return WORKER;

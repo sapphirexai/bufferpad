@@ -2,7 +2,6 @@ import HslCommunication.Core.Types.OperateResult;
 import HslCommunication.Core.Types.OperateResultExOne;
 import HslCommunication.Profinet.Melsec.MelsecMcNet;
 import cn.tpl.opc.OpcApplication;
-import cn.tpl.opc.netty.MsgBus;
 import cn.tpl.opc.service.INettyService;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
@@ -24,8 +23,6 @@ import java.util.Date;
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = OpcApplication.class)
 public class TestSample implements AutoCloseable {
-    @Resource
-    private MsgBus nettyMsgBus;
     @Resource
     private INettyService nettyService;
 

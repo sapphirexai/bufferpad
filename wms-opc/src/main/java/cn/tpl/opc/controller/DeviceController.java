@@ -93,7 +93,7 @@ public class DeviceController {
             String ip = deviceInfoDTO.getIp();
             Integer port = deviceInfoDTO.getPort();
             log.info("removeConnection, removing connection, ip => {}:{}", ip, port);
-            connectionMgr.removeConnection(deviceInfoDTO.getIp(), deviceInfoDTO.getPort());
+            connectionMgr.removeConnection(deviceInfoDTO.getId());
             log.info("removeConnection, removing connection => success");
             return ResultDTO.success();
         } catch (Exception e) {
@@ -120,7 +120,7 @@ public class DeviceController {
                 String ip = deviceInfoDTO.getIp();
                 Integer port = deviceInfoDTO.getPort();
                 log.info("deleteDevice, removing connection, ip => {}:{}", ip, port);
-                connectionMgr.removeConnection(deviceInfoDTO.getIp(), deviceInfoDTO.getPort());
+                connectionMgr.removeConnection(deviceInfoDTO.getId());
                 log.info("deleteDevice, removing connection => success");
             }
 

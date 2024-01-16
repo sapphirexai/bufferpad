@@ -12,8 +12,6 @@ import java.util.List;
  * Netty服务接口
  */
 public interface INettyService {
-    ResultDTO<Boolean> sendMsg(String ip, Integer port, String msg);
-
     /**
      * 连接所有设备，并返回当前所有设备状态信息
      *

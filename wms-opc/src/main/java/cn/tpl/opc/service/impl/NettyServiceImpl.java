@@ -9,7 +9,6 @@ import cn.tpl.opc.entity.DeviceInfoEntity;
 import cn.tpl.opc.netty.Connection;
 import cn.tpl.opc.netty.ConnectionMgr;
 import cn.tpl.opc.netty.Connector;
-import cn.tpl.opc.netty.MsgBus;
 import cn.tpl.opc.service.IDeviceInfoService;
 import cn.tpl.opc.service.INettyService;
 import lombok.extern.slf4j.Slf4j;
@@ -30,19 +29,11 @@ import java.util.stream.Collectors;
 @Service("nettyService")
 public class NettyServiceImpl implements INettyService {
     @Resource
-    private MsgBus nettyMsgBus;
-    @Resource
     private IDeviceInfoService deviceService;
     @Resource
     private Connector connector;
     @Resource
     private ConnectionMgr connectionMgr;
-
-    @Override
-    public ResultDTO<Boolean> sendMsg(String ip, Integer port, String msg) {
-        nettyMsgBus.sendMsg(ip, port, msg);
-        return ResultDTO.success(true);
-    }
 
     @Override
     public ResultDTO<List<DeviceInfoDTO>> connectDevices(Integer workLine) {

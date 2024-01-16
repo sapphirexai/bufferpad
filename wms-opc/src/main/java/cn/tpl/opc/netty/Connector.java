@@ -91,14 +91,11 @@ public class Connector {
      * @return 连接结果
      */
     public boolean connect(Connection conn) {
-        String ip = conn.getIp();
-        Integer port = conn.getPort();
-        if (connectionExists(ip, port)) return reconnectExistConnection(ip, port);
-
+        Long id = conn.getId();
+        if (connectionExists(id)) return reconnectExistConnection(id);
         synchronized (this) {
             // 获取锁后进行二次判断
-            if (connectionExists(ip, port)) return reconnectExistConnection(ip, port);
-
+            if (connectionExists(id)) return reconnectExistConnection(id);
             // 保存连接信息到列表
             conn.setOnStatusChangeListener(new Connection.OnStatusChangeListener() {
                 @Override
@@ -125,8 +122,8 @@ public class Connector {
      * @return 重连结果
      * @see #doReconnect(Connection)
      */
-    private boolean reconnectExistConnection(String ip, Integer port) {
-        return doReconnect(connectionMgr.getConnection(ip, port));
+    private boolean reconnectExistConnection(Long id) {
+        return doReconnect(connectionMgr.getConnection(id));
     }
 
     /**
@@ -135,7 +132,7 @@ public class Connector {
      * @see #doConnect(Connection)
      */
     private void reconnect() {
-        ConcurrentHashMap<String, Connection> connections = connectionMgr.getConnections();
+        ConcurrentHashMap<Long, Connection> connections = connectionMgr.getConnections();
         if (CollectionUtils.isEmpty(connections)) return;
 
         Collection<Connection> connectionsList = connections.values();
@@ -234,7 +231,7 @@ public class Connector {
     }
 
     private void sendPLCHeartBeat() {
-        ConcurrentHashMap<String, Connection> connections = connectionMgr.getConnections();
+        ConcurrentHashMap<Long, Connection> connections = connectionMgr.getConnections();
         if (CollectionUtils.isEmpty(connections)) return;
 
         Collection<Connection> connectionsList = connections.values();
@@ -268,11 +265,10 @@ public class Connector {
     /**
      * 判断指定IP和端口的连接是否已存在
      *
-     * @param ip   IP地址
-     * @param port 端口号
-     * @return true 已存在，false 不存在
+     * @param id 设备ID
+     * @return true 已存在
      */
-    private boolean connectionExists(String ip, Integer port) {
-        return null != connectionMgr.getConnection(ip, port);
+    private boolean connectionExists(Long id) {
+        return connectionMgr.connectionExists(id);
     }
 }
