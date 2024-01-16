@@ -190,13 +190,7 @@ public class Connector {
         try {
             log.info("connect，connecting scanner => {}", ip + ":" + port);
             Bootstrap client = fastBuildClient(conn);// 创建一个客户端）
-            ChannelFuture cf = client.connect(ip, port).addListener(new GenericFutureListener<Future<? super Void>>() {
-                @Override
-                public void operationComplete(Future<? super Void> future) throws Exception {
-                    if (future.isSuccess())
-                        log.info("connect，success ###");
-                }
-            }).sync();// 发起连接
+            ChannelFuture cf = client.connect(ip, port).sync();// 发起连接
             conn.nowActive(cf);
             return conn.isActive();
         } catch (Exception e) {
