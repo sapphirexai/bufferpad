@@ -30,6 +30,10 @@ public class HeartbeatHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void userEventTriggered(ChannelHandlerContext ctx, Object event) throws Exception {
         // 如果当前触发的事件是闲置事件
+        if (mConnection.isDead()) {
+            log.info("userEventTriggered, connection is dead");
+            return;
+        }
         if (event instanceof IdleStateEvent idleEvent) {
             // 如果当前通道触发了写闲置事件
             if (idleEvent.state() == IdleState.WRITER_IDLE) {
@@ -46,21 +50,21 @@ public class HeartbeatHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        log.info("channelActive, connect success, ip => {}:{}", mConnection.getIp(), mConnection.getPort());
+        log.info("channelActive, ip => {}:{}", mConnection.getIp(), mConnection.getPort());
         super.channelActive(ctx);
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         super.channelInactive(ctx);
-        log.info("channelInactive, connection closed....");
+        log.info("channelInactive, ip => {}:{}", mConnection.getIp(), mConnection.getPort());
         onConnectionClosed();
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         super.exceptionCaught(ctx, cause);
-        log.error("exceptionCaught, connection exception => ", cause);
+        log.error("exceptionCaught, exception => ", cause);
         onConnectionClosed();
     }
 
