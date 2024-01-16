@@ -203,7 +203,7 @@ public class Connection {
         log.info("onMessageEvent, EventBusMsgPlcCmd: {}", event);
         if (null == melsecMcNet) return;
 
-        if (!PLCUtils.pingPLC(melsecMcNet)) return;
+        if (PLCUtils.pingPLCFailed(melsecMcNet)) return;
 
         if (!workLine.equals(event.getWorkLine())) return;
         String addr = event.getAddress();
@@ -225,7 +225,7 @@ public class Connection {
 
         if (null == melsecMcNet) return;
 
-        if (!PLCUtils.pingPLC(melsecMcNet)) return;
+        if (PLCUtils.pingPLCFailed(melsecMcNet)) return;
 
         if (!workLine.equals(event.getWorkLine())) return;
 

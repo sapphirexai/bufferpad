@@ -28,7 +28,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
-import java.io.IOException;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -212,7 +211,7 @@ public class Connector {
         log.info("connectPLC, connecting PLC => {}", ip + ":" + port);
         MelsecMcNet melsecMcNet = new MelsecMcNet(ip, port);
 
-        if (!PLCUtils.pingPLC(melsecMcNet)) return false;
+        if (PLCUtils.pingPLCFailed(melsecMcNet)) return false;
 
         OperateResult operateResult = melsecMcNet.ConnectServer();
         if (operateResult.IsSuccess) {

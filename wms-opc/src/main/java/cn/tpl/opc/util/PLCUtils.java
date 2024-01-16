@@ -20,20 +20,20 @@ public class PLCUtils {
      * 操作PLC前先ping
      *
      * @param melsecMcNet PLC连接操作器
-     * @return ping的结果, true: 成功; false: 失败
+     * @return ping的结果, true: 失败; false: 成功
      */
-    public static boolean pingPLC(MelsecMcNet melsecMcNet) {
+    public static boolean pingPLCFailed(MelsecMcNet melsecMcNet) {
         try {
-            if (null == melsecMcNet) return false;
+            if (null == melsecMcNet) return true;
 
-            if (melsecMcNet.IpAddressPing()) return true;
+            if (melsecMcNet.IpAddressPing()) return false;
 
         } catch (IOException e) {
             log.error("pingPLC, error => ", e);
-            return false;
+            return true;
         }
 
         log.info("pingPLC, failed");
-        return false;
+        return true;
     }
 }
