@@ -189,20 +189,16 @@ public class Connector {
      */
     private boolean connectScanner(Connection conn, String ip, Integer port) {
         try {
-            log.info("connect，connecting scanner => {}", ip + ":" + port);
+            log.info("connect, connecting scanner => {}", ip + ":" + port);
             Bootstrap client = fastBuildClient(conn);// 创建一个客户端）
             ChannelFuture cf = client.connect(ip, port).addListener(new ChannelFutureListener() {
                 @Override
                 public void operationComplete(ChannelFuture future) throws Exception {
-                    Throwable cause = future.cause();
-                    if (cause != null) {
-                        log.info("connect, error => {}", cause);
-                    }
+                    log.info("connect, operationComplete future => {}", future.toString());
                     if (future.isSuccess())
                         conn.nowActive(future);
                 }
             }).sync();// 发起连接
-//            conn.nowActive(cf);
             return conn.isActive();
         } catch (Exception e) {
             log.error("connect, error", e);
