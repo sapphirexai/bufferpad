@@ -100,11 +100,13 @@ public class MsgHandler extends ChannelInboundHandlerAdapter {
      * @param workLine    产线
      */
     private void notifyPLC(Integer plcAddrType, Integer scannerSeq, Integer workLine) {
+        if (null == plcAddrType) return;
+
         IPLCAddrService ps = (IPLCAddrService) ApplicationContextAwareImpl.getBean("plcAddrService");
         PLCAddrEntity plcAddr = ps.findByTypeAndScannerSeq(plcAddrType, scannerSeq);
         if (null == plcAddr) return;
 
-        EventBus.getDefault().post(new EventBusMsgPlcCmd(plcAddr.getAddr(), Constants.DEFAULT_2_PLC_VAL, workLine));
+        EventBus.getDefault().post(new EventBusMsgPlcCmd(plcAddrType, plcAddr.getAddr(), Constants.DEFAULT_2_PLC_VAL, workLine));
     }
 
     /**

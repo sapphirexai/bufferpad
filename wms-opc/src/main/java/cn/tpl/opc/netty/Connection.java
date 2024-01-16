@@ -141,7 +141,7 @@ public class Connection {
 
         if (cf.isSuccess()) {
             log.info("nowActive, activated, set status active");
-            status = Params.NETTY_CONNECTION_KEY_STATUS_ACTIVE;
+            status2Active();
         }
 
         resetConnectionResetInterval();
@@ -158,11 +158,11 @@ public class Connection {
      */
     public synchronized void nowActive(MelsecMcNet melsecMcNet) {
         if (isActive()) {
-            log.info("nowActive, 连接已活不做操作");
+            log.info("nowActive, already activated, no operation next");
             return;
         }
 
-        status = Params.NETTY_CONNECTION_KEY_STATUS_ACTIVE;
+        status2Active();
         setMelsecMcNet(melsecMcNet);
         if (!EventBus.getDefault().isRegistered(this))
             EventBus.getDefault().register(this);
@@ -173,11 +173,11 @@ public class Connection {
      */
     public synchronized void nowDead() {
         if (isDead()) {
-            log.info("nowDead, connection is dead");
+            log.info("nowDead, already dead, no operation next");
             return;
         }
 
-        status = Params.NETTY_CONNECTION_KEY_STATUS_DISCONNECTED;
+        status2Disconnected();
         if (null != channelFuture) {
             channelFuture.channel().close();
             channelFuture = null;
@@ -201,23 +201,28 @@ public class Connection {
     @Subscribe(threadMode = ThreadMode.POSTING)
     public void onMessageEvent(EventBusMsgPlcCmd event) {
         log.info("onMessageEvent, EventBusMsgPlcCmd: {}", event);
-        if (isDead()) return;
+        if (isDead() && Constants.PLC_ADDR_TYPE_HEART_BEAT != event.getAddrType()) return;
 
-        if (null == melsecMcNet) return;
+        if (isNoPLCNet()) return;
 
         if (NetUtils.pingFailed(melsecMcNet.getIpAddress())) return;
 
         if (!workLine.equals(event.getWorkLine())) return;
+
         String addr = event.getAddress();
-        int cmd = event.getCmd();
+        Integer cmd = event.getCmd();
         log.info("onMessageEvent, writing cmd to PLC =>> Address: {}, Cmd: {}", addr, cmd);
+        if (null == cmd) return;
+
         OperateResult operateResult = melsecMcNet.Write(addr, cmd);
         if (!operateResult.IsSuccess) {
             log.error("onMessageEvent, writing cmd to PLC =>> failed, address: {}, cmd: {}", addr, cmd);
             log.error("onMessageEvent, ErrorCode: {}", operateResult.ErrorCode);
             log.error("onMessageEvent, ErrorMsg: {}", operateResult.Message);
+            status2Disconnected();
             return;
         }
+        status2Active();
         log.info("onMessageEvent, writing cmd to PLC =>> success");
     }
 
@@ -226,7 +231,7 @@ public class Connection {
         log.info("onMessageEvent, EventBusMsgReadOpenCountFromPLC: {}", event);
         if (isDead()) return;
 
-        if (null == melsecMcNet) return;
+        if (isNoPLCNet()) return;
 
         if (NetUtils.pingFailed(melsecMcNet.getIpAddress())) return;
 
@@ -239,6 +244,7 @@ public class Connection {
             log.error("onMessageEvent, reading from PLC =>> failed, address: {}", addr);
             log.error("onMessageEvent, ErrorCode: {}", operateResult.ErrorCode);
             log.error("onMessageEvent, ErrorMsg: {}", operateResult.Message);
+            status2Disconnected();
             return;
         }
 
@@ -256,4 +262,23 @@ public class Connection {
         }
         log.info("onMessageEvent, reading from PLC =>> modify openCount failed");
     }
+
+
+    /**
+     * 验证PLC网络操作类是否为空
+     *
+     * @return 验证结果, true: 空; false: 非空
+     */
+    public boolean isNoPLCNet() {
+        return null == melsecMcNet;
+    }
+
+    public void status2Disconnected() {
+        status = Params.NETTY_CONNECTION_KEY_STATUS_DISCONNECTED;
+    }
+
+    public void status2Active() {
+        status = Params.NETTY_CONNECTION_KEY_STATUS_ACTIVE;
+    }
+
 }

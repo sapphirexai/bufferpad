@@ -136,10 +136,8 @@ public class Connector {
      */
     private void reconnect() {
         ConcurrentHashMap<String, Connection> connections = connectionMgr.getConnections();
-        if (CollectionUtils.isEmpty(connections)) {
-            log.info("reconnect, no necctions, skip reconnection...");
-            return;
-        }
+        if (CollectionUtils.isEmpty(connections)) return;
+
         Collection<Connection> connectionsList = connections.values();
         for (Connection conn : connectionsList) {
             doReconnect(conn);
@@ -210,6 +208,7 @@ public class Connector {
      * @param port 端口号
      */
     private boolean connectPLC(Connection conn, String ip, Integer port) {
+        if (!conn.isNoPLCNet()) return false;
         log.info("connectPLC, connecting PLC => {}", ip + ":" + port);
         if (NetUtils.pingFailed(ip)) return false;
 
@@ -245,13 +244,13 @@ public class Connector {
     }
 
     private void doSendPLCHeartBeat(Connection conn) {
-        if (!conn.isActive()) return;
+        if (conn.isDead() && conn.isNoPLCNet()) return;
 
         PLCAddrEntity plcAddr = plcAddrService.findByTypeAndScannerSeq(Constants.PLC_ADDR_TYPE_HEART_BEAT, conn.getInstallSeq());
         if (null == plcAddr) return;
 
         log.info("sendPLCHeartBeat, sending heartbeat...");
-        EventBus.getDefault().post(new EventBusMsgPlcCmd(plcAddr.getAddr(), Constants.HEARTBEAT_2_PLC_VAL, conn.getWorkLine()));
+        EventBus.getDefault().post(new EventBusMsgPlcCmd(Constants.PLC_ADDR_TYPE_HEART_BEAT, plcAddr.getAddr(), Constants.HEARTBEAT_2_PLC_VAL, conn.getWorkLine()));
     }
 
     public void startReconnectService() {

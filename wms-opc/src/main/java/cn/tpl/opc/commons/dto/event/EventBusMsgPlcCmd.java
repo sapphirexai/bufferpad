@@ -15,9 +15,15 @@ import lombok.EqualsAndHashCode;
 @Data
 public class EventBusMsgPlcCmd extends AbsBaseDTO {
     /**
+     * 地址类型
+     */
+    private Integer addrType;
+
+    /**
      * 指令地址
      */
     private String address;
+
     /**
      * 指令
      */
@@ -28,7 +34,8 @@ public class EventBusMsgPlcCmd extends AbsBaseDTO {
      */
     private Integer workLine;
 
-    public EventBusMsgPlcCmd(String address, Integer cmd, Integer workLine) {
+    public EventBusMsgPlcCmd(Integer addrType, String address, Integer cmd, Integer workLine) {
+        this.addrType = addrType;
         this.address = address;
         this.cmd = cmd;
         this.workLine = workLine;
