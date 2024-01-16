@@ -196,7 +196,7 @@ public class Connector {
                 public void operationComplete(ChannelFuture future) throws Exception {
                     Throwable cause = future.cause();
                     if (cause != null) {
-                        log.info("connect，error => {}", cause);
+                        log.info("connect, error => {}", cause);
                     }
                     if (future.isSuccess())
                         conn.nowActive(future);
