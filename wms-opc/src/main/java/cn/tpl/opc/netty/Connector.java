@@ -32,6 +32,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.concurrent.*;
 
@@ -191,13 +192,17 @@ public class Connector {
         try {
             log.info("connect, connecting scanner => {}", ip + ":" + port);
             Bootstrap client = fastBuildClient(conn);// 创建一个客户端）
-            ChannelFuture cf = client.connect(ip, port).addListener(new ChannelFutureListener() {
-                @Override
-                public void operationComplete(ChannelFuture future) throws Exception {
-                    if (future.isSuccess())
-                        conn.nowActive(future);
-                }
-            }).sync();// 发起连接
+            ChannelFuture cf = client
+                    .connect(ip, port)
+                    .addListener(ChannelFutureListener.CLOSE_ON_FAILURE)
+                    .addListener(new ChannelFutureListener() {
+                        @Override
+                        public void operationComplete(ChannelFuture future) throws Exception {
+                            if (future.isSuccess())
+                                conn.nowActive(future);
+                        }
+                    })
+                    .sync();// 发起连接
             return conn.isActive();
         } catch (Exception e) {
             log.error("connect, error", e);
@@ -215,6 +220,15 @@ public class Connector {
     private boolean connectPLC(Connection conn, String ip, Integer port) {
         log.info("connectPLC, connecting PLC => {}", ip + ":" + port);
         MelsecMcNet melsecMcNet = new MelsecMcNet(ip, port);
+        try {
+            if (!melsecMcNet.IpAddressPing()) {
+                log.error("connectPLC, ping failed");
+                return false;
+            }
+        } catch (IOException e) {
+            log.error("connectPLC, ping error: {}", e);
+            return false;
+        }
         OperateResult operateResult = melsecMcNet.ConnectServer();
         if (operateResult.IsSuccess) {
             log.info("connectPLC, connecting PLC => success");
@@ -222,8 +236,8 @@ public class Connector {
             return true;
         }
         log.error("connectPLC, connecting PLC => failed, ip =>{}:{}", ip, port);
-        log.error("connectPLC, ErrorCode：{}", operateResult.ErrorCode);
-        log.error("connectPLC, ErrorMsg：{}", operateResult.Message);
+        log.error("connectPLC, ErrorCode: {}", operateResult.ErrorCode);
+        log.error("connectPLC, ErrorMsg: {}", operateResult.Message);
         return false;
     }
 
@@ -245,7 +259,7 @@ public class Connector {
         }
         Collection<Connection> connectionsList = connections.values();
         for (Connection conn : connectionsList) {
-            if (conn.getType() == Params.DEVICE_TYPE_KEY_PLC) {
+            if (conn.getType() == Params.DEVICE_TYPE_KEY_PLC && conn.isActive()) {
                 doSendPLCHeartBeat(conn);
             }
         }

@@ -188,7 +188,7 @@ public class Connection {
      */
     public synchronized void nowDead() {
         if (isDead()) {
-            log.info("nowDead, 连接已死不做操作");
+            log.info("nowDead, connection is dead");
             return;
         }
 
