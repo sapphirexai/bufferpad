@@ -10,12 +10,10 @@ import cn.tpl.opc.commons.dto.result.DeviceInfoDTO;
 import cn.tpl.opc.entity.PLCAddrEntity;
 import cn.tpl.opc.netty.handler.HeartbeatHandler;
 import cn.tpl.opc.netty.handler.MsgHandler;
-import cn.tpl.opc.service.ICushionInfoService;
 import cn.tpl.opc.service.IPLCAddrService;
 import cn.tpl.opc.service.ISseService;
-import cn.tpl.opc.service.impl.PLCAddrServiceImpl;
+import cn.tpl.opc.util.PLCUtils;
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
@@ -24,8 +22,6 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.string.StringEncoder;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.CharsetUtil;
-import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.GenericFutureListener;
 import lombok.extern.slf4j.Slf4j;
 import org.greenrobot.eventbus.EventBus;
 import org.springframework.stereotype.Component;
@@ -34,7 +30,10 @@ import org.springframework.util.CollectionUtils;
 import javax.annotation.Resource;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Author: Luo GuoWen
@@ -47,8 +46,6 @@ import java.util.concurrent.*;
 public class Connector {
     @Resource
     private ConnectionMgr connectionMgr;
-    @Resource
-    private ICushionInfoService cushionInfoService;
     @Resource
     private ISseService sseService;
     @Resource
@@ -66,8 +63,6 @@ public class Connector {
     }
 
     private Bootstrap fastBuildClient(Connection connection) {
-        String ip = connection.getIp();
-        Integer port = connection.getPort();
         Bootstrap client = new Bootstrap();
         client.group(connectionMgr.getWorker())
                 .channel(NioSocketChannel.class)
@@ -93,7 +88,7 @@ public class Connector {
     /**
      * 连接
      *
-     * @param connection 连接对象
+     * @param conn 连接对象
      * @return 连接结果
      */
     public boolean connect(Connection conn) {
@@ -156,7 +151,6 @@ public class Connector {
      * 连接设备，根据类型自动判断
      *
      * @param conn 连接信息
-     * @throws InterruptedException
      */
     private boolean doConnect(Connection conn) {
         String ip = conn.getIp();
@@ -191,16 +185,12 @@ public class Connector {
     private boolean connectScanner(Connection conn, String ip, Integer port) {
         try {
             log.info("connect, connecting scanner => {}", ip + ":" + port);
-            Bootstrap client = fastBuildClient(conn);// 创建一个客户端）
-            ChannelFuture cf = client
+            fastBuildClient(conn)// 创建一个客户端）
                     .connect(ip, port)
                     .addListener(ChannelFutureListener.CLOSE_ON_FAILURE)
-                    .addListener(new ChannelFutureListener() {
-                        @Override
-                        public void operationComplete(ChannelFuture future) throws Exception {
-                            if (future.isSuccess())
-                                conn.nowActive(future);
-                        }
+                    .addListener((ChannelFutureListener) future -> {
+                        if (future.isSuccess())
+                            conn.nowActive(future);
                     })
                     .sync();// 发起连接
             return conn.isActive();
@@ -209,6 +199,7 @@ public class Connector {
             return false;
         }
     }
+
 
     /**
      * 连接PLC
@@ -220,15 +211,9 @@ public class Connector {
     private boolean connectPLC(Connection conn, String ip, Integer port) {
         log.info("connectPLC, connecting PLC => {}", ip + ":" + port);
         MelsecMcNet melsecMcNet = new MelsecMcNet(ip, port);
-        try {
-            if (!melsecMcNet.IpAddressPing()) {
-                log.error("connectPLC, ping failed");
-                return false;
-            }
-        } catch (IOException e) {
-            log.error("connectPLC, ping error: {}", e);
-            return false;
-        }
+
+        if (!PLCUtils.pingPLC(melsecMcNet)) return false;
+
         OperateResult operateResult = melsecMcNet.ConnectServer();
         if (operateResult.IsSuccess) {
             log.info("connectPLC, connecting PLC => success");
@@ -243,12 +228,8 @@ public class Connector {
 
     private void startPLCHeartbeatService() {
         long timeExecuteSec = 2L;// 执行时间，单位：秒
-        scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
-            @Override
-            public void run() {
-                sendPLCHeartBeat();
-            }
-        }, timeExecuteSec, timeExecuteSec, TimeUnit.SECONDS);
+        scheduledExecutorService.scheduleAtFixedRate(
+                this::sendPLCHeartBeat, timeExecuteSec, timeExecuteSec, TimeUnit.SECONDS);
     }
 
     private void sendPLCHeartBeat() {
@@ -259,13 +240,15 @@ public class Connector {
         }
         Collection<Connection> connectionsList = connections.values();
         for (Connection conn : connectionsList) {
-            if (conn.getType() == Params.DEVICE_TYPE_KEY_PLC && conn.isActive()) {
+            if (conn.getType() == Params.DEVICE_TYPE_KEY_PLC) {
                 doSendPLCHeartBeat(conn);
             }
         }
     }
 
     private void doSendPLCHeartBeat(Connection conn) {
+        if (!conn.isActive()) return;
+
         PLCAddrEntity plcAddr = plcAddrService.findByTypeAndScannerSeq(Constants.PLC_ADDR_TYPE_HEART_BEAT, conn.getInstallSeq());
         if (null == plcAddr) return;
 
@@ -275,12 +258,8 @@ public class Connector {
 
     public void startReconnectService() {
         long timeExecuteSec = 120L;// 执行时间，单位：秒
-        scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
-            @Override
-            public void run() {
-                reconnect();
-            }
-        }, timeExecuteSec, timeExecuteSec, TimeUnit.SECONDS);
+        scheduledExecutorService.scheduleAtFixedRate(
+                this::reconnect, timeExecuteSec, timeExecuteSec, TimeUnit.SECONDS);
     }
 
     private boolean isScannerConn(Connection conn) {

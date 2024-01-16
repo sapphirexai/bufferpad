@@ -11,9 +11,14 @@ public final class Constants {
     }
 
     /**
+     * 配置表的默认ID
+     */
+    public static final long OPC_CONFIG_ID = 1L;
+
+    /**
      * NETTY连接超时时间，单位：毫秒
      */
-    public static final int NETTY_CONNECT_TIMEOUT_MILLIS = 3500;
+    public static final int NETTY_CONNECT_TIMEOUT_MILLIS = 3000;
 
     /**
      * 产线，全部

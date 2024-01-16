@@ -9,6 +9,7 @@ import cn.tpl.opc.commons.constant.Params;
 import cn.tpl.opc.commons.dto.event.EventBusMsgPlcCmd;
 import cn.tpl.opc.commons.dto.event.EventBusMsgReadOpenCountFromPLC;
 import cn.tpl.opc.service.ICushionInfoService;
+import cn.tpl.opc.util.PLCUtils;
 import io.netty.channel.ChannelFuture;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -97,26 +98,10 @@ public class Connection {
      */
     private final ScheduledExecutorService connectionCheckService = Executors.newScheduledThreadPool(1);
 
-//    /**
-//     * 连接检查任务
-//     */
-//    private final Runnable connectionCheckTask = () -> {
-//        if (isActive()) {
-//            long resetInterval = connectionResetInterval.decrementAndGet();
-//            if (0 > resetInterval) nowDead();
-//        }
-//    };
 
     public Connection() {
     }
 
-//    /**
-//     * 参数初始化完毕后, 首次连接之前调用
-//     */
-//    public void readyToConnect() {
-//        if (Params.DEVICE_TYPE_KEY_SCANNER == type)
-//            connectionCheckService.scheduleAtFixedRate(connectionCheckTask, 0, 1, TimeUnit.SECONDS);
-//    }
 
     /**
      * 判断连接是否处于活跃状态
@@ -217,6 +202,9 @@ public class Connection {
     public void onMessageEvent(EventBusMsgPlcCmd event) {
         log.info("onMessageEvent, EventBusMsgPlcCmd: {}", event);
         if (null == melsecMcNet) return;
+
+        if (!PLCUtils.pingPLC(melsecMcNet)) return;
+
         if (!workLine.equals(event.getWorkLine())) return;
         String addr = event.getAddress();
         int cmd = event.getCmd();
@@ -229,8 +217,6 @@ public class Connection {
             return;
         }
         log.info("onMessageEvent, writing cmd to PLC =>> success");
-        //            nowDead();// 关闭PLC连接等待重连
-//        if (isDead()) nowActive(melsecMcNet);
     }
 
     @Subscribe(threadMode = ThreadMode.POSTING)
@@ -238,6 +224,8 @@ public class Connection {
         log.info("onMessageEvent, EventBusMsgReadOpenCountFromPLC: {}", event);
 
         if (null == melsecMcNet) return;
+
+        if (!PLCUtils.pingPLC(melsecMcNet)) return;
 
         if (!workLine.equals(event.getWorkLine())) return;
 
