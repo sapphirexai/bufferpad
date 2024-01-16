@@ -139,16 +139,11 @@ public class Connection {
             return;
         }
 
-        if (cf.isSuccess()) {
-            log.info("nowActive, activated, set status active");
-            status2Active();
-        }
+        log.info("nowActive, activated, set status active");
+        status2Active();
 
         resetConnectionResetInterval();
         setChannelFuture(cf);
-
-        if (null != onStatusChangeListener)
-            onStatusChangeListener.onStatusChanged(this);
     }
 
     /**
@@ -190,8 +185,6 @@ public class Connection {
                 EventBus.getDefault().unregister(this);
         }
 
-        if (null != onStatusChangeListener)
-            onStatusChangeListener.onStatusChanged(this);
     }
 
     public interface OnStatusChangeListener {
@@ -274,11 +267,17 @@ public class Connection {
     }
 
     public void status2Disconnected() {
+        if (isDead()) return;
         status = Params.NETTY_CONNECTION_KEY_STATUS_DISCONNECTED;
+        if (null != onStatusChangeListener)
+            onStatusChangeListener.onStatusChanged(this);
     }
 
     public void status2Active() {
+        if (isActive()) return;
         status = Params.NETTY_CONNECTION_KEY_STATUS_ACTIVE;
+        if (null != onStatusChangeListener)
+            onStatusChangeListener.onStatusChanged(this);
     }
 
 }

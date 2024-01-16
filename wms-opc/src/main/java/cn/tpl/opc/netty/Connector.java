@@ -181,18 +181,20 @@ public class Connector {
      */
     private boolean connectScanner(Connection conn, String ip, Integer port) {
         try {
-            log.info("connect, connecting scanner => {}", ip + ":" + port);
+            log.info("connectScanner, connecting => {}", ip + ":" + port);
             if (NetUtils.pingFailed(ip)) return false;
 
             fastBuildClient(conn)// 创建一个客户端）
                     .connect(ip, port)
                     .addListener(ChannelFutureListener.CLOSE_ON_FAILURE)
                     .addListener((ChannelFutureListener) future -> {
-                        if (future.isSuccess())
+                        if (future.isSuccess()) {
+                            log.info("connectScanner, connecting => success");
                             conn.nowActive(future);
-                    })
-                    .sync();// 发起连接
-            return conn.isActive();
+                        }
+                    });// 发起连接
+            log.info("connectScanner, connecting => success status = > {}", conn.isActive());
+            return true;
         } catch (Exception e) {
             log.error("connect, error", e);
             return false;
@@ -209,17 +211,17 @@ public class Connector {
      */
     private boolean connectPLC(Connection conn, String ip, Integer port) {
         if (!conn.isNoPLCNet()) return false;
-        log.info("connectPLC, connecting PLC => {}", ip + ":" + port);
+        log.info("connectPLC, connecting => {}", ip + ":" + port);
         if (NetUtils.pingFailed(ip)) return false;
 
         MelsecMcNet melsecMcNet = new MelsecMcNet(ip, port);
         OperateResult operateResult = melsecMcNet.ConnectServer();
         if (operateResult.IsSuccess) {
-            log.info("connectPLC, connecting PLC => success");
+            log.info("connectPLC, connecting => success");
             conn.nowActive(melsecMcNet);
             return true;
         }
-        log.error("connectPLC, connecting PLC => failed, ip =>{}:{}", ip, port);
+        log.error("connectPLC, connecting => failed, ip =>{}:{}", ip, port);
         log.error("connectPLC, ErrorCode: {}", operateResult.ErrorCode);
         log.error("connectPLC, ErrorMsg: {}", operateResult.Message);
         return false;
