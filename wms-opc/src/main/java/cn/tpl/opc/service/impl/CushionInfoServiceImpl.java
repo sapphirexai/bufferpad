@@ -347,7 +347,7 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
 
         if (null == plcAddr) return;
 
-        EventBus.getDefault().post(new EventBusMsgReadOpenCountFromPLC(qrCode, plcAddr.getAddr(), workLine));
+//        EventBus.getDefault().post(new EventBusMsgReadOpenCountFromPLC(qrCode, plcAddr.getAddr(), workLine));
     }
 
     @SuppressWarnings("unused")

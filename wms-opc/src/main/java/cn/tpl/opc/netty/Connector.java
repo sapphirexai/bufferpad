@@ -194,7 +194,6 @@ public class Connector {
             ChannelFuture cf = client.connect(ip, port).addListener(new ChannelFutureListener() {
                 @Override
                 public void operationComplete(ChannelFuture future) throws Exception {
-                    log.info("connect, operationComplete future => {}", future.toString());
                     if (future.isSuccess())
                         conn.nowActive(future);
                 }
