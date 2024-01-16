@@ -201,6 +201,8 @@ public class Connection {
     @Subscribe(threadMode = ThreadMode.POSTING)
     public void onMessageEvent(EventBusMsgPlcCmd event) {
         log.info("onMessageEvent, EventBusMsgPlcCmd: {}", event);
+        if (isDead()) return;
+
         if (null == melsecMcNet) return;
 
         if (PLCUtils.pingPLCFailed(melsecMcNet)) return;
@@ -222,6 +224,7 @@ public class Connection {
     @Subscribe(threadMode = ThreadMode.POSTING)
     public void onMessageEvent(EventBusMsgReadOpenCountFromPLC event) {
         log.info("onMessageEvent, EventBusMsgReadOpenCountFromPLC: {}", event);
+        if (isDead()) return;
 
         if (null == melsecMcNet) return;
 
