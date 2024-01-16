@@ -53,7 +53,7 @@ public class HeartbeatHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         super.channelInactive(ctx);
-        log.warn("channelInactive, connection closed....");
+        log.info("channelInactive, connection closed....");
         onConnectionClosed();
     }
 

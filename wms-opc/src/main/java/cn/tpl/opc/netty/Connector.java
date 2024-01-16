@@ -23,6 +23,8 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.string.StringEncoder;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.CharsetUtil;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
 import lombok.extern.slf4j.Slf4j;
 import org.greenrobot.eventbus.EventBus;
 import org.springframework.stereotype.Component;
@@ -75,7 +77,7 @@ public class Connector {
                         // 添加一个编码处理器，对数据编码为UTF-8格式
                         sc.pipeline().addLast(new StringEncoder(CharsetUtil.UTF_8));
                         // 配置如果对应时间内未触发写事件，就会触发写闲置事件
-                        sc.pipeline().addLast(new IdleStateHandler(0, 3, 0, TimeUnit.SECONDS));
+                        sc.pipeline().addLast(new IdleStateHandler(0, 30, 0, TimeUnit.SECONDS));
                         // 添加一个入站处理器，对收到的数据进行处理
                         sc.pipeline().addLast(new MsgHandler(connection));
                         // 添加心跳处理器
@@ -188,7 +190,13 @@ public class Connector {
         try {
             log.info("connect，connecting scanner => {}", ip + ":" + port);
             Bootstrap client = fastBuildClient(conn);// 创建一个客户端）
-            ChannelFuture cf = client.connect(ip, port).sync(); // 发起连接
+            ChannelFuture cf = client.connect(ip, port).addListener(new GenericFutureListener<Future<? super Void>>() {
+                @Override
+                public void operationComplete(Future<? super Void> future) throws Exception {
+                    if (future.isSuccess())
+                        log.info("connect，success ###");
+                }
+            }).sync();// 发起连接
             conn.nowActive(cf);
             return conn.isActive();
         } catch (Exception e) {
