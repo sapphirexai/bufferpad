@@ -1,5 +1,5 @@
 import axios from 'axios'
-import Qs from 'qs'
+import qs from 'qs'
 import router from '../router'
 // 在开发环境中的测试 development
 if (process.env.NODE_ENV === 'development') {

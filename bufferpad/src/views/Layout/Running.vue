@@ -37,7 +37,7 @@
             </div>
           </div>
         </el-col>
-        <el-col :span="4" style="display:flex; align-items: center; ">
+        <el-col :span="5" style="display:flex; align-items: center; ">
           <p class="title">读码器状态:</p>
           <div class="connection-status">
             <div class="info" v-for="item in devicesMessage.filter(data => data.type === 0)" :key="item.id">
@@ -47,7 +47,7 @@
                 :style="{
                   width: '14px',
                   height: '14px',
-                  backgroundColor:item.status ? '#67c23a' : 'red',
+                  backgroundColor: item.status ? '#67c23a' : 'red',
                   borderRadius: '14px'
                 }">
               </div>
@@ -91,7 +91,7 @@
               <span>{{ currentQrCode }}</span>
             </div>
             <div class="cunrrentPosition">
-              <span>{{ showCodeName(currentScannerSeq) }}</span>
+              <span :class="showCodeClass(currentScannerSeq)">{{ showCodeName(currentScannerSeq) }}</span>
             </div>
           </el-card>
         </el-col>
@@ -148,7 +148,9 @@
       <el-table-column type="selection" width="55"></el-table-column>
       <el-table-column prop="qrCode" label="缓冲垫编号" width="180"></el-table-column>
       <el-table-column prop="scannerSeq" label="缓冲垫位置" width="180">
-        <template slot-scope="scope">{{ showCodeName(scope.row.scannerSeq) }}</template>
+        <template slot-scope="scope">
+          <span :class="showCodeClass(scope.row.scannerSeq)">{{ showCodeName(scope.row.scannerSeq) }}</span>
+        </template>
       </el-table-column>
       <el-table-column prop="openCount" label="开口数" width="180"></el-table-column>
       <el-table-column prop="createdDate" label="第一次使用时间" :formatter="formatDate"></el-table-column>
@@ -174,9 +176,9 @@
     <el-pagination
       @size-change="handleSizeChange"
       @current-change="handleCurrentChange"
-      :current-page="currentPage"
+      :current-page.sync="currentPage"
       :page-sizes="pageSizes"
-      :pages-size="pageSize"
+      :pages-size.sync="pageSize"
       :pager-count="5"
       layout="total, sizes, prev, pager, next, jumper"
       :total="total"
@@ -282,6 +284,10 @@ export default {
     showCodeName(value) {
       const name = value ? (value === 1 ? '上' : '下') : '-'
       return name
+    },
+    showCodeClass(value) {
+      const className = value ? (value === 1 ? 'success' : 'error') : ''
+      return className
     },
     showColor(row) {
       const colorName = row.usedCount === row.maxUseCount ? 'info' : (row.maxUseCount - row.usedCount > 5 ? 'success' : 'warning')
@@ -524,7 +530,7 @@ export default {
     },
     InitEventSourse() {
       // 目前的做法是和后端做的单向长链接，这里的接口就不放在 API 列表中处理，直接在这里作为参数传入
-      const url = 'http://localhost:9001/sse/devicesStatus/' + this.ProdLine
+      const url = 'http://192.0.2.6:9001/sse/devicesStatus/' + this.ProdLine
       this.events = new EventSourses(
         url,
         res => {
@@ -535,6 +541,8 @@ export default {
               this.currentScannerSeq = res.data.data.scannerSeq
               this.useCount = res.data.data.usedCount
               this.Count = res.data.data.maxUseCount
+
+              this.currentPage = 1
               this.InitpageInfo();
               if (res.codeSuccess) {
                 this.$message.success(res.msg)
@@ -547,11 +555,14 @@ export default {
             }
           }
           if (res.data.topic === 'deviceStatus') {
-            this.devicesMessage.forEach((e, index) => {
+            const devicesMessage = this.devicesMessage
+            devicesMessage.forEach((e, index) => {
               if (res.data.data.id === e.id) {
-                this.devicesMessage[index] = res.data.data
+                devicesMessage[index] = res.data.data
               }
             })
+
+            this.devicesMessage = [...devicesMessage]
             console.log('deviceStatus:', this.devicesMessage)
           }
         }
@@ -615,13 +626,13 @@ export default {
 
       const ids = this.multipleSelection.map(item => item.id)
       exportData(ids).then(res => {
-        if (res.status === 200) {
+        if (res.status === 200 && res.headers['content-disposition']) {
+          const fileName = res.headers['content-disposition']
           const a = document.createElement('a')
           const blob = new Blob([res.data])
           const href = window.URL.createObjectURL(blob)
 
           a.href = href
-          const fileName = res.headers['content-disposition']
           a.download = fileName.split('=')[1]
           document.body.appendChild(a)
           a.click()
@@ -763,13 +774,12 @@ export default {
 }
 
 .connection-status {
-  max-height: 100px;
+  max-height: 120px;
   margin-left: 16px;
   padding: 8px;
-  overflow-y: scroll;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  justify-content: center;
 
   .info {
     display: flex;
