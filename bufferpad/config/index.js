@@ -12,7 +12,7 @@ module.exports = {
     assetsPublicPath: '/',
     proxyTable: {
       '/api': {
-        target: "https://gitlab.example.invalid:40570", 
+        target: "http://192.0.2.6:9001", 
         changeOrigin: true,
         ws: true,
         secure: false,
