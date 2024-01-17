@@ -1,6 +1,7 @@
 package cn.tpl.opc.mapper;
 
 import cn.tpl.opc.commons.scheme.request.ModifyCushionInfoScheme;
+import cn.tpl.opc.commons.scheme.request.QueryCushionInfoPageScheme;
 import cn.tpl.opc.entity.CushionInfoEntity;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -69,7 +70,7 @@ public interface CushionInfoEntityMapper {
 
     int modifyMaxUseCountByIds(@Param("data") ModifyCushionInfoScheme scheme);
 
-    IPage<CushionInfoEntity> listByPage(Page<CushionInfoEntity> page);
+    IPage<CushionInfoEntity> listByPage(Page<CushionInfoEntity> page, @Param("data") QueryCushionInfoPageScheme scheme);
 
     List<CushionInfoEntity> listByIds(@Param("ids") List<Long> ids);
 }

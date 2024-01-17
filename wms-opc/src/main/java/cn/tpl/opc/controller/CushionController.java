@@ -7,8 +7,8 @@ import cn.tpl.opc.commons.dto.ResultDTO;
 import cn.tpl.opc.commons.dto.result.CushionInfoDTO;
 import cn.tpl.opc.commons.dto.result.ExportCushionInfoDTO;
 import cn.tpl.opc.commons.dto.result.PageData;
-import cn.tpl.opc.commons.scheme.base.BasePageScheme;
 import cn.tpl.opc.commons.scheme.request.ModifyCushionInfoScheme;
+import cn.tpl.opc.commons.scheme.request.QueryCushionInfoPageScheme;
 import cn.tpl.opc.service.ICushionInfoService;
 import cn.tpl.opc.util.EasyExcelUtils;
 import io.swagger.v3.oas.annotations.Operation;
@@ -40,7 +40,9 @@ public class CushionController {
 
     @Operation(summary = "分页查询缓冲垫列表")
     @GetMapping("/cushionsPage")
-    public ResultDTO<PageData<CushionInfoDTO>> cushionsPage(@Parameter(description = "详情查看<a href=\"#model-BasePageScheme\"> BasePageScheme") BasePageScheme scheme) {
+    public ResultDTO<PageData<CushionInfoDTO>> cushionsPage(
+            @Parameter(description = "详情查看<a href=\"#model-BasePageScheme\"> BasePageScheme")
+                    QueryCushionInfoPageScheme scheme) {
         try {
             log.debug("cushionsPage，scheme：{}", scheme);
             return ResultDTO.success(cushionInfoService.listByPage(scheme));

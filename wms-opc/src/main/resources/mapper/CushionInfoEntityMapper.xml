@@ -53,10 +53,16 @@
         where qr_code like concat('%', #{qrCode}, '%')
     </select>
 
-    <select id="listByPage" resultMap="BaseResultMap">
+    <select id="listByPage" resultMap="BaseResultMap"
+            parameterType="cn.tpl.opc.commons.scheme.request.QueryCushionInfoPageScheme">
         select
         <include refid="Base_Column_List"/>
         from cushion_info
+        <where>
+            <if test="data.qrCode!=null">
+                qr_code like concat('%', #{data.goodsName.qrCode}, '%')
+            </if>
+        </where>
         order by last_scan_date desc
     </select>
 
