@@ -3,11 +3,9 @@ package cn.tpl.opc.service;
 import cn.tpl.opc.commons.dto.ResultDTO;
 import cn.tpl.opc.commons.dto.result.CushionInfoDTO;
 import cn.tpl.opc.commons.dto.result.PageData;
-import cn.tpl.opc.commons.scheme.base.BasePageScheme;
 import cn.tpl.opc.commons.scheme.request.ModifyCushionInfoScheme;
 import cn.tpl.opc.commons.scheme.request.QueryCushionInfoPageScheme;
 import cn.tpl.opc.entity.CushionInfoEntity;
-import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 

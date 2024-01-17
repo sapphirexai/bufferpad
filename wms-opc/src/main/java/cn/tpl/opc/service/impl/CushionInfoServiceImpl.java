@@ -230,12 +230,13 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
     @Override
     public PageData<CushionInfoDTO> listByPage(QueryCushionInfoPageScheme scheme) {
         Page<CushionInfoEntity> page = new Page<>(scheme.getCurrentPage(), scheme.getPageSize());
-        IPage<CushionInfoEntity> iPage = cushionInfoEntityMapper.listByPage(page,scheme);
+        IPage<CushionInfoEntity> iPage = cushionInfoEntityMapper.listByPage(page, scheme);
         return PageData.of(iPage, this::cushionInfo2DTO);
     }
 
 
     private CushionInfoDTO cushionInfo2DTO(CushionInfoEntity cushionInfo) {
+        if (null == cushionInfo) return null;
         CushionInfoDTO cushionInfoDTO = new CushionInfoDTO();
         BeanUtil.copyProperties(cushionInfo, cushionInfoDTO);
         return cushionInfoDTO;
@@ -274,7 +275,6 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
     @Override
     public List<CushionInfoDTO> listByIds(List<Long> ids) {
         List<CushionInfoEntity> cushionInfos = cushionInfoEntityMapper.listByIds(ids);
-        if (CollectionUtils.isEmpty(cushionInfos)) return null;
         return cushionInfos.stream().map(this::cushionInfo2DTO).collect(Collectors.toList());
     }
 
