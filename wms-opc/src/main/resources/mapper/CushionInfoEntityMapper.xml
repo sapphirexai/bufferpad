@@ -60,7 +60,7 @@
         from cushion_info
         <where>
             <if test="data.qrCode!=null">
-                qr_code like concat('%', #{data.goodsName.qrCode}, '%')
+                qr_code like concat('%', #{data.qrCode}, '%')
             </if>
         </where>
         order by last_scan_date desc
