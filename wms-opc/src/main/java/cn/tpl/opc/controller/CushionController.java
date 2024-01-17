@@ -141,7 +141,7 @@ public class CushionController {
                 exportDatas.add(exportData);
             }
             String fileType = ".xls";
-            String fileName = "CushionInfo_" + DateUtil.now() + fileType;
+            String fileName = "Cushion_" + DateUtil.now() + fileType;
             response.setContentType(fileType + "; charset=UTF-8");
             response.setHeader("Access-Control-Expose-Headers", "Content-Disposition");
             response.setHeader("Content-Disposition", "attachment;filename=" + new String(fileName.getBytes(StandardCharsets.UTF_8), StandardCharsets.ISO_8859_1));
