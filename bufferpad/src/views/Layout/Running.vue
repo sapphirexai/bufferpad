@@ -524,7 +524,7 @@ export default {
     },
     InitEventSourse() {
       // 目前的做法是和后端做的单向长链接，这里的接口就不放在 API 列表中处理，直接在这里作为参数传入
-      const url = 'localhost:9001/sse/devicesStatus/' + this.ProdLine
+      const url = 'http://localhost:9001/sse/devicesStatus/' + this.ProdLine
       this.events = new EventSourses(
         url,
         res => {
