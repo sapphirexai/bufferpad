@@ -290,7 +290,7 @@ export default {
       return className
     },
     showColor(row) {
-      const colorName = row.usedCount === row.maxUseCount ? 'info' : (row.maxUseCount - row.usedCount > 5 ? 'success' : 'warning')
+      const colorName = row.usedCount >= row.maxUseCount ? 'info' : (row.maxUseCount - row.usedCount > 5 ? 'success' : 'warning')
       return colorName
     },
     updateMaxUseCount(row) {
@@ -304,7 +304,7 @@ export default {
       }
     },
     tableRowClassName({ row, rowIndex }) {
-      if (row.usedCount === row.maxUseCount) {
+      if (row.usedCount >= row.maxUseCount) {
         return 'warning-row';
       } else {
         return '';
