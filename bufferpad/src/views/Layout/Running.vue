@@ -588,6 +588,8 @@ export default {
     enterChangeMaxCount(row) {
       if (!row.maxUseCount) {
         this.$message.error('请填入有效数字')
+      } else if (row.maxUseCount < 0) {
+        this.$message.error('使用寿命不能小于 0')
       } else {
         const params = {
           maxUseCount: row.maxUseCount,
@@ -600,6 +602,10 @@ export default {
     enterBatchChangeMaxCount() {
       this.$refs['dialogRuleFormRef'].validate(valid => {
         if (valid) {
+          if (this.dialogRuleForm.maxUseCount < 0) {
+            this.$message.error('使用寿命不能小于 0')
+            return
+          }
           const ids = this.multipleSelection.map(item => item.id)
           const params = {
             maxUseCount: this.dialogRuleForm.maxUseCount,
