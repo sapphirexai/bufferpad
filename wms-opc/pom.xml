@@ -153,8 +153,9 @@
             <groupId>com.github.dathlin</groupId>
             <artifactId>HslCommunication</artifactId>
             <version>3.4.0</version>
+            <scope>system</scope>
+            <systemPath>${pom.basedir}/src/main/resources/lib/HslCommunication-3.4.0.jar</systemPath>
         </dependency>
-
     </dependencies>
 
     <dependencyManagement>
@@ -205,6 +206,7 @@
                 <version>${spring-boot.version}</version>
                 <configuration>
                     <mainClass>cn.tpl.opc.OpcApplication</mainClass>
+                    <includeSystemScope>true</includeSystemScope>
                 </configuration>
                 <executions>
                     <execution>
