@@ -1,8 +1,8 @@
 <template>
   <div class="page">
     <div ref="lineRef">
-      <el-row style="display: flex; justify-content: space-between; align-items: center;">
-        <el-col :span="5" style=" display: flex; align-items: center;justify-content: space-between;">
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 100px;">
+        <div style=" display: flex; align-items: center;">
           <p class="title" style="width: 20%;">产线:</p>
           <el-select
             v-model="ProdLine"
@@ -19,8 +19,8 @@
             >
             </el-option>
           </el-select>
-        </el-col>
-        <el-col :span="4" style="display:flex; align-items: center;">
+        </div>
+        <div style="display:flex; align-items: center;">
           <p class="title">PLC状态:</p>
           <div class="connection-status">
             <div class="info" v-for="item in devicesMessage.filter(data => data.type === 1)" :key="item.id">
@@ -36,8 +36,8 @@
               </div>
             </div>
           </div>
-        </el-col>
-        <el-col :span="5" style="display:flex; align-items: center; ">
+        </div>
+        <div style="display:flex; align-items: center; ">
           <p class="title">读码器状态:</p>
           <div class="connection-status">
             <div class="info" v-for="item in devicesMessage.filter(data => data.type === 0)" :key="item.id">
@@ -53,8 +53,8 @@
               </div>
             </div>
           </div>
-        </el-col>
-      </el-row>
+        </div>
+      </div>
       <el-divider></el-divider>
     </div>
     <div ref="cardRef">
@@ -160,7 +160,7 @@
           <span :class="showColor(scope.row)">{{ scope.row.usedCount }}</span>
         </template>
       </el-table-column>
-      <el-table-column prop="maxUseCount" label="使用寿命">
+      <el-table-column prop="maxUseCount" width="260px" label="使用寿命">
         <template slot-scope="scope">
           <div class="update-maxUseCount" v-if="!scope.row.isCheck">
             <span>{{ scope.row.maxUseCount }}</span>
@@ -312,30 +312,7 @@ export default {
     },
 
     handleSearchQrCode() {
-      if (this.searchQrCode !== '') {
-        qrCodeGetData(this.searchQrCode).then(res => {
-          if (res.status === 200 && res.data.code === 0) {
-            // eslint-disable-next-line no-mixed-operators
-            this.tableData = res.data.data ? (res.data.data.filter(item => {
-              return item.workLine === Number(this.ProdLine);
-            }).map(item => {
-              return {
-                ...item,
-                isCheck: false
-              }
-            })) : []
-
-            this.total = this.tableData.length
-            this.currentPage = 1
-            this.pageSize = 10000
-            this.loading = false
-          }
-        })
-      } else {
-        this.pageSize = 8
-        this.currentPage = 1
-        this.InitpageInfo()
-      }
+      this.InitpageInfo()
     },
 
     formatDate(row, column, cellValue, index) {
@@ -360,6 +337,8 @@ export default {
                 // this.handle = false;
 
                 this.currentPage = 1
+                this.searchQrCode = ''
+
                 this.InitpageInfo();
               } else {
                 this.$message.error(res.data.msg)
@@ -435,9 +414,13 @@ export default {
         });
     },
     handleSizeChange(val) {
-      this.searchQrCode = ''
       this.pageSize = val
-      getPageInfo(this.currentPage, val)
+      const params = {
+        currentPage: this.currentPage,
+        pageSize: this.pageSize,
+        qrCode: this.searchQrCode
+      }
+      getPageInfo(params)
         .then(res => {
           if (res.status === 200) {
             let result = res.data.data.data;
@@ -467,8 +450,13 @@ export default {
         });
     },
     handleCurrentChange(val) {
-      this.searchQrCode = ''
-      getPageInfo(val, this.pageSize)
+      this.currentPage = val
+      const params = {
+        currentPage: this.currentPage,
+        pageSize: this.pageSize,
+        qrCode: this.searchQrCode
+      }
+      getPageInfo(params)
         .then(res => {
           if (res.status === 200) {
             let result = res.data.data.data;
@@ -498,20 +486,25 @@ export default {
         });
     },
     InitpageInfo() {
-      getPageInfo(this.currentPage, this.pageSize)
+      const params = {
+        currentPage: this.currentPage,
+        pageSize: this.pageSize,
+        qrCode: this.searchQrCode
+      }
+      getPageInfo(params)
         .then(res => {
           if (res.status === 200) {
-            let result = res.data.data.data;
-            this.tableData = result.filter(item => {
+            let result = res.data.data;
+            this.tableData = result ? result.data.filter(item => {
               return item.workLine === Number(this.ProdLine);
             }).map(item => {
               return {
                 ...item,
                 isCheck: false
               }
-            });
+            }) : []
 
-            this.total = res.data.data.totalPage;
+            this.total = result ? res.data.data.totalPage : 0
             this.loading = false;
           }
         })
@@ -530,7 +523,7 @@ export default {
     },
     InitEventSourse() {
       // 目前的做法是和后端做的单向长链接，这里的接口就不放在 API 列表中处理，直接在这里作为参数传入
-      const url = 'http://192.0.2.6:9001/sse/devicesStatus/' + this.ProdLine
+      const url = 'http://localhost:9001/sse/devicesStatus/' + this.ProdLine
       this.events = new EventSourses(
         url,
         res => {
@@ -543,6 +536,9 @@ export default {
               this.Count = res.data.data.maxUseCount
 
               this.currentPage = 1
+              this.searchQrCode = ''
+              this.dialogVisible = false
+
               this.InitpageInfo();
               if (res.codeSuccess) {
                 this.$message.success(res.msg)
@@ -618,29 +614,30 @@ export default {
       this.$refs['dialogRuleFormRef'].resetFields()
       this.dialogVisible = false
     },
-    exportExcel() {
+    async exportExcel() {
       if (this.multipleSelection.length === 0) {
         this.$message.warning('请选择导出数据')
         return false
       }
 
       const ids = this.multipleSelection.map(item => item.id)
-      exportData(ids).then(res => {
-        if (res.status === 200 && res.headers['content-disposition']) {
-          const fileName = res.headers['content-disposition']
-          const a = document.createElement('a')
-          const blob = new Blob([res.data])
-          const href = window.URL.createObjectURL(blob)
+      const res = await exportData(ids)
 
-          a.href = href
+      if (res.status === 200) {
+        const fileName = res.headers['content-disposition']
+        const a = document.createElement('a')
+        const blob = new Blob([res.data])
+        const href = window.URL.createObjectURL(blob)
+        a.href = href
+        if (fileName) {
           a.download = fileName.split('=')[1]
           document.body.appendChild(a)
           a.click()
 
           document.body.removeChild(a)
-          window.URL.revokeObjectURL(href)
         }
-      })
+        window.URL.revokeObjectURL(href)
+      }
     }
   },
   watch: {

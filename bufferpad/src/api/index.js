@@ -13,11 +13,8 @@ export const postInfo = (workline, qrcode) => {
     return post(`/cushion/manualCushionInfo/${workline}/${qrcode}`)
 }
 
-export const getPageInfo = (page, size) => {
-    return get('/cushion/cushionsPage', {
-        currentPage: page,
-        pageSize: size
-    })
+export const getPageInfo = (params) => {
+    return get('/cushion/cushionsPage', params)
 }
 
 export const changeMaxCount = (data) => {
