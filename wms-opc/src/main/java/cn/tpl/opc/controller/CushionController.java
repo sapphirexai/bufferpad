@@ -99,6 +99,9 @@ public class CushionController {
             if (null == maxUseCount)
                 return ResultDTO.failure("最大使用次数不能为空!");
 
+            if (0 > maxUseCount)
+                return ResultDTO.failure("最大使用次数不能为负!");
+
             List<Long> ids = scheme.getIds();
             if (CollectionUtils.isEmpty(ids))
                 return ResultDTO.failure("需修改的缓冲垫ID不能为空!");
