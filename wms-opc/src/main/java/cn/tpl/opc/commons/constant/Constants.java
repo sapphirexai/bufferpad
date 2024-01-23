@@ -119,6 +119,6 @@ public final class Constants {
             RESULT_MSG_CUSHION_ADD_FAILED = "新增缓冲垫失败！",
             RESULT_MSG_CUSHION_ADD_USED_COUNT_FAILED = "增加缓冲垫使用次数失败！",
             RESULT_MSG_CUSHION_USED_COUNT_REACHED_MAX = "使用次数已达到最大次数！",
-            RESULT_MSG_CUSHION_INVALID_SCAN = "扫码间隔时间不足1小时，无效扫码！";
+            RESULT_MSG_CUSHION_INVALID_SCAN = "扫码间隔时间不足2小时，无效扫码！";
 
 }
