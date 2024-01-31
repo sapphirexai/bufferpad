@@ -29,7 +29,7 @@ public final class Constants {
      * HEARTBEAT_2_PLC_VAL 给PLC的心跳值
      * DEFAULT_2_PLC_VAL 默认写入值PLC的值
      */
-    public static final int
+    public static final short
             HEARTBEAT_2_PLC_VAL = 0,
             DEFAULT_2_PLC_VAL = 1;
 

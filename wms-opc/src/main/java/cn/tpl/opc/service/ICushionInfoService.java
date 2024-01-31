@@ -77,7 +77,7 @@ public interface ICushionInfoService {
      */
     boolean modifyUsedCountByQrCode(String qrCode, Integer scannerSeq, Integer count);
 
-    boolean modifyOpenCountByQrCode(String qrCode, Integer openCount);
+    boolean modifyOpenCountByQrCode(String qrCode, Short openCount);
 
     boolean modifyMaxUseCountByIds(ModifyCushionInfoScheme scheme);
 

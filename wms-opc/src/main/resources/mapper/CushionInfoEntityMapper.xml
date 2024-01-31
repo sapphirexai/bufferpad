@@ -11,7 +11,7 @@
         <result column="qr_code" jdbcType="VARCHAR" property="qrCode"/>
         <result column="max_use_count" jdbcType="INTEGER" property="maxUseCount"/>
         <result column="used_count" jdbcType="INTEGER" property="usedCount"/>
-        <result column="open_count" jdbcType="INTEGER" property="openCount"/>
+        <result column="open_count" jdbcType="SMALLINT" property="openCount"/>
         <result column="work_line" jdbcType="INTEGER" property="workLine"/>
         <result column="scanner_seq" jdbcType="INTEGER" property="scannerSeq"/>
         <result column="last_scan_date" jdbcType="TIMESTAMP" property="lastScanDate"/>
@@ -94,7 +94,7 @@
         insert into cushion_info (id, qr_code, max_use_count,
         used_count,open_count,work_line,scanner_seq, last_scan_date)
         values (#{id,jdbcType=BIGINT}, #{qrCode,jdbcType=VARCHAR}, #{maxUseCount,jdbcType=INTEGER},
-        #{usedCount,jdbcType=INTEGER},#{openCount,jdbcType=INTEGER},#{workLine,jdbcType=INTEGER},#{scannerSeq,jdbcType=INTEGER},
+        #{usedCount,jdbcType=INTEGER},#{openCount,jdbcType=SMALLINT},#{workLine,jdbcType=INTEGER},#{scannerSeq,jdbcType=INTEGER},
         #{lastScanDate,jdbcType=TIMESTAMP})
     </insert>
     <insert id="insertSelective" parameterType="cn.tpl.opc.entity.CushionInfoEntity">
@@ -150,7 +150,7 @@
                 #{usedCount,jdbcType=INTEGER},
             </if>
             <if test="openCount != null">
-                #{openCount,jdbcType=INTEGER},
+                #{openCount,jdbcType=SMALLINT},
             </if>
             <if test="workLine != null">
                 #{workLine,jdbcType=INTEGER},
@@ -187,7 +187,7 @@
                 used_count = #{usedCount,jdbcType=INTEGER},
             </if>
             <if test="openCount != null">
-                open_count = #{openCount,jdbcType=INTEGER},
+                open_count = #{openCount,jdbcType=SMALLINT},
             </if>
             <if test="workLine != null">
                 work_line = #{workLine,jdbcType=INTEGER},
@@ -217,7 +217,7 @@
         set qr_code = #{qrCode,jdbcType=VARCHAR},
         max_use_count = #{maxUseCount,jdbcType=INTEGER},
         used_count = #{usedCount,jdbcType=INTEGER},
-        open_count = #{openCount,jdbcType=INTEGER},
+        open_count = #{openCount,jdbcType=SMALLINT},
         work_line = #{workLine,jdbcType=INTEGER},
         scanner_seq = #{scannerSeq,jdbcType=INTEGER},
         last_scan_date = #{lastScanDate,jdbcType=TIMESTAMP},
@@ -246,7 +246,7 @@
         update cushion_info
         <set>
             <if test="openCount != null">
-                open_count = #{openCount,jdbcType=INTEGER},
+                open_count = #{openCount,jdbcType=SMALLINT},
             </if>
         </set>
         where qr_code = #{qrCode,jdbcType=VARCHAR}

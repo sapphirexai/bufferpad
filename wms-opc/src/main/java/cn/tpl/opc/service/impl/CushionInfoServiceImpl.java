@@ -290,7 +290,7 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
     }
 
     @Override
-    public boolean modifyOpenCountByQrCode(String qrCode, Integer openCount) {
+    public boolean modifyOpenCountByQrCode(String qrCode, Short openCount) {
         if (null == openCount) return false;
         CushionInfoEntity cushionInfo = new CushionInfoEntity();
         cushionInfo.setQrCode(qrCode);

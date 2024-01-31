@@ -203,7 +203,7 @@ public class Connection {
         if (!workLine.equals(event.getWorkLine())) return;
 
         String addr = event.getAddress();
-        Integer cmd = event.getCmd();
+        Short cmd = event.getCmd();
         log.info("onMessageEvent, writing cmd to PLC =>> Address: {}, Cmd: {}", addr, cmd);
         if (null == cmd) return;
 
@@ -232,7 +232,7 @@ public class Connection {
 
         String addr = event.getAddress();
         log.info("onMessageEvent, reading from PLC =>> Address: {}", addr);
-        OperateResultExOne<Integer> operateResult = melsecMcNet.ReadInt32(addr);
+        OperateResultExOne<Short> operateResult = melsecMcNet.ReadInt16(addr);
         if (!operateResult.IsSuccess) {
             log.error("onMessageEvent, reading from PLC =>> failed, address: {}", addr);
             log.error("onMessageEvent, ErrorCode: {}", operateResult.ErrorCode);
@@ -241,7 +241,7 @@ public class Connection {
             return;
         }
 
-        Integer content = operateResult.Content;
+        Short content = operateResult.Content;
         if (null == content) {
             log.error("onMessageEvent, reading from PLC =>> openCount is null");
             return;
