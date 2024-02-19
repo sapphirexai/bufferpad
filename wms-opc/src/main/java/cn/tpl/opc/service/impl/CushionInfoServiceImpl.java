@@ -4,6 +4,7 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.tpl.opc.commons.constant.Constants;
 import cn.tpl.opc.commons.constant.Params;
 import cn.tpl.opc.commons.dto.ResultDTO;
+import cn.tpl.opc.commons.dto.event.EventBusCushionAfterNotifyPLC;
 import cn.tpl.opc.commons.dto.event.EventBusMsgCushionQrCode;
 import cn.tpl.opc.commons.dto.event.EventBusMsgPlcCmd;
 import cn.tpl.opc.commons.dto.event.EventBusMsgReadOpenCountFromPLC;
@@ -90,7 +91,7 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
             else
                 notifyPLC(qrCode, Constants.PLC_ADDR_TYPE_SCAN_SUCCESS, scannerSeq, workLine);
 
-            return ResultDTO.success(onScanCodeSuccess(qrCode, scannerSeq));
+            return ResultDTO.success(onScanCodeSuccess(workLine, qrCode, scannerSeq));
         }
         sseService.sendFailMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, null, workLine, scannerSeq), Constants.RESULT_MSG_CUSHION_ADD_FAILED);
         return ResultDTO.failure(Constants.RESULT_MSG_CUSHION_ADD_FAILED);
@@ -108,11 +109,11 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
             else
                 notifyPLC(qrCode, Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS, cushionScannerSeq, workLine);
 
-            return ResultDTO.success(onScanCodeSuccess(qrCode, cushionScannerSeq));
+            return ResultDTO.success(onScanCodeSuccess(workLine, qrCode, cushionScannerSeq));
         } else {
             notifyPLC(qrCode, Constants.PLC_ADDR_TYPE_SCAN_SUCCESS, scannerSeq, workLine);
         }
-        return ResultDTO.success(onScanCodeSuccess(qrCode, scannerSeq));
+        return ResultDTO.success(onScanCodeSuccess(workLine, qrCode, scannerSeq));
     }
 
     /**
@@ -198,18 +199,18 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
     /**
      * 缓冲垫扫码成功
      *
+     * @param workLine      产线
      * @param cushionQrCode 缓冲垫二维码
      * @param scannerSeq    扫码器安装顺序
      */
-    private CushionInfoDTO onScanCodeSuccess(String cushionQrCode, Integer scannerSeq) {
+    private CushionInfoDTO onScanCodeSuccess(Integer workLine, String cushionQrCode, Integer scannerSeq) {
         if (StringUtils.isEmpty(cushionQrCode)) return null;
         CushionInfoEntity cushionInfoEntity = findByQrCode(cushionQrCode);
         if (null == cushionInfoEntity) return null;
         log.info("onScanCodeSuccess");
-        CushionInfoDTO cushionInfoDTO = new CushionInfoDTO();
-        BeanUtil.copyProperties(cushionInfoEntity, cushionInfoDTO);
+        CushionInfoDTO cushionInfoDTO = cushionInfo2DTO(cushionInfoEntity);
         cushionInfoDTO.setScannerSeq(scannerSeq);
-        sseService.sendCushionMsg(cushionInfoDTO);// 推送一条缓冲垫数据到客户端
+        EventBus.getDefault().post(new EventBusCushionAfterNotifyPLC(workLine, cushionInfoDTO));
         return cushionInfoDTO;
     }
 
