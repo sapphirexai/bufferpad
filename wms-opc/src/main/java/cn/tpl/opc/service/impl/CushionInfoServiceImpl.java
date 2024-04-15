@@ -1,6 +1,7 @@
 package cn.tpl.opc.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.bean.copier.CopyOptions;
 import cn.tpl.opc.commons.constant.Constants;
 import cn.tpl.opc.commons.constant.Params;
 import cn.tpl.opc.commons.dto.ResultDTO;
@@ -13,10 +14,8 @@ import cn.tpl.opc.commons.dto.result.PageData;
 import cn.tpl.opc.commons.dto.result.SseMsgDTO;
 import cn.tpl.opc.commons.scheme.request.ModifyCushionInfoScheme;
 import cn.tpl.opc.commons.scheme.request.QueryCushionInfoPageScheme;
-import cn.tpl.opc.entity.CushionInfoEntity;
-import cn.tpl.opc.entity.DeviceInfoEntity;
-import cn.tpl.opc.entity.OpcConfigEntity;
-import cn.tpl.opc.entity.PLCAddrEntity;
+import cn.tpl.opc.entity.*;
+import cn.tpl.opc.mapper.CushionDetailEntityMapper;
 import cn.tpl.opc.mapper.CushionInfoEntityMapper;
 import cn.tpl.opc.mapper.OpcConfigEntityMapper;
 import cn.tpl.opc.service.ICushionInfoService;
@@ -33,6 +32,7 @@ import org.greenrobot.eventbus.ThreadMode;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
@@ -48,11 +48,14 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Service("cushionInfoService")
+@Transactional
 public class CushionInfoServiceImpl implements ICushionInfoService, InitializingBean, DisposableBean {
     @Resource
     private OpcConfigEntityMapper opcConfigEntityMapper;
     @Resource
     private CushionInfoEntityMapper cushionInfoEntityMapper;
+    @Resource
+    private CushionDetailEntityMapper cushionDetailEntityMapper;
     @Resource
     private ISseService sseService;
     @Resource
@@ -79,12 +82,36 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
     }
 
     /**
+     * 获取PLC地址类型
+     *
+     * @param isReScan   是否补码
+     * @param scannerSeq 扫码器顺序
+     * @return PLC地址类型
+     */
+    private static Integer getPlcAddrType(boolean isReScan, Integer scannerSeq) {
+        Integer plcAddrType = null;
+        if (Params.SCANNER_SEQ_KEY_1 == scannerSeq) {
+            plcAddrType = Constants.PLC_ADDR_TYPE_SCAN_SUCCESS_OPEN_COUNT_UP;
+            if (isReScan)
+                plcAddrType = Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS_OPEN_COUNT_UP;
+        }
+
+        if (Params.SCANNER_SEQ_KEY_2 == scannerSeq) {
+            plcAddrType = Constants.PLC_ADDR_TYPE_SCAN_SUCCESS_OPEN_COUNT_DOWN;
+            if (isReScan)
+                plcAddrType = Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS_OPEN_COUNT_DOWN;
+        }
+        return plcAddrType;
+    }
+
+    /**
      * 收到新的二维码时
      */
     private ResultDTO<CushionInfoDTO> onScanNew(Integer workLine, Integer scannerSeq, String qrCode) {
         boolean addResult = add(workLine, scannerSeq, qrCode);
         log.info("onQrCodeReceived，新增缓冲垫结果：[{}]", addResult);
         if (addResult) {
+            addDetail(cushionInfoEntityMapper.findByQrCode(qrCode));
             // 扫码成功PLC提示
             if (null == scannerSeq)
                 notifyAllScannersSates2PLC(qrCode, Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS, workLine);
@@ -95,25 +122,6 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
         }
         sseService.sendFailMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, null, workLine, scannerSeq), Constants.RESULT_MSG_CUSHION_ADD_FAILED);
         return ResultDTO.failure(Constants.RESULT_MSG_CUSHION_ADD_FAILED);
-    }
-
-    /**
-     * 扫码成功时
-     */
-    private ResultDTO<CushionInfoDTO> onScanSuccess(Integer workLine, Integer scannerSeq, String qrCode, CushionInfoEntity cushionInfoEntity) {
-        Integer cushionScannerSeq = cushionInfoEntity.getScannerSeq();
-        if (null == scannerSeq) {
-            // 补码逻辑
-            if (null == cushionScannerSeq)
-                notifyAllScannersSates2PLC(qrCode, Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS, workLine);
-            else
-                notifyPLC(qrCode, Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS, cushionScannerSeq, workLine);
-
-            return ResultDTO.success(onScanCodeSuccess(workLine, qrCode, cushionScannerSeq));
-        } else {
-            notifyPLC(qrCode, Constants.PLC_ADDR_TYPE_SCAN_SUCCESS, scannerSeq, workLine);
-        }
-        return ResultDTO.success(onScanCodeSuccess(workLine, qrCode, scannerSeq));
     }
 
     /**
@@ -194,6 +202,26 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
 
         sseService.sendFailMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, cushionInfoEntity, workLine, scannerSeq), Constants.RESULT_MSG_CUSHION_ADD_USED_COUNT_FAILED);
         return ResultDTO.failure(Constants.RESULT_MSG_CUSHION_ADD_USED_COUNT_FAILED);
+    }
+
+    /**
+     * 扫码成功时
+     */
+    private ResultDTO<CushionInfoDTO> onScanSuccess(Integer workLine, Integer scannerSeq, String qrCode, CushionInfoEntity cushionInfoEntity) {
+        Integer cushionScannerSeq = cushionInfoEntity.getScannerSeq();
+        addDetail(cushionInfoEntity);
+        if (null == scannerSeq) {
+            // 补码逻辑
+            if (null == cushionScannerSeq)
+                notifyAllScannersSates2PLC(qrCode, Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS, workLine);
+            else
+                notifyPLC(qrCode, Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS, cushionScannerSeq, workLine);
+
+            return ResultDTO.success(onScanCodeSuccess(workLine, qrCode, cushionScannerSeq));
+        } else {
+            notifyPLC(qrCode, Constants.PLC_ADDR_TYPE_SCAN_SUCCESS, scannerSeq, workLine);
+        }
+        return ResultDTO.success(onScanCodeSuccess(workLine, qrCode, scannerSeq));
     }
 
     /**
@@ -290,13 +318,17 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
         return cushionInfoEntityMapper.modifyUsedCountByQrCode(cushionInfo) > 0;
     }
 
-    @Override
-    public boolean modifyOpenCountByQrCode(String qrCode, Short openCount) {
-        if (null == openCount) return false;
-        CushionInfoEntity cushionInfo = new CushionInfoEntity();
-        cushionInfo.setQrCode(qrCode);
-        cushionInfo.setOpenCount(openCount);
-        return cushionInfoEntityMapper.modifyOpenCountByQrCode(cushionInfo) > 0;
+    /**
+     * 添加对应缓冲垫数据明细
+     *
+     * @param cushionInfo 缓冲垫数据
+     */
+    private void addDetail(CushionInfoEntity cushionInfo) {
+        CushionDetailEntity cushionDetail = new CushionDetailEntity();
+        CopyOptions copyOptions = new CopyOptions();
+        copyOptions.setIgnoreProperties("id");
+        BeanUtil.copyProperties(cushionInfo, cushionDetail, copyOptions);
+        cushionDetailEntityMapper.insertSelective(cushionDetail);
     }
 
     @Override
@@ -337,6 +369,25 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
             readOpenCountFromPLC(true, qrCode, scannerSeq, workLine);
     }
 
+    @Override
+    public boolean modifyOpenCountByQrCode(String qrCode, Short openCount) {
+        if (null == openCount) return false;
+
+        boolean modifyDetailResult = false;
+        CushionInfoEntity cushionInfo = new CushionInfoEntity();
+        cushionInfo.setQrCode(qrCode);
+        cushionInfo.setOpenCount(openCount);
+
+        boolean modifyInfoResult = cushionInfoEntityMapper.modifyOpenCountByQrCode(cushionInfo) > 0;
+        if (modifyInfoResult) {
+            CushionDetailEntity cushionDetail = new CushionDetailEntity();
+            BeanUtil.copyProperties(cushionInfo, cushionDetail);
+            modifyDetailResult = cushionDetailEntityMapper.modifyOpenCountByQrCode(cushionDetail) > 0;
+        }
+
+        return modifyInfoResult && modifyDetailResult;
+    }
+
     /**
      * 从PLC读取开口数
      *
@@ -350,18 +401,7 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
         log.info("readOpenCountFromPLC, isReScan => {}, seq => {}", isReScan, scannerSeq);
         if (null == scannerSeq) return;
 
-        Integer plcAddrType = null;
-        if (Params.SCANNER_SEQ_KEY_1 == scannerSeq) {
-            plcAddrType = Constants.PLC_ADDR_TYPE_SCAN_SUCCESS_OPEN_COUNT_UP;
-            if (isReScan)
-                plcAddrType = Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS_OPEN_COUNT_UP;
-        }
-
-        if (Params.SCANNER_SEQ_KEY_2 == scannerSeq) {
-            plcAddrType = Constants.PLC_ADDR_TYPE_SCAN_SUCCESS_OPEN_COUNT_DOWN;
-            if (isReScan)
-                plcAddrType = Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS_OPEN_COUNT_DOWN;
-        }
+        Integer plcAddrType = getPlcAddrType(isReScan, scannerSeq);
 
         if (null == plcAddrType) return;
 

@@ -52,4 +52,7 @@ public interface CushionDetailEntityMapper {
      * @mbg.generated Mon Apr 15 16:08:36 CST 2024
      */
     int updateByPrimaryKey(CushionDetailEntity record);
+
+    int modifyOpenCountByQrCode(CushionDetailEntity cushionDetail);
+
 }
