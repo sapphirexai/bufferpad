@@ -27,6 +27,7 @@ public class PageData<R> extends AbsBasePageDTO {
         PageData<R> pageData = new PageData<>();
         pageData.setCurrentPage(iPage.getCurrent());
         pageData.setTotalPage(iPage.getTotal());
+        pageData.setPageSize(iPage.getSize());
         pageData.setData(iPage.getRecords().stream().map(data2DTO).collect(Collectors.toList()));
         return pageData;
     }

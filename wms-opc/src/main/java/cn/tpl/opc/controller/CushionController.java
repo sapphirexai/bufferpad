@@ -4,10 +4,12 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.date.DateUtil;
 import cn.tpl.opc.commons.constant.Params;
 import cn.tpl.opc.commons.dto.ResultDTO;
+import cn.tpl.opc.commons.dto.result.CushionDetailDTO;
 import cn.tpl.opc.commons.dto.result.CushionInfoDTO;
 import cn.tpl.opc.commons.dto.result.ExportCushionInfoDTO;
 import cn.tpl.opc.commons.dto.result.PageData;
 import cn.tpl.opc.commons.scheme.request.ModifyCushionInfoScheme;
+import cn.tpl.opc.commons.scheme.request.QueryCushionDetailPageScheme;
 import cn.tpl.opc.commons.scheme.request.QueryCushionInfoPageScheme;
 import cn.tpl.opc.service.ICushionInfoService;
 import cn.tpl.opc.util.EasyExcelUtils;
@@ -41,8 +43,8 @@ public class CushionController {
     @Operation(summary = "分页查询缓冲垫列表")
     @GetMapping("/cushionsPage")
     public ResultDTO<PageData<CushionInfoDTO>> cushionsPage(
-            @Parameter(description = "详情查看<a href=\"#model-BasePageScheme\"> BasePageScheme")
-                    QueryCushionInfoPageScheme scheme) {
+            @Parameter(description = "详情查看<a href=\"#model-QueryCushionInfoPageScheme\"> QueryCushionInfoPageScheme")
+            QueryCushionInfoPageScheme scheme) {
         try {
             log.debug("cushionsPage，scheme：{}", scheme);
             return ResultDTO.success(cushionInfoService.listByPage(scheme));
@@ -62,6 +64,19 @@ public class CushionController {
                 return ResultDTO.failure("缓冲垫编码不能为空！");
 
             return ResultDTO.success(cushionInfoService.listByQrCode(qrCode));
+        } catch (Exception e) {
+            return ResultDTO.exception(e);
+        }
+    }
+
+    @Operation(summary = "通过二维码查询对应缓冲垫明细")
+    @GetMapping("/detailsPage")
+    public ResultDTO<PageData<CushionDetailDTO>> listDetailsPageByQrCode(
+            @Parameter(description = "详情查看<a href=\"#model-QueryCushionDetailPageScheme\"> QueryCushionDetailPageScheme")
+            QueryCushionDetailPageScheme scheme) {
+        try {
+            log.debug("detailsPage，scheme：{}", scheme);
+            return ResultDTO.success(cushionInfoService.listDetailsByPage(scheme));
         } catch (Exception e) {
             return ResultDTO.exception(e);
         }

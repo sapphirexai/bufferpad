@@ -34,6 +34,28 @@
     from cushion_detail
     where id = #{id,jdbcType=BIGINT}
   </select>
+
+  <select id="listByQrCode" parameterType="java.lang.String" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List"/>
+    from cushion_detail
+    where qr_code = #{qrCode}
+  </select>
+
+  <select id="listByPage" resultMap="BaseResultMap"
+          parameterType="cn.tpl.opc.commons.scheme.request.QueryCushionDetailPageScheme">
+    select
+    <include refid="Base_Column_List"/>
+    from cushion_detail
+    <where>
+      <if test="data.qrCode!=null">
+        qr_code = #{data.qrCode}
+      </if>
+    </where>
+    order by created_date desc
+  </select>
+
+
   <delete id="deleteByPrimaryKey" parameterType="java.lang.Long">
     <!--
       WARNING - @mbg.generated

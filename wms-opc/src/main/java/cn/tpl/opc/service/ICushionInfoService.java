@@ -1,9 +1,11 @@
 package cn.tpl.opc.service;
 
 import cn.tpl.opc.commons.dto.ResultDTO;
+import cn.tpl.opc.commons.dto.result.CushionDetailDTO;
 import cn.tpl.opc.commons.dto.result.CushionInfoDTO;
 import cn.tpl.opc.commons.dto.result.PageData;
 import cn.tpl.opc.commons.scheme.request.ModifyCushionInfoScheme;
+import cn.tpl.opc.commons.scheme.request.QueryCushionDetailPageScheme;
 import cn.tpl.opc.commons.scheme.request.QueryCushionInfoPageScheme;
 import cn.tpl.opc.entity.CushionInfoEntity;
 
@@ -59,12 +61,15 @@ public interface ICushionInfoService {
      */
     List<CushionInfoDTO> listByQrCode(String qrCode);
 
+
     /**
-     * 根据ID列表查找对应缓冲垫
+     * 根据ID列表查找对应缓冲垫明细
      *
-     * @param ids 缓冲垫ID
-     * @return 对应缓冲垫列表信息
+     * @param scheme 分页查询参数协议
+     * @return 分页数据
      */
+    PageData<CushionDetailDTO> listDetailsByPage(QueryCushionDetailPageScheme scheme);
+
     List<CushionInfoDTO> listByIds(List<Long> ids);
 
     /**

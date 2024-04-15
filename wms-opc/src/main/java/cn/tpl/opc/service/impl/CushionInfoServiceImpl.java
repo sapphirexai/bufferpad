@@ -9,10 +9,12 @@ import cn.tpl.opc.commons.dto.event.EventBusCushionAfterNotifyPLC;
 import cn.tpl.opc.commons.dto.event.EventBusMsgCushionQrCode;
 import cn.tpl.opc.commons.dto.event.EventBusMsgPlcCmd;
 import cn.tpl.opc.commons.dto.event.EventBusMsgReadOpenCountFromPLC;
+import cn.tpl.opc.commons.dto.result.CushionDetailDTO;
 import cn.tpl.opc.commons.dto.result.CushionInfoDTO;
 import cn.tpl.opc.commons.dto.result.PageData;
 import cn.tpl.opc.commons.dto.result.SseMsgDTO;
 import cn.tpl.opc.commons.scheme.request.ModifyCushionInfoScheme;
+import cn.tpl.opc.commons.scheme.request.QueryCushionDetailPageScheme;
 import cn.tpl.opc.commons.scheme.request.QueryCushionInfoPageScheme;
 import cn.tpl.opc.entity.*;
 import cn.tpl.opc.mapper.CushionDetailEntityMapper;
@@ -271,6 +273,13 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
         return cushionInfoDTO;
     }
 
+    private CushionDetailDTO cushionDetail2DTO(CushionDetailEntity cushionDetail) {
+        if (null == cushionDetail) return null;
+        CushionDetailDTO cushionDetailDTO = new CushionDetailDTO();
+        BeanUtil.copyProperties(cushionDetail, cushionDetailDTO);
+        return cushionDetailDTO;
+    }
+
     @Override
     public boolean add(Integer workLine, Integer scannerSeq, String qrCode) {
         // 二维码为空直接返回失败
@@ -299,6 +308,13 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
     public List<CushionInfoDTO> listByQrCode(String qrCode) {
         List<CushionInfoEntity> cushionInfos = cushionInfoEntityMapper.listByQrCode(qrCode);
         return cushionInfos.stream().map(this::cushionInfo2DTO).collect(Collectors.toList());
+    }
+
+    @Override
+    public PageData<CushionDetailDTO> listDetailsByPage(QueryCushionDetailPageScheme scheme) {
+        Page<CushionDetailEntity> page = new Page<>(scheme.getCurrentPage(), scheme.getPageSize());
+        IPage<CushionDetailEntity> iPage = cushionDetailEntityMapper.listByPage(page, scheme);
+        return PageData.of(iPage, this::cushionDetail2DTO);
     }
 
     @Override
