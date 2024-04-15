@@ -326,8 +326,9 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
     private void addDetail(CushionInfoEntity cushionInfo) {
         CushionDetailEntity cushionDetail = new CushionDetailEntity();
         CopyOptions copyOptions = new CopyOptions();
-        copyOptions.setIgnoreProperties("id");
+        copyOptions.setIgnoreProperties("id", "modifiedDate");
         BeanUtil.copyProperties(cushionInfo, cushionDetail, copyOptions);
+        cushionDetail.setCreatedDate(new Date());
         cushionDetailEntityMapper.insertSelective(cushionDetail);
     }
 
