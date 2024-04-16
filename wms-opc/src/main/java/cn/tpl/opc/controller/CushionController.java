@@ -4,10 +4,7 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.date.DateUtil;
 import cn.tpl.opc.commons.constant.Params;
 import cn.tpl.opc.commons.dto.ResultDTO;
-import cn.tpl.opc.commons.dto.result.CushionDetailDTO;
-import cn.tpl.opc.commons.dto.result.CushionInfoDTO;
-import cn.tpl.opc.commons.dto.result.ExportCushionInfoDTO;
-import cn.tpl.opc.commons.dto.result.PageData;
+import cn.tpl.opc.commons.dto.result.*;
 import cn.tpl.opc.commons.scheme.request.ModifyCushionInfoScheme;
 import cn.tpl.opc.commons.scheme.request.QueryCushionDetailPageScheme;
 import cn.tpl.opc.commons.scheme.request.QueryCushionInfoPageScheme;
@@ -23,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -147,28 +145,81 @@ public class CushionController {
                 ExportCushionInfoDTO exportData = new ExportCushionInfoDTO();
                 BeanUtil.copyProperties(data, exportData);
                 Integer scannerSeq = data.getScannerSeq();
-                String position = "";
-                if (null != scannerSeq) {
-                    if (Params.SCANNER_SEQ_KEY_1 == data.getScannerSeq())
-                        position = Params.SCANNER_SEQ_VAL_1;
-                    if (Params.SCANNER_SEQ_KEY_2 == data.getScannerSeq())
-                        position = Params.SCANNER_SEQ_VAL_2;
-                }
                 exportData.setCreatedDate(DateUtil.formatDateTime(data.getCreatedDate()));
                 exportData.setLastScanDate(DateUtil.formatDateTime(data.getLastScanDate()));
-                exportData.setPosition(position);
+                exportData.setPosition(convertSeq2Pos(scannerSeq));
 
                 exportDatas.add(exportData);
             }
-            String fileType = ".xls";
-            String fileName = "Cushion_" + DateUtil.now() + fileType;
-            response.setContentType(fileType + "; charset=UTF-8");
-            response.setHeader("Access-Control-Expose-Headers", "Content-Disposition");
-            response.setHeader("Content-Disposition", "attachment;filename=" + new String(fileName.getBytes(StandardCharsets.UTF_8), StandardCharsets.ISO_8859_1));
-            EasyExcelUtils.export(response.getOutputStream(), exportDatas, ExportCushionInfoDTO.class);
+            doExportExcel("Cushion_", exportDatas, ExportCushionInfoDTO.class, response);
             return ResultDTO.success();
         } catch (Exception e) {
             return ResultDTO.exception(e);
         }
+    }
+
+    @Operation(summary = "批量导出指定缓冲垫明细")
+    @PostMapping("/details/excel")
+    public ResultDTO<Boolean> exportCushionDetails(
+            @Parameter(hidden = true) HttpServletResponse response,
+            @Parameter(description = "需要导出的缓冲垫明细ID列表")
+            @RequestBody List<Long> ids) {
+        try {
+            log.info("exportCushionDetails, ids => {}", ids);
+            if (CollectionUtils.isEmpty(ids))
+                return ResultDTO.failure("需导出的缓冲垫明细ID不能为空!");
+
+            List<CushionDetailDTO> cushionDetails = cushionInfoService.listDetailsByIds(ids);
+            if (CollectionUtils.isEmpty(cushionDetails)) return ResultDTO.failure("无对应数据!");
+
+            List<ExportCushionDetailDTO> exportDatas = new ArrayList<>();
+            for (CushionDetailDTO data : cushionDetails) {
+                ExportCushionDetailDTO exportData = new ExportCushionDetailDTO();
+                BeanUtil.copyProperties(data, exportData);
+                Integer scannerSeq = data.getScannerSeq();
+                exportData.setCreatedDate(DateUtil.formatDateTime(data.getCreatedDate()));
+                exportData.setPosition(convertSeq2Pos(scannerSeq));
+
+                exportDatas.add(exportData);
+            }
+            doExportExcel("Cushion_Details_", exportDatas, ExportCushionDetailDTO.class, response);
+            return ResultDTO.success();
+        } catch (Exception e) {
+            return ResultDTO.exception(e);
+        }
+    }
+
+    /**
+     * 将扫码器安装顺序转换为对应位置
+     *
+     * @param scannerSeq 扫码器安装顺序
+     * @return 对应位置
+     */
+    private String convertSeq2Pos(Integer scannerSeq) {
+        String position = "";
+        if (null != scannerSeq) {
+            if (Params.SCANNER_SEQ_KEY_1 == scannerSeq)
+                position = Params.SCANNER_SEQ_VAL_1;
+            if (Params.SCANNER_SEQ_KEY_2 == scannerSeq)
+                position = Params.SCANNER_SEQ_VAL_2;
+        }
+        return position;
+    }
+
+    /**
+     * 导出
+     *
+     * @param fileName    文件名
+     * @param exportDatas 导出数据列表
+     * @param template    导出模板
+     * @param response    HTTP响应体
+     * @throws IOException IO异常
+     */
+    private <T> void doExportExcel(String fileName, List<T> exportDatas, Class<?> template, HttpServletResponse response) throws IOException {
+        fileName = fileName + DateUtil.now() + ".xls";
+        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+        response.setHeader("Access-Control-Expose-Headers", "Content-Disposition");
+        response.setHeader("Content-Disposition", "attachment;filename=" + new String(fileName.getBytes(StandardCharsets.UTF_8), StandardCharsets.ISO_8859_1));
+        EasyExcelUtils.export(response.getOutputStream(), exportDatas, template);
     }
 }

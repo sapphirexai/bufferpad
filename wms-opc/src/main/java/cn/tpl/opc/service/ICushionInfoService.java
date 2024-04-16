@@ -72,6 +72,8 @@ public interface ICushionInfoService {
 
     List<CushionInfoDTO> listByIds(List<Long> ids);
 
+    List<CushionDetailDTO> listDetailsByIds(List<Long> ids);
+
     /**
      * 修改已使用次数
      *

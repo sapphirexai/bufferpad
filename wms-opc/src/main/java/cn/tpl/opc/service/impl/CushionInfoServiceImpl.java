@@ -326,6 +326,11 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
         List<CushionInfoEntity> cushionInfos = cushionInfoEntityMapper.listByIds(ids);
         return cushionInfos.stream().map(this::cushionInfo2DTO).collect(Collectors.toList());
     }
+    @Override
+    public List<CushionDetailDTO> listDetailsByIds(List<Long> ids) {
+        List<CushionDetailEntity> cushionDetails = cushionDetailEntityMapper.listByIds(ids);
+        return cushionDetails.stream().map(this::cushionDetail2DTO).collect(Collectors.toList());
+    }
 
     @Override
     public boolean modifyUsedCountByQrCode(CushionInfoEntity cushionInfoEntity, Integer scannerSeq) {

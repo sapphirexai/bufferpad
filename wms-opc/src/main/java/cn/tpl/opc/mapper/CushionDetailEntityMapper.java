@@ -1,9 +1,7 @@
 package cn.tpl.opc.mapper;
 
 import cn.tpl.opc.commons.scheme.request.QueryCushionDetailPageScheme;
-import cn.tpl.opc.commons.scheme.request.QueryCushionInfoPageScheme;
 import cn.tpl.opc.entity.CushionDetailEntity;
-import cn.tpl.opc.entity.CushionInfoEntity;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.ibatis.annotations.Mapper;
@@ -66,5 +64,7 @@ public interface CushionDetailEntityMapper {
     List<CushionDetailEntity> listByQrCode(String qrCode);
 
     IPage<CushionDetailEntity> listByPage(Page<CushionDetailEntity> page, @Param("data") QueryCushionDetailPageScheme scheme);
+
+    List<CushionDetailEntity> listByIds(@Param("ids") List<Long> ids);
 
 }
