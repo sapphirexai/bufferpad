@@ -69,7 +69,7 @@ public class CushionController {
         }
     }
 
-    @Operation(summary = "通过二维码查询对应缓冲垫明细")
+    @Operation(summary = "通过二维码分页查询对应缓冲垫明细")
     @GetMapping("/detailsPage")
     public ResultDTO<PageData<CushionDetailDTO>> listDetailsPageByQrCode(
             @Parameter(description = "详情查看<a href=\"#model-QueryCushionDetailPageScheme\"> QueryCushionDetailPageScheme")
