@@ -17,9 +17,12 @@
       <el-table-column type="selection" width="55"></el-table-column>
       <el-table-column prop="qrCode" label="缓冲垫编号"></el-table-column>
       <el-table-column prop="openCount" label="开口数"></el-table-column>
-      <el-table-column prop="workLine" label="产线"></el-table-column>
-      <el-table-column prop="scannerSeq" label="扫码器安装顺序"></el-table-column>
-      <el-table-column prop="createdDate" label="创建时间" :formatter="formatDate"></el-table-column>
+      <el-table-column prop="scannerSeq" label="缓冲垫位置" width="180">
+        <template slot-scope="scope">
+          <span :class="showCodeClass(scope.row.scannerSeq)">{{ showCodeName(scope.row.scannerSeq) }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column prop="createdDate" label="扫码时间" :formatter="formatDate"></el-table-column>
     </el-table>
     <el-pagination
       @size-change="handleSizeChange"
@@ -90,6 +93,15 @@ export default {
       } else {
         return '';
       }
+    },
+
+    showCodeName(value) {
+      const name = value ? (value === 1 ? '上' : '下') : '-'
+      return name
+    },
+    showCodeClass(value) {
+      const className = value ? (value === 1 ? 'success' : 'error') : ''
+      return className
     },
 
     formatDate(row, column, cellValue, index) {
