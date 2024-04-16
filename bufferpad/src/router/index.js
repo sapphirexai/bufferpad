@@ -1,40 +1,50 @@
+/*
+ * @Date         : 2024-04-16 08:55:40
+ * @LastEditTime : 2024-04-16 10:32:00
+ * @filePath     : no item name
+ * @Description  : qwe
+ *
+ * Copyright (c) 2024 by Jay@lang, All Rights Reserved.
+ */
 import Vue from 'vue'
 import Router from 'vue-router'
 import Layout from '@/views/layout'
 Vue.use(Router)
 
-const router =  new Router({
-  mode: 'history', 
+const router = new Router({
+  mode: 'history',
   routes: [
     {
       path: '/',
       name: 'Home',
       component: Layout,
-      redirect:'/index',
-      children:[
-        {path: '/summary',component: () => import('../views/Layout/summary.vue')},
-        {path:'/index',
-        name:'Running',
-        component:()=>import('../views/Layout/Running.vue'),
-        meta: {
-          title: 'running',
-          keepAlive: true // 缓存组件
+      redirect: '/index',
+      children: [
+        {
+          path: '/summary',
+          component: () => import('../views/Layout/summary.vue')
+        },
+        {
+          path: '/index',
+          name: 'Running',
+          component: () => import('../views/Layout/Running.vue'),
+          meta: {
+            title: 'running',
+            keepAlive: true // 缓存组件
+          }
+        },
+        {
+          path: '/details',
+          component: () => import('../views/Layout/details.vue')
         }
-      }
       ]
-    }, 
+    },
     {
- 
       path: '/networkError',
- 
-      component: require('../components/network_error.vue').default, 
- 
+      component: require('../components/network_error.vue').default,
       name: 'networkError',
- 
-      meta: { title: '网络异常' } 
+      meta: { title: '网络异常' }
 }
-
-    
   ]
 })
 // router.beforeEach((to, from, next) => {
@@ -52,6 +62,4 @@ const router =  new Router({
 //     sessionStorage.setItem(to.name, JSON.stringify(to.params))
 //   }
 // })
-
-
 export default router

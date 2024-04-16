@@ -1,3 +1,11 @@
+/*
+ * @Date         : 2024-04-16 08:55:39
+ * @LastEditTime : 2024-04-16 09:04:32
+ * @filePath     : no item name
+ * @Description  : 
+ * 
+ * Copyright (c) 2024 by Jay@lang, All Rights Reserved.
+ */
 'use strict'
 // Template version: 1.3.1
 // see http://vuejs-templates.github.io/webpack for documentation.
@@ -12,7 +20,8 @@ module.exports = {
     assetsPublicPath: '/',
     proxyTable: {
       '/api': {
-        target: "http://192.0.2.18:9001/", 
+        // target: "http://192.0.2.18:9001/", 
+        target: "http://192.0.2.6:9001/", 
         changeOrigin: true,
         ws: true,
         secure: false,

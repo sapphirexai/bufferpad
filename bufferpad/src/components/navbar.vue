@@ -1,12 +1,19 @@
+<!--
+ * @Date         : 2024-04-16 08:55:40
+ * @LastEditTime : 2024-04-16 11:12:59
+ * @filePath     : no item name
+ * @Description  :
+ *
+ * Copyright (c) 2024 by Jay@lang, All Rights Reserved.
+-->
 <template>
   <div class="navbar">
-    <el-menu 
+    <el-menu
       active-text-color="#ffd04b"
-      default-active="1"
       background-color="#545c64"
       text-color="#ffffff"
       :router="true"
-      :default-active="this.$route.path"
+      :default-active='this.$route.path'
     >
       <el-menu-item v-for="(item, i) in navList" :key="i" :index="item.name">
         <template slot="title">
@@ -15,7 +22,6 @@
         </template>
       </el-menu-item>
     </el-menu>
-   
     <!-- 二级菜单 -->
     <!-- <template v-if="!item.leaf">
       <el-submenu :index="index + ''">
@@ -39,12 +45,12 @@
 
 <script>
 export default {
-  name: "AppNavbar",
+  name: 'AppNavbar',
   data() {
     return {
       navList: [
-        { name: "/index", navItem: "Running" },
-        { name: "/summary", navItem: "Summary" }
+        { name: '/index', navItem: 'Running' },
+        { name: '/summary', navItem: 'Summary' }
       ]
     };
   },

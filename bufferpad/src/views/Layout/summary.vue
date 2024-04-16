@@ -50,12 +50,16 @@ export default {
   },
   methods: {
     getData() {
-      getPageInfo(1, 10).then(res => {
+      const params = {
+        currentPage: this.currentPage,
+        pageSize: this.pageSize
+      }
+      getPageInfo(params).then(res => {
       // eslint-disable-next-line eqeqeq
         if (res.status == 200) {
           console.log(res)
-          this.tableData = res.data.data.data
-          this.total = res.data.data.totalPage
+          this.tableData = res.data.data.data || []
+          this.total = res.data.data.totalPage || 0
           this.loading = false
         }
       })

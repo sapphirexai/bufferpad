@@ -24,3 +24,7 @@ export const changeMaxCount = (data) => {
 export const exportData = (data) => {
     return post('/cushion/cushions/excel', data, 'blob')
 }
+
+export const getDetails = (params) => {
+    return get('/cushion/detailsPage', params)
+}

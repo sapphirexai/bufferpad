@@ -1,18 +1,26 @@
+<!--
+ * @Date         : 2024-04-16 08:55:40
+ * @LastEditTime : 2024-04-16 11:20:59
+ * @filePath     : no item name
+ * @Description  :
+ *
+ * Copyright (c) 2024 by Jay@lang, All Rights Reserved.
+-->
 <template>
     <div class="main">
-      <keep-alive>
-      <router-view></router-view>
-    </keep-alive></div>
+      <keep-alive exclude="details">
+        <router-view></router-view>
+      </keep-alive>
+    </div>
   </template>
-  
+
   <script>
       export default {
-          name: "AppMain"
+          name: 'AppMain'
       }
   </script>
-  
+
   <style scoped>
-  
   /* 主区域 */
   .main {
     position: absolute;
