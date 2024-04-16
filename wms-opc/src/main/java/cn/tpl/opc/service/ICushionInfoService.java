@@ -75,12 +75,11 @@ public interface ICushionInfoService {
     /**
      * 修改已使用次数
      *
-     * @param qrCode     缓冲垫二维码
-     * @param scannerSeq 扫码器安装顺序
-     * @param count      已使用次数
+     * @param cushionInfoEntity 缓冲垫信息
+     * @param scannerSeq        扫码器安装顺序
      * @return 修改结果
      */
-    boolean modifyUsedCountByQrCode(String qrCode, Integer scannerSeq, Integer count);
+    boolean modifyUsedCountByQrCode(CushionInfoEntity cushionInfoEntity, Integer scannerSeq);
 
     boolean modifyOpenCountByQrCode(String qrCode, Short openCount);
 

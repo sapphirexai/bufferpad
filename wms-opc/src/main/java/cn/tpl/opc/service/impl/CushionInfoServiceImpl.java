@@ -129,8 +129,9 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
     /**
      * 无效扫码时
      */
-    private ResultDTO<CushionInfoDTO> onScanIneffective(Integer workLine, Integer scannerSeq, String qrCode, CushionInfoEntity cushionInfoEntity) {
+    private ResultDTO<CushionInfoDTO> onScanIneffective(Integer workLine, Integer scannerSeq, CushionInfoEntity cushionInfoEntity) {
         Integer cushionScannerSeq = cushionInfoEntity.getScannerSeq();
+        String qrCode = cushionInfoEntity.getQrCode();
         sseService.sendFailMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, cushionInfoEntity, workLine, scannerSeq), Constants.RESULT_MSG_CUSHION_INVALID_SCAN);
         // 扫码成功PLC提示
         if (null == scannerSeq) {
@@ -149,8 +150,9 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
     /**
      * 达到使用最大次数时
      */
-    private ResultDTO<CushionInfoDTO> onScanMax(Integer workLine, Integer scannerSeq, String qrCode, CushionInfoEntity cushionInfoEntity) {
+    private void onScanMax(Integer workLine, Integer scannerSeq, CushionInfoEntity cushionInfoEntity) {
         Integer cushionScannerSeq = cushionInfoEntity.getScannerSeq();
+        String qrCode = cushionInfoEntity.getQrCode();
         if (null == scannerSeq) {
             // 补码逻辑
             if (null == cushionScannerSeq)
@@ -162,7 +164,6 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
         }
 
         sseService.sendFailMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, cushionInfoEntity, workLine, scannerSeq), Constants.RESULT_MSG_CUSHION_USED_COUNT_REACHED_MAX);
-        return ResultDTO.failure(Constants.RESULT_MSG_CUSHION_USED_COUNT_REACHED_MAX);
     }
 
 
@@ -182,24 +183,16 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
         long interval = System.currentTimeMillis() - lastScanDate.getTime();
         if (interval < Constants.SCANNER_EFFECTIVE_INTERVAL_MILLIS) {
             log.info("handleScannerData, onScanIneffective, interval => {}ms", interval);
-            return onScanIneffective(workLine, scannerSeq, qrCode, cushionInfoEntity);
+            return onScanIneffective(workLine, scannerSeq, cushionInfoEntity);
         }
 
-        int maxUseCount = cushionInfoEntity.getMaxUseCount();
-        int usedCount = cushionInfoEntity.getUsedCount();
-
-        // 超次数PLC报警
-        if (maxUseCount <= usedCount) {
-            log.warn("handleScannerData，onScanMax，maxUseCount => {}，usedCount => {}", maxUseCount, usedCount);
-            return onScanMax(workLine, scannerSeq, qrCode, cushionInfoEntity);
-        }
         // 增加当前缓冲垫1次使用次数
-        usedCount++;
-        boolean modifyResult = modifyUsedCountByQrCode(qrCode, scannerSeq, usedCount);
+        cushionInfoEntity.setUsedCount(cushionInfoEntity.getUsedCount() + 1);
+        boolean modifyResult = modifyUsedCountByQrCode(cushionInfoEntity, scannerSeq);
         log.info("handleScannerData, modify usedCount, result => [{}]", modifyResult);
         if (modifyResult) {
             // 扫码成功PLC提示
-            return onScanSuccess(workLine, scannerSeq, qrCode, cushionInfoEntity);
+            return onScanSuccess(workLine, scannerSeq, cushionInfoEntity);
         }
 
         sseService.sendFailMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, cushionInfoEntity, workLine, scannerSeq), Constants.RESULT_MSG_CUSHION_ADD_USED_COUNT_FAILED);
@@ -209,8 +202,9 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
     /**
      * 扫码成功时
      */
-    private ResultDTO<CushionInfoDTO> onScanSuccess(Integer workLine, Integer scannerSeq, String qrCode, CushionInfoEntity cushionInfoEntity) {
+    private ResultDTO<CushionInfoDTO> onScanSuccess(Integer workLine, Integer scannerSeq, CushionInfoEntity cushionInfoEntity) {
         Integer cushionScannerSeq = cushionInfoEntity.getScannerSeq();
+        String qrCode = cushionInfoEntity.getQrCode();
         addDetail(cushionInfoEntity);
         if (null == scannerSeq) {
             // 补码逻辑
@@ -223,6 +217,7 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
         } else {
             notifyPLC(qrCode, Constants.PLC_ADDR_TYPE_SCAN_SUCCESS, scannerSeq, workLine);
         }
+
         return ResultDTO.success(onScanCodeSuccess(workLine, qrCode, scannerSeq));
     }
 
@@ -241,6 +236,15 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
         CushionInfoDTO cushionInfoDTO = cushionInfo2DTO(cushionInfoEntity);
         cushionInfoDTO.setScannerSeq(scannerSeq);
         EventBus.getDefault().post(new EventBusCushionAfterNotifyPLC(workLine, cushionInfoDTO));
+
+        int maxUseCount = cushionInfoEntity.getMaxUseCount();
+        int usedCount = cushionInfoEntity.getUsedCount();
+        // 达到最大次数PLC报警
+        if (maxUseCount <= usedCount) {
+            log.warn("handleScannerData，onScanMax，maxUseCount => {}，usedCount => {}", maxUseCount, usedCount);
+            onScanMax(workLine, scannerSeq, cushionInfoEntity);
+        }
+
         return cushionInfoDTO;
     }
 
@@ -324,14 +328,10 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
     }
 
     @Override
-    public boolean modifyUsedCountByQrCode(String qrCode, Integer scannerSeq, Integer count) {
-        if (null == count) return false;
-        CushionInfoEntity cushionInfo = new CushionInfoEntity();
-        cushionInfo.setQrCode(qrCode);
-        cushionInfo.setUsedCount(count);
-        cushionInfo.setLastScanDate(new Date());
-        cushionInfo.setScannerSeq(scannerSeq);
-        return cushionInfoEntityMapper.modifyUsedCountByQrCode(cushionInfo) > 0;
+    public boolean modifyUsedCountByQrCode(CushionInfoEntity cushionInfoEntity, Integer scannerSeq) {
+        cushionInfoEntity.setLastScanDate(new Date());
+        cushionInfoEntity.setScannerSeq(scannerSeq);
+        return cushionInfoEntityMapper.modifyUsedCountByQrCode(cushionInfoEntity) > 0;
     }
 
     /**
