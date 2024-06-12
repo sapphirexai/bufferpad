@@ -23,7 +23,7 @@
         <div style="display:flex; align-items: center;">
           <p class="title">PLC状态:</p>
           <div class="connection-status">
-            <div class="info" v-for="item in devicesMessage.filter(data => data.type === 1)" :key="item.id">
+            <div class="info" v-for="item in devicesMessage.filter(data => data.type !== 0)" :key="item.id">
               <span class="name">{{ item.name }}</span>
               <div
                 :class="{'blink': !item.status}"
@@ -246,7 +246,7 @@ export default {
       input: '',
       events: null,
       useCount: 0,
-      devicesMessage: [{type: 0, status: 0}, {type: 1, status: 0}],
+      devicesMessage: [{type: 0, status: 0}, {type: 1, status: 0}, {type: 2, status: 0}],
       loading: true,
       pageSizes: [8, 15, 20, 100, 10000],
       pageSize: 8,
