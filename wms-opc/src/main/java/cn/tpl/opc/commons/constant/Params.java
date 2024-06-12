@@ -13,11 +13,13 @@ public final class Params {
     /**
      * 设备类型
      * DEVICE_TYPE_KEY_SCANNER 扫码器
-     * DEVICE_TYPE_KEY_PLC PLC
+     * DEVICE_TYPE_KEY_PLC 三菱PLC
+     * DEVICE_TYPE_KEY_HC_PLC 汇川PLC
      */
     public static final int
             DEVICE_TYPE_KEY_SCANNER = 0,
-            DEVICE_TYPE_KEY_PLC = 1;
+            DEVICE_TYPE_KEY_SL_PLC = 1,
+            DEVICE_TYPE_KEY_HC_PLC = 2;
 
     /**
      * NETTY连接状态名

@@ -2,6 +2,7 @@ package cn.tpl.opc.netty;
 
 import HslCommunication.Core.Types.OperateResult;
 import HslCommunication.Core.Types.OperateResultExOne;
+import HslCommunication.Profinet.Inovance.InovanceTcpNet;
 import HslCommunication.Profinet.Melsec.MelsecMcNet;
 import cn.hutool.core.util.ObjectUtil;
 import cn.tpl.opc.ApplicationContextAwareImpl;
@@ -42,7 +43,8 @@ public class Connection {
      * 设备类型
      *
      * @see Params#DEVICE_TYPE_KEY_SCANNER
-     * @see Params#DEVICE_TYPE_KEY_PLC
+     * @see Params#DEVICE_TYPE_KEY_SL_PLC
+     * @see Params#DEVICE_TYPE_KEY_HC_PLC
      */
     private Integer type;
 
@@ -88,6 +90,7 @@ public class Connection {
      * PLC连接后产生的I/O操作通道
      */
     private volatile MelsecMcNet melsecMcNet;
+    private volatile InovanceTcpNet inovanceTcpNet;
 
     private OnStatusChangeListener onStatusChangeListener;
 
@@ -149,19 +152,14 @@ public class Connection {
         setChannelFuture(cf);
     }
 
-    /**
-     * 改变连接状态为活跃
-     *
-     * @param melsecMcNet 通道
-     */
-    public synchronized void nowActive(MelsecMcNet melsecMcNet) {
+    public synchronized void nowActive(MelsecMcNet melsecMcNet, InovanceTcpNet inovanceTcpNet) {
         if (isActive()) {
             log.info("nowActive, already activated, no operation next");
             return;
         }
-
         status2Active();
         setMelsecMcNet(melsecMcNet);
+        setInovanceTcpNet(inovanceTcpNet);
         if (!EventBus.getDefault().isRegistered(this))
             EventBus.getDefault().register(this);
     }
@@ -181,17 +179,28 @@ public class Connection {
             channelFuture = null;
         }
 
-        if (null != melsecMcNet) {
+        if (ObjectUtil.isNotNull(melsecMcNet)) {
             melsecMcNet.ConnectClose();
             melsecMcNet = null;
-            if (EventBus.getDefault().isRegistered(this))
-                EventBus.getDefault().unregister(this);
         }
 
+        if (ObjectUtil.isNotNull(inovanceTcpNet)) {
+            inovanceTcpNet.ConnectClose();
+            inovanceTcpNet = null;
+        }
+
+        if (EventBus.getDefault().isRegistered(this))
+            EventBus.getDefault().unregister(this);
     }
 
     public interface OnStatusChangeListener {
         void onStatusChanged(Connection conn);
+    }
+
+    private boolean plcEventCheckNotPassed() {
+        if (isNoPLCNet()) return true;
+        if (ObjectUtil.isNotNull(melsecMcNet) && NetUtils.pingFailed(melsecMcNet.getIpAddress())) return true;
+        return ObjectUtil.isNotNull(inovanceTcpNet) && NetUtils.pingFailed(inovanceTcpNet.getIpAddress());
     }
 
     @Subscribe(threadMode = ThreadMode.POSTING)
@@ -199,9 +208,7 @@ public class Connection {
         log.info("onMessageEvent, EventBusMsgPlcCmd: {}", event);
         if (isDead() && Constants.PLC_ADDR_TYPE_HEART_BEAT != event.getAddrType()) return;
 
-        if (isNoPLCNet()) return;
-
-        if (NetUtils.pingFailed(melsecMcNet.getIpAddress())) return;
+        if (plcEventCheckNotPassed()) return;
 
         if (!workLine.equals(event.getWorkLine())) return;
 
@@ -210,7 +217,13 @@ public class Connection {
         log.info("onMessageEvent, writing cmd to PLC =>> Address: {}, Cmd: {}", addr, cmd);
         if (null == cmd) return;
 
-        OperateResult operateResult = melsecMcNet.Write(addr, cmd);
+        OperateResult operateResult;
+        if (ObjectUtil.isNull(melsecMcNet))
+            operateResult = inovanceTcpNet.Write(addr, cmd);
+        else
+            operateResult = melsecMcNet.Write(addr, cmd);
+
+
         if (!operateResult.IsSuccess) {
             log.error("onMessageEvent, writing cmd to PLC =>> failed, address: {}, cmd: {}", addr, cmd);
             log.error("onMessageEvent, ErrorCode: {}", operateResult.ErrorCode);
@@ -227,15 +240,19 @@ public class Connection {
         log.info("onMessageEvent, EventBusMsgReadOpenCountFromPLC: {}", event);
         if (isDead()) return;
 
-        if (isNoPLCNet()) return;
-
-        if (NetUtils.pingFailed(melsecMcNet.getIpAddress())) return;
+        if (plcEventCheckNotPassed()) return;
 
         if (!workLine.equals(event.getWorkLine())) return;
 
         String addr = event.getAddress();
         log.info("onMessageEvent, reading from PLC =>> Address: {}", addr);
-        OperateResultExOne<Short> operateResult = melsecMcNet.ReadInt16(addr);
+        OperateResultExOne<Short> operateResult;
+        if (ObjectUtil.isNull(melsecMcNet))
+            operateResult = inovanceTcpNet.ReadInt16(addr);
+        else
+            operateResult = melsecMcNet.ReadInt16(addr);
+
+
         if (!operateResult.IsSuccess) {
             log.error("onMessageEvent, reading from PLC =>> failed, address: {}", addr);
             log.error("onMessageEvent, ErrorCode: {}", operateResult.ErrorCode);
@@ -280,7 +297,7 @@ public class Connection {
      * @return 验证结果, true: 空; false: 非空
      */
     public boolean isNoPLCNet() {
-        return null == melsecMcNet;
+        return ObjectUtil.isNull(melsecMcNet) && ObjectUtil.isNull(inovanceTcpNet);
     }
 
     public void status2Disconnected() {

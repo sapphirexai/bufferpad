@@ -1,6 +1,7 @@
 package cn.tpl.opc.netty;
 
 import HslCommunication.Core.Types.OperateResult;
+import HslCommunication.Profinet.Inovance.InovanceTcpNet;
 import HslCommunication.Profinet.Melsec.MelsecMcNet;
 import cn.hutool.core.bean.BeanUtil;
 import cn.tpl.opc.commons.constant.Constants;
@@ -211,13 +212,23 @@ public class Connector {
         log.info("connectPLC, connecting => {}", ip + ":" + port);
         if (NetUtils.pingFailed(ip)) return false;
 
-        MelsecMcNet melsecMcNet = new MelsecMcNet(ip, port);
-        OperateResult operateResult = melsecMcNet.ConnectServer();
+        InovanceTcpNet inovanceTcpNet = null;
+        MelsecMcNet melsecMcNet = null;
+        OperateResult operateResult;
+        if (Params.DEVICE_TYPE_KEY_HC_PLC == conn.getType()) {
+            inovanceTcpNet = new InovanceTcpNet(ip, port, Constants.DEFAULT_STATION_HC_PLC_);
+            operateResult = inovanceTcpNet.ConnectServer();
+        } else {
+            melsecMcNet = new MelsecMcNet(ip, port);
+            operateResult = melsecMcNet.ConnectServer();
+        }
+
         if (operateResult.IsSuccess) {
             log.info("connectPLC, connecting => success");
-            conn.nowActive(melsecMcNet);
+            conn.nowActive(melsecMcNet, inovanceTcpNet);
             return true;
         }
+
         log.error("connectPLC, connecting => failed, ip =>{}:{}", ip, port);
         log.error("connectPLC, ErrorCode: {}", operateResult.ErrorCode);
         log.error("connectPLC, ErrorMsg: {}", operateResult.Message);
@@ -236,7 +247,7 @@ public class Connector {
 
         Collection<Connection> connectionsList = connections.values();
         for (Connection conn : connectionsList) {
-            if (conn.getType() == Params.DEVICE_TYPE_KEY_PLC) {
+            if (!isScannerConn(conn)) {
                 doSendPLCHeartBeat(conn);
             }
         }

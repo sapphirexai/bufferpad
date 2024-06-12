@@ -11,6 +11,10 @@ public final class Constants {
     }
 
     /**
+     * 汇川PLC默认站号
+     */
+    public static final byte DEFAULT_STATION_HC_PLC_ = 1;
+    /**
      * 配置表的默认ID
      */
     public static final long OPC_CONFIG_ID = 1L;
