@@ -199,8 +199,8 @@ public class Connection {
 
     private boolean plcEventCheckNotPassed() {
         if (isNoPLCNet()) return true;
-        if (ObjectUtil.isNull(melsecMcNet) || NetUtils.pingFailed(melsecMcNet.getIpAddress())) return true;
-        return ObjectUtil.isNull(inovanceTcpNet) || NetUtils.pingFailed(inovanceTcpNet.getIpAddress());
+        if (ObjectUtil.isNotNull(melsecMcNet) && NetUtils.pingFailed(melsecMcNet.getIpAddress())) return true;
+        return ObjectUtil.isNotNull(inovanceTcpNet) && NetUtils.pingFailed(inovanceTcpNet.getIpAddress());
     }
 
     @Subscribe(threadMode = ThreadMode.POSTING)
