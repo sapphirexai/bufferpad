@@ -46,5 +46,5 @@ public class CushionDetailEntity implements Serializable {
     /**
      * 开口数
      */
-    private Integer openCount;
+    private Short openCount;
 }

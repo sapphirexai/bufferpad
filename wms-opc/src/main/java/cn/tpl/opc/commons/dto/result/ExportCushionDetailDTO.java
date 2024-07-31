@@ -25,7 +25,7 @@ public class ExportCushionDetailDTO extends AbsBaseDTO {
      * 开口数
      */
     @ExcelProperty("开口数")
-    private Integer openCount;
+    private Short openCount;
 
     /**
      * 扫码器安装顺序

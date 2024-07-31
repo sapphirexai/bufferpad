@@ -13,7 +13,7 @@
     <result column="created_date" jdbcType="TIMESTAMP" property="createdDate" />
     <result column="modified_date" jdbcType="TIMESTAMP" property="modifiedDate" />
     <result column="scanner_seq" jdbcType="INTEGER" property="scannerSeq" />
-    <result column="open_count" jdbcType="INTEGER" property="openCount" />
+    <result column="open_count" jdbcType="SMALLINT" property="openCount" />
   </resultMap>
   <sql id="Base_Column_List">
     <!--
@@ -85,7 +85,7 @@
       open_count)
     values (#{id,jdbcType=BIGINT}, #{qrCode,jdbcType=VARCHAR}, #{workLine,jdbcType=INTEGER},
       #{createdDate,jdbcType=TIMESTAMP}, #{modifiedDate,jdbcType=TIMESTAMP}, #{scannerSeq,jdbcType=INTEGER},
-      #{openCount,jdbcType=INTEGER})
+      #{openCount,jdbcType=SMALLINT})
   </insert>
   <insert id="insertSelective" parameterType="cn.tpl.opc.entity.CushionDetailEntity">
     <!--
@@ -137,7 +137,7 @@
         #{scannerSeq,jdbcType=INTEGER},
       </if>
       <if test="openCount != null">
-        #{openCount,jdbcType=INTEGER},
+        #{openCount,jdbcType=SMALLINT},
       </if>
     </trim>
   </insert>
@@ -165,7 +165,7 @@
         scanner_seq = #{scannerSeq,jdbcType=INTEGER},
       </if>
       <if test="openCount != null">
-        open_count = #{openCount,jdbcType=INTEGER},
+        open_count = #{openCount,jdbcType=SMALLINT},
       </if>
     </set>
     where id = #{id,jdbcType=BIGINT}
@@ -182,7 +182,7 @@
       created_date = #{createdDate,jdbcType=TIMESTAMP},
       modified_date = #{modifiedDate,jdbcType=TIMESTAMP},
       scanner_seq = #{scannerSeq,jdbcType=INTEGER},
-      open_count = #{openCount,jdbcType=INTEGER}
+      open_count = #{openCount,jdbcType=SMALLINT}
     where id = #{id,jdbcType=BIGINT}
   </update>
 
@@ -193,6 +193,15 @@
               open_count = #{openCount,jdbcType=SMALLINT},
           </if>
       </set>
+      where id = (
+      select id
+      from (
+      select id
+      from cushion_detail
       where qr_code = #{qrCode,jdbcType=VARCHAR}
+      order by created_date desc
+      limit 1
+      ) as target
+      )
   </update>
 </mapper>
