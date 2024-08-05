@@ -46,12 +46,14 @@
           parameterType="cn.tpl.opc.commons.scheme.request.QueryCushionDetailPageScheme">
     select
     <include refid="Base_Column_List"/>
-    from cushion_detail
-    <where>
+    from cushion_detail WHERE 1=1
       <if test="data.qrCode!=null">
-        qr_code = #{data.qrCode}
+        AND qr_code = #{data.qrCode}
       </if>
-    </where>
+      <if test="data.startTime!=null and data.endTime != null">
+        AND created_date BETWEEN  #{data.startTime} and #{data.endTime}
+      </if>
+
     order by created_date desc
   </select>
 
