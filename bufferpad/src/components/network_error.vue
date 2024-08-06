@@ -5,7 +5,7 @@
       <button @click="refresh">重试</button>
     </div>
   </template>
-  
+
   <script>
   export default {
     methods: {
@@ -16,7 +16,7 @@
     }
   }
   </script>
-  
+
   <style scoped>
   .network-error {
     display: flex;
@@ -26,12 +26,12 @@
     height: 100%;
     text-align: center;
   }
-  
+
   .network-error h1 {
     font-size: 3em;
     margin-bottom: 20px;
   }
-  
+
   .network-error button {
     padding: 10px 20px;
     background-color: #00bcd4;
@@ -41,9 +41,8 @@
     cursor: pointer;
     transition: all 0.3s ease;
   }
-  
+
   .network-error button:hover {
     background-color: #008c9e;
   }
   </style>
-  

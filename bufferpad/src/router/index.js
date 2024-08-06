@@ -1,6 +1,6 @@
 /*
  * @Date         : 2024-04-16 08:55:40
- * @LastEditTime : 2024-04-16 10:32:00
+ * @LastEditTime : 2024-08-05 15:44:11
  * @filePath     : no item name
  * @Description  : qwe
  *
@@ -32,6 +32,10 @@ const router = new Router({
             title: 'running',
             keepAlive: true // 缓存组件
           }
+        },
+        {
+          path: '/record',
+          component: () => import('../views/Layout/Record.vue')
         },
         {
           path: '/details',

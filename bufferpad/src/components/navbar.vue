@@ -50,7 +50,8 @@ export default {
     return {
       navList: [
         { name: '/index', navItem: 'Running' },
-        { name: '/summary', navItem: 'Summary' }
+        { name: '/summary', navItem: 'Summary' },
+        { name: '/record', navItem: 'Record' }
       ]
     };
   },
