@@ -5,7 +5,6 @@ import cn.hutool.core.bean.copier.CopyOptions;
 import cn.tpl.opc.commons.constant.Constants;
 import cn.tpl.opc.commons.constant.Params;
 import cn.tpl.opc.commons.dto.ResultDTO;
-import cn.tpl.opc.commons.dto.event.EventBusCushionAfterNotifyPLC;
 import cn.tpl.opc.commons.dto.event.EventBusMsgCushionQrCode;
 import cn.tpl.opc.commons.dto.event.EventBusMsgPlcCmd;
 import cn.tpl.opc.commons.dto.event.EventBusMsgReadOpenCountFromPLC;
@@ -235,7 +234,7 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
         log.info("onScanCodeSuccess");
         CushionInfoDTO cushionInfoDTO = cushionInfo2DTO(cushionInfoEntity);
         cushionInfoDTO.setScannerSeq(scannerSeq);
-        EventBus.getDefault().post(new EventBusCushionAfterNotifyPLC(workLine, cushionInfoDTO));
+        sseService.sendCushionMsg(cushionInfoDTO);
 
         int maxUseCount = cushionInfoEntity.getMaxUseCount();
         int usedCount = cushionInfoEntity.getUsedCount();

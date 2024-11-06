@@ -8,11 +8,9 @@ import cn.hutool.core.util.ObjectUtil;
 import cn.tpl.opc.ApplicationContextAwareImpl;
 import cn.tpl.opc.commons.constant.Constants;
 import cn.tpl.opc.commons.constant.Params;
-import cn.tpl.opc.commons.dto.event.EventBusCushionAfterNotifyPLC;
 import cn.tpl.opc.commons.dto.event.EventBusMsgPlcCmd;
 import cn.tpl.opc.commons.dto.event.EventBusMsgReadOpenCountFromPLC;
 import cn.tpl.opc.service.ICushionInfoService;
-import cn.tpl.opc.service.ISseService;
 import cn.tpl.opc.util.NetUtils;
 import io.netty.channel.ChannelFuture;
 import lombok.Data;
@@ -276,19 +274,6 @@ public class Connection {
             return;
         }
         log.info("onMessageEvent, reading from PLC =>> modify openCount failed");
-    }
-
-    @Subscribe(threadMode = ThreadMode.POSTING)
-    public void onMessageEvent(EventBusCushionAfterNotifyPLC event) {
-        log.info("onMessageEvent, EventBusCushionAfterNotifyPLC: {}", event);
-        if (isNoPLCNet()) return;
-
-        if (!workLine.equals(event.getWorkLine())) return;
-
-        if (ObjectUtil.isNull(event.getCushionInfoDTO())) return;
-
-        ISseService sseService = (ISseService) ApplicationContextAwareImpl.getBean("sseService");
-        sseService.sendCushionMsg(event.getCushionInfoDTO());// 推送一条缓冲垫数据到客户端
     }
 
     /**
