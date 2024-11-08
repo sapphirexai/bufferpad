@@ -11,6 +11,15 @@ public final class Constants {
     }
 
     /**
+     * 扫码日志类型
+     * SCAN_LOG_TYPE_INFO 普通
+     * SCAN_LOG_TYPE_ERROR 异常
+     */
+    public static final short
+            SCAN_LOG_TYPE_INFO = 0,
+            SCAN_LOG_TYPE_ERROR = 1;
+
+    /**
      * 汇川PLC默认站号
      */
     public static final byte DEFAULT_STATION_HC_PLC_ = 1;
