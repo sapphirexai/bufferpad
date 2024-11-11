@@ -259,7 +259,6 @@ public class Connector {
         PLCAddrEntity plcAddr = plcAddrService.findByTypeAndScannerSeq(Constants.PLC_ADDR_TYPE_HEART_BEAT, conn.getInstallSeq());
         if (null == plcAddr) return;
 
-        log.info("sendPLCHeartBeat, sending heartbeat...");
         EventBus.getDefault().post(new EventBusMsgPlcCmd(null,Constants.PLC_ADDR_TYPE_HEART_BEAT, plcAddr.getAddr(), Constants.HEARTBEAT_2_PLC_VAL, conn.getWorkLine()));
     }
 

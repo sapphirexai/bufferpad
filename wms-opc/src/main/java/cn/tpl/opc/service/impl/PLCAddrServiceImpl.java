@@ -4,6 +4,7 @@ import cn.tpl.opc.entity.PLCAddrEntity;
 import cn.tpl.opc.mapper.PLCAddrEntityMapper;
 import cn.tpl.opc.service.IPLCAddrService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 
@@ -18,6 +19,7 @@ public class PLCAddrServiceImpl implements IPLCAddrService {
     @Resource
     private PLCAddrEntityMapper plcAddrEntityMapper;
 
+    @Transactional
     @Override
     public PLCAddrEntity findByTypeAndScannerSeq(Integer type, Integer scannerSeq) {
         if (null == type || null == scannerSeq) return null;

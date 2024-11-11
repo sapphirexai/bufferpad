@@ -29,7 +29,6 @@ public class NetUtils {
      * @return ping的结果, true: 失败; false: 成功
      */
     public static boolean pingFailed(String host) {
-        log.info("ping, host => {}", host);
         try {
             if (StrUtil.isEmpty(host)) return true;
 

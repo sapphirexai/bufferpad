@@ -204,7 +204,6 @@ public class Connection {
 
     @Subscribe(threadMode = ThreadMode.POSTING)
     public void onMessageEvent(EventBusMsgPlcCmd event) {
-        log.info("onMessageEvent, EventBusMsgPlcCmd: {}", event);
         if (isDead() && isNotHeartBeat(event.getAddrType())) return;
 
         if (plcEventCheckNotPassed()) return;
@@ -213,7 +212,9 @@ public class Connection {
 
         String addr = event.getAddress();
         Short cmd = event.getCmd();
-        log.info("onMessageEvent, writing cmd to PLC =>> Address: {}, Cmd: {}", addr, cmd);
+        if (isNotHeartBeat(event.getAddrType())) {
+            log.info("onMessageEvent, writing cmd to PLC =>> Address: {}, Cmd: {}", addr, cmd);
+        }
 
         if (null == cmd) return;
 
@@ -232,10 +233,11 @@ public class Connection {
             status2Disconnected();
             return;
         }
-        if (isNotHeartBeat(event.getAddrType()))
+        if (isNotHeartBeat(event.getAddrType())) {
             scanLogService.add(event.getQrCode(), Constants.SCAN_LOG_MSG_NOTIFY_PLC_SUCCESS + addr + Constants.SCAN_LOG_MSG_SUFFIX_NOTIFY_PLC_CMD + cmd, Constants.SCAN_LOG_TYPE_INFO);
+            log.info("onMessageEvent, writing cmd to PLC =>> success");
+        }
         status2Active();
-        log.info("onMessageEvent, writing cmd to PLC =>> success");
     }
 
     private boolean isNotHeartBeat(Integer addrType) {
