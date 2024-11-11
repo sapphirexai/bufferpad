@@ -127,6 +127,7 @@
         </el-input>
       </div>
       <div class="table-button">
+        <el-button @click="goLogs" size="small" type="primary">日志查询</el-button>
         <el-button @click="openDialog" size="small" type="primary">批量修改</el-button>
         <el-button icon="el-icon-upload2" size="small" @click="exportExcel">导出</el-button>
       </div>
@@ -279,6 +280,9 @@ export default {
         return
       }
       this.dialogVisible = true
+    },
+    goLogs() {
+      this.$router.push('/logs')
     },
     handleClose() {
       this.dialogVisible = false

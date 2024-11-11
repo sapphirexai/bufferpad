@@ -1,3 +1,11 @@
+/*
+ * @Date         : 2024-04-16 08:55:40
+ * @LastEditTime : 2024-11-11 11:45:43
+ * @filePath     : no item name
+ * @Description  :
+ *
+ * Copyright (c) 2024 by Jay@lang, All Rights Reserved.
+ */
 import {get, post} from '../http/index.js'
 
 // 封装接口的方法
@@ -27,4 +35,8 @@ export const exportData = (data) => {
 
 export const getDetails = (params) => {
     return get('/cushion/detailsPage', params)
+}
+
+export const getLogs = (params) => {
+    return get('/scanLogs', params)
 }

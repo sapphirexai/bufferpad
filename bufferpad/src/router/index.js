@@ -1,6 +1,6 @@
 /*
  * @Date         : 2024-04-16 08:55:40
- * @LastEditTime : 2024-08-05 15:44:11
+ * @LastEditTime : 2024-11-11 11:37:26
  * @filePath     : no item name
  * @Description  : qwe
  *
@@ -40,6 +40,10 @@ const router = new Router({
         {
           path: '/details',
           component: () => import('../views/Layout/details.vue')
+        },
+        {
+          path: '/logs',
+          component: () => import('../views/Layout/logs.vue')
         }
       ]
     },
