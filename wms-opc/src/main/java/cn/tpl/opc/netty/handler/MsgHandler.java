@@ -65,9 +65,7 @@ public class MsgHandler extends ChannelInboundHandlerAdapter {
                 if (oMsg.contains(Constants.SCANNER_MSG_NO_READ)) {
                     log.info("channelRead, no read");
                     EventBus.getDefault().post(new EventBusMsgCushionQrCode(null, workLine, installSeq));
-                    // 扫码失败PLC报警
-//                    if (Params.SCANNER_SEQ_KEY_1 == installSeq)
-                    notifyPLC(Constants.PLC_ADDR_TYPE_SCAN_FAILED, installSeq, workLine);
+//                    notifyPLC(Constants.PLC_ADDR_TYPE_SCAN_FAILED, installSeq, workLine);
                     return;
                 }
 
@@ -103,6 +101,7 @@ public class MsgHandler extends ChannelInboundHandlerAdapter {
      * @param scannerSeq  扫码器安装顺序
      * @param workLine    产线
      */
+    @SuppressWarnings("all")
     private void notifyPLC(Integer plcAddrType, Integer scannerSeq, Integer workLine) {
         if (null == plcAddrType) return;
 

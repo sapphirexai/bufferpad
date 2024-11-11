@@ -1,6 +1,7 @@
 package cn.tpl.opc.entity;
 
 import java.io.Serializable;
+import java.sql.Timestamp;
 import java.util.Date;
 import lombok.Data;
 
@@ -34,7 +35,7 @@ public class ScanLogEntity implements Serializable {
     /**
      * 创建时间
      */
-    private Date createdDate;
+    private Timestamp createdDate;
     /**
      * 日志类型，0：普通；1：异常
      */

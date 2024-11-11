@@ -257,6 +257,7 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
     private void onScanCodeFailed(Integer workLine, Integer scannerSeq) {
         log.info("onScanCodeFailed");
         scanLogService.add(null, Constants.SCAN_LOG_MSG_FAILED, Constants.SCAN_LOG_TYPE_ERROR);
+        notifyPLC(null, Constants.PLC_ADDR_TYPE_SCAN_FAILED, scannerSeq, workLine);
         CushionInfoDTO cushionInfoDTO = new CushionInfoDTO();
         cushionInfoDTO.setWorkLine(workLine);
         cushionInfoDTO.setScannerSeq(scannerSeq);

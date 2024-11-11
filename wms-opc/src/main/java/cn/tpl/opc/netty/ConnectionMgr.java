@@ -62,6 +62,10 @@ public class ConnectionMgr {
         CONNECTIONS.remove(id);
     }
 
+    public Integer getStatusById(Long key) {
+        return getConnection(key).getStatus();
+    }
+
 //    public void removeAllConnections() {
 //        disconnectAll();
 //        CONNECTIONS.clear();
