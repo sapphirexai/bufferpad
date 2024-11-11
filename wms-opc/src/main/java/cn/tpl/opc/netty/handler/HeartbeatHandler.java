@@ -41,7 +41,7 @@ public class HeartbeatHandler extends ChannelInboundHandlerAdapter {
                 // 为了防止服务端关闭当前连接，手动发送一个心跳包
                 String hb = Constants.SCANNER_MSG_STX + Constants.SCANNER_MSG_HEART_BEAT + Constants.SCANNER_MSG_ETX;
                 ctx.channel().writeAndFlush(Unpooled.unreleasableBuffer(Unpooled.copiedBuffer(hb.getBytes(CharsetUtil.UTF_8))).duplicate());
-                log.info("userEventTriggered, send heartbeat success {}, ip => {}:{}", hb, mConnection.getIp(), mConnection.getPort());
+//                log.info("userEventTriggered, send heartbeat success {}, ip => {}:{}", hb, mConnection.getIp(), mConnection.getPort());
             } else {
                 super.userEventTriggered(ctx, event);
             }

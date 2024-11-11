@@ -4,7 +4,7 @@ spring:
 mybatis-plus:
   mapper-locations: classpath*:mapper/**/*Mapper.xml
   configuration:
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
 #监控所有端点
 management:
   endpoints:

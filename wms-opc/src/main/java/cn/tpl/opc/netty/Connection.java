@@ -133,6 +133,10 @@ public class Connection {
         connectionResetInterval.set(Constants.NETTY_CONNECTION_RESET_INTERVAL_SEC);
     }
 
+    private void nowActiveLogOut() {
+        log.info("nowActive, already activated, no operation next");
+    }
+
     /**
      * 改变连接状态为活跃
      *
@@ -140,7 +144,7 @@ public class Connection {
      */
     public synchronized void nowActive(ChannelFuture cf) {
         if (isActive()) {
-            log.info("nowActive, already activated, no operation next");
+            nowActiveLogOut();
             return;
         }
 
@@ -153,7 +157,7 @@ public class Connection {
 
     public synchronized void nowActive(MelsecMcNet melsecMcNet, InovanceTcpNet inovanceTcpNet) {
         if (isActive()) {
-            log.info("nowActive, already activated, no operation next");
+            nowActiveLogOut();
             return;
         }
         status2Active();
