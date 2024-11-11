@@ -15,6 +15,11 @@ import lombok.EqualsAndHashCode;
 @Data
 public class EventBusMsgPlcCmd extends AbsBaseDTO {
     /**
+     * 二维码
+     */
+    private String qrCode;
+
+    /**
      * 地址类型
      */
     private Integer addrType;
@@ -34,7 +39,8 @@ public class EventBusMsgPlcCmd extends AbsBaseDTO {
      */
     private Integer workLine;
 
-    public EventBusMsgPlcCmd(Integer addrType, String address, Short cmd, Integer workLine) {
+    public EventBusMsgPlcCmd(String qrCode, Integer addrType, String address, Short cmd, Integer workLine) {
+        this.qrCode = qrCode;
         this.addrType = addrType;
         this.address = address;
         this.cmd = cmd;

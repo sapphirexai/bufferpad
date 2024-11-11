@@ -6,6 +6,7 @@ import cn.tpl.opc.commons.scheme.request.QueryScanLogScheme;
 import cn.tpl.opc.entity.ScanLogEntity;
 import cn.tpl.opc.mapper.ScanLogEntityMapper;
 import cn.tpl.opc.service.IScanLogService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -17,6 +18,7 @@ import java.util.List;
  * Time: 2024/11/8
  * 扫码日志服务
  */
+@Slf4j
 @Service("scanLogService")
 public class ScanLogServiceImpl implements IScanLogService {
     @Resource
@@ -24,9 +26,10 @@ public class ScanLogServiceImpl implements IScanLogService {
 
     @Override
     public void add(String qrCode, String msg, short msgType) {
+        log.info("addScanLog, qrCode:{}, msg:{}, msgType:{}", qrCode, msg, msgType);
         ScanLogEntity entity = new ScanLogEntity();
         entity.setQrCode(qrCode);
-        entity.setMsg(qrCode);
+        entity.setMsg(msg);
         entity.setMsgType(msgType);
         scanLogEntityMapper.insertSelective(entity);
     }

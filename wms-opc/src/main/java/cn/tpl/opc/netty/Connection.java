@@ -11,6 +11,7 @@ import cn.tpl.opc.commons.constant.Params;
 import cn.tpl.opc.commons.dto.event.EventBusMsgPlcCmd;
 import cn.tpl.opc.commons.dto.event.EventBusMsgReadOpenCountFromPLC;
 import cn.tpl.opc.service.ICushionInfoService;
+import cn.tpl.opc.service.IScanLogService;
 import cn.tpl.opc.util.NetUtils;
 import io.netty.channel.ChannelFuture;
 import lombok.Data;
@@ -204,7 +205,7 @@ public class Connection {
     @Subscribe(threadMode = ThreadMode.POSTING)
     public void onMessageEvent(EventBusMsgPlcCmd event) {
         log.info("onMessageEvent, EventBusMsgPlcCmd: {}", event);
-        if (isDead() && Constants.PLC_ADDR_TYPE_HEART_BEAT != event.getAddrType()) return;
+        if (isDead() && isNotHeartBeat(event.getAddrType())) return;
 
         if (plcEventCheckNotPassed()) return;
 
@@ -213,6 +214,7 @@ public class Connection {
         String addr = event.getAddress();
         Short cmd = event.getCmd();
         log.info("onMessageEvent, writing cmd to PLC =>> Address: {}, Cmd: {}", addr, cmd);
+
         if (null == cmd) return;
 
         OperateResult operateResult;
@@ -221,16 +223,28 @@ public class Connection {
         else
             operateResult = melsecMcNet.Write(addr, cmd);
 
-
+        IScanLogService scanLogService = ApplicationContextAwareImpl.getScanLogService();
         if (!operateResult.IsSuccess) {
             log.error("onMessageEvent, writing cmd to PLC =>> failed, address: {}, cmd: {}", addr, cmd);
-            log.error("onMessageEvent, ErrorCode: {}", operateResult.ErrorCode);
-            log.error("onMessageEvent, ErrorMsg: {}", operateResult.Message);
+            logOutPLCOperateResult(operateResult);
+            if (isNotHeartBeat(event.getAddrType()))
+                scanLogService.add(event.getQrCode(), Constants.SCAN_LOG_MSG_NOTIFY_PLC_FAILED + addr + Constants.SCAN_LOG_MSG_SUFFIX_NOTIFY_PLC_CMD + cmd, Constants.SCAN_LOG_TYPE_ERROR);
             status2Disconnected();
             return;
         }
+        if (isNotHeartBeat(event.getAddrType()))
+            scanLogService.add(event.getQrCode(), Constants.SCAN_LOG_MSG_NOTIFY_PLC_SUCCESS + addr + Constants.SCAN_LOG_MSG_SUFFIX_NOTIFY_PLC_CMD + cmd, Constants.SCAN_LOG_TYPE_INFO);
         status2Active();
         log.info("onMessageEvent, writing cmd to PLC =>> success");
+    }
+
+    private boolean isNotHeartBeat(Integer addrType) {
+        return Constants.PLC_ADDR_TYPE_HEART_BEAT != addrType;
+    }
+
+    private void logOutPLCOperateResult(OperateResult operateResult) {
+        log.error("onMessageEvent, ErrorCode: {}", operateResult.ErrorCode);
+        log.error("onMessageEvent, ErrorMsg: {}", operateResult.Message);
     }
 
     @Subscribe(threadMode = ThreadMode.POSTING)
@@ -253,8 +267,7 @@ public class Connection {
 
         if (!operateResult.IsSuccess) {
             log.error("onMessageEvent, reading from PLC =>> failed, address: {}", addr);
-            log.error("onMessageEvent, ErrorCode: {}", operateResult.ErrorCode);
-            log.error("onMessageEvent, ErrorMsg: {}", operateResult.Message);
+            logOutPLCOperateResult(operateResult);
             status2Disconnected();
             return;
         }
@@ -266,7 +279,7 @@ public class Connection {
         }
         log.info("onMessageEvent, reading from PLC =>> openCount is {}", content);
 
-        ICushionInfoService cs = (ICushionInfoService) ApplicationContextAwareImpl.getBean("cushionInfoService");
+        ICushionInfoService cs = ApplicationContextAwareImpl.getCushionService();
         boolean result = cs.modifyOpenCountByQrCode(event.getQrCode(), content);
         log.info("onMessageEvent, reading from PLC =>> success");
         if (result) {

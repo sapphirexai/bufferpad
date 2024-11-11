@@ -11,6 +11,24 @@ public final class Constants {
     }
 
     /**
+     * 扫码日志信息
+     */
+    public static final String
+            SCAN_LOG_MSG_PREFIX_CURRENT_COUNT = "当前次数：",
+            SCAN_LOG_MSG_SUFFIX_MAX_COUNT = "，最大次数：",
+            SCAN_LOG_MSG_SUFFIX_SCANNER_NUM = "，扫码器序号：",
+            SCAN_LOG_MSG_FAILED = "扫码失败",
+            SCAN_LOG_MSG_SUCCESS = "扫码成功",
+            SCAN_LOG_MSG_INVALID = "扫码间隔时间不足2小时，无效扫码",
+            SCAN_LOG_MSG_OVER_MAXIMUM = "使用次数已达到最大次数",
+            SCAN_LOG_MSG_NOTIFY_PLC_SUCCESS = "通知PLC成功，地址：",
+            SCAN_LOG_MSG_NOTIFY_PLC_FAILED = "通知PLC失败，地址：",
+            SCAN_LOG_MSG_SUFFIX_NOTIFY_PLC_CMD = "，写入值：",
+            SCAN_LOG_MSG_SUCCESS_DATA_FORM_SCANNER = SCAN_LOG_MSG_SUCCESS + SCAN_LOG_MSG_SUFFIX_SCANNER_NUM,
+            SCAN_LOG_MSG_INVALID_DATA_FORM_SCANNER = SCAN_LOG_MSG_INVALID + SCAN_LOG_MSG_SUFFIX_SCANNER_NUM,
+            SCAN_LOG_MSG_OVER_MAXIMUM_FORM_SCANNER = SCAN_LOG_MSG_OVER_MAXIMUM + SCAN_LOG_MSG_SUFFIX_SCANNER_NUM;
+
+    /**
      * 扫码日志类型
      * SCAN_LOG_TYPE_INFO 普通
      * SCAN_LOG_TYPE_ERROR 异常

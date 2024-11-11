@@ -260,7 +260,7 @@ public class Connector {
         if (null == plcAddr) return;
 
         log.info("sendPLCHeartBeat, sending heartbeat...");
-        EventBus.getDefault().post(new EventBusMsgPlcCmd(Constants.PLC_ADDR_TYPE_HEART_BEAT, plcAddr.getAddr(), Constants.HEARTBEAT_2_PLC_VAL, conn.getWorkLine()));
+        EventBus.getDefault().post(new EventBusMsgPlcCmd(null,Constants.PLC_ADDR_TYPE_HEART_BEAT, plcAddr.getAddr(), Constants.HEARTBEAT_2_PLC_VAL, conn.getWorkLine()));
     }
 
     public void startReconnectService() {

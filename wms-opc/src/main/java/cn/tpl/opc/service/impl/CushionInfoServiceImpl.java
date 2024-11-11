@@ -19,10 +19,7 @@ import cn.tpl.opc.entity.*;
 import cn.tpl.opc.mapper.CushionDetailEntityMapper;
 import cn.tpl.opc.mapper.CushionInfoEntityMapper;
 import cn.tpl.opc.mapper.OpcConfigEntityMapper;
-import cn.tpl.opc.service.ICushionInfoService;
-import cn.tpl.opc.service.IDeviceInfoService;
-import cn.tpl.opc.service.IPLCAddrService;
-import cn.tpl.opc.service.ISseService;
+import cn.tpl.opc.service.*;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.extern.slf4j.Slf4j;
@@ -51,6 +48,8 @@ import java.util.stream.Collectors;
 @Service("cushionInfoService")
 @Transactional
 public class CushionInfoServiceImpl implements ICushionInfoService, InitializingBean, DisposableBean {
+    @Resource
+    private IScanLogService scanLogService;
     @Resource
     private OpcConfigEntityMapper opcConfigEntityMapper;
     @Resource
@@ -142,7 +141,7 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
         } else {
             notifyPLC(qrCode, Constants.PLC_ADDR_TYPE_SCAN_SUCCESS, scannerSeq, workLine);
         }
-
+        scanLogService.add(qrCode, Constants.SCAN_LOG_MSG_INVALID_DATA_FORM_SCANNER + scannerSeq, Constants.SCAN_LOG_TYPE_ERROR);
         return ResultDTO.failure(Constants.RESULT_MSG_CUSHION_INVALID_SCAN);
     }
 
@@ -161,7 +160,6 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
         } else {
             notifyPLC(qrCode, Constants.PLC_ADDR_TYPE_SCAN_OVER_MAXIMUM, scannerSeq, workLine);
         }
-
         sseService.sendFailMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, cushionInfoEntity, workLine, scannerSeq), Constants.RESULT_MSG_CUSHION_USED_COUNT_REACHED_MAX);
     }
 
@@ -174,6 +172,7 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
      */
     @Override
     public ResultDTO<CushionInfoDTO> onQrCodeReceived(Integer workLine, Integer scannerSeq, String qrCode) {
+        scanLogService.add(qrCode, Constants.SCAN_LOG_MSG_SUCCESS_DATA_FORM_SCANNER + scannerSeq, Constants.SCAN_LOG_TYPE_INFO);
         CushionInfoEntity cushionInfoEntity = findByQrCode(qrCode);
         if (null == cushionInfoEntity) return onScanNew(workLine, scannerSeq, qrCode);
 
@@ -241,6 +240,8 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
         // 达到最大次数PLC报警
         if (maxUseCount <= usedCount) {
             log.warn("handleScannerData，onScanMax，maxUseCount => {}，usedCount => {}", maxUseCount, usedCount);
+            scanLogService.add(cushionQrCode, Constants.SCAN_LOG_MSG_OVER_MAXIMUM_FORM_SCANNER + scannerSeq, Constants.SCAN_LOG_TYPE_ERROR);
+            scanLogService.add(cushionQrCode, Constants.SCAN_LOG_MSG_PREFIX_CURRENT_COUNT + usedCount + Constants.SCAN_LOG_MSG_SUFFIX_MAX_COUNT + maxUseCount, Constants.SCAN_LOG_TYPE_ERROR);
             onScanMax(workLine, scannerSeq, cushionInfoEntity);
         }
 
@@ -255,6 +256,7 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
      */
     private void onScanCodeFailed(Integer workLine, Integer scannerSeq) {
         log.info("onScanCodeFailed");
+        scanLogService.add(null, Constants.SCAN_LOG_MSG_FAILED, Constants.SCAN_LOG_TYPE_ERROR);
         CushionInfoDTO cushionInfoDTO = new CushionInfoDTO();
         cushionInfoDTO.setWorkLine(workLine);
         cushionInfoDTO.setScannerSeq(scannerSeq);
@@ -325,6 +327,7 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
         List<CushionInfoEntity> cushionInfos = cushionInfoEntityMapper.listByIds(ids);
         return cushionInfos.stream().map(this::cushionInfo2DTO).collect(Collectors.toList());
     }
+
     @Override
     public List<CushionDetailDTO> listDetailsByIds(List<Long> ids) {
         List<CushionDetailEntity> cushionDetails = cushionDetailEntityMapper.listByIds(ids);
@@ -381,7 +384,7 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
         PLCAddrEntity plcAddr = plcAddrService.findByTypeAndScannerSeq(plcAddrType, scannerSeq);
         if (null == plcAddr) return;
 
-        EventBus.getDefault().post(new EventBusMsgPlcCmd(plcAddrType, plcAddr.getAddr(), Constants.DEFAULT_2_PLC_VAL, workLine));
+        EventBus.getDefault().post(new EventBusMsgPlcCmd(qrCode, plcAddrType, plcAddr.getAddr(), Constants.DEFAULT_2_PLC_VAL, workLine));
 
         if (Constants.PLC_ADDR_TYPE_SCAN_SUCCESS == plcAddrType)
             readOpenCountFromPLC(false, qrCode, scannerSeq, workLine);

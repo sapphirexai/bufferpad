@@ -73,14 +73,14 @@ public class MsgHandler extends ChannelInboundHandlerAdapter {
 
                 // 帧头匹配就进行下一步操作
                 if (oMsg.startsWith(String.valueOf(Constants.SCANNER_MSG_STX))) {
-                    log.info("channelRead, scanner data matched, *** START ***");
+                    logOutMatched();
                     // 替换帧头和帧尾
                     String fMsg = oMsg.replaceAll(SCANNER_DATA_REGEX, "");
                     EventBus.getDefault().post(new EventBusMsgCushionQrCode(fMsg, mConnection.getWorkLine(), installSeq));
                 }
 
                 if (oMsg.startsWith(Constants.SCANNER_XZ_STX)) {
-                    log.info("channelRead, scanner data matched, *** START ***");
+                    logOutMatched();
                     // 替换帧头和帧尾
                     String fMsg = oMsg.replaceAll(XZ_SCANNER_DATA_REGEX, "");
                     EventBus.getDefault().post(new EventBusMsgCushionQrCode(fMsg, mConnection.getWorkLine(), installSeq));
@@ -90,6 +90,10 @@ public class MsgHandler extends ChannelInboundHandlerAdapter {
             // 使用完须释放资源
             ReferenceCountUtil.release(msg);
         }
+    }
+
+    private void logOutMatched() {
+        log.info("channelRead, scanner data matched, *** START ***");
     }
 
     /**
@@ -102,11 +106,11 @@ public class MsgHandler extends ChannelInboundHandlerAdapter {
     private void notifyPLC(Integer plcAddrType, Integer scannerSeq, Integer workLine) {
         if (null == plcAddrType) return;
 
-        IPLCAddrService ps = (IPLCAddrService) ApplicationContextAwareImpl.getBean("plcAddrService");
+        IPLCAddrService ps = ApplicationContextAwareImpl.getPLCAddrService();
         PLCAddrEntity plcAddr = ps.findByTypeAndScannerSeq(plcAddrType, scannerSeq);
         if (null == plcAddr) return;
 
-        EventBus.getDefault().post(new EventBusMsgPlcCmd(plcAddrType, plcAddr.getAddr(), Constants.DEFAULT_2_PLC_VAL, workLine));
+        EventBus.getDefault().post(new EventBusMsgPlcCmd(null, plcAddrType, plcAddr.getAddr(), Constants.DEFAULT_2_PLC_VAL, workLine));
     }
 
     /**

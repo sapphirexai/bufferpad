@@ -1,5 +1,8 @@
 package cn.tpl.opc;
 
+import cn.tpl.opc.service.ICushionInfoService;
+import cn.tpl.opc.service.IPLCAddrService;
+import cn.tpl.opc.service.IScanLogService;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -28,5 +31,17 @@ public class ApplicationContextAwareImpl implements ApplicationContextAware {
      */
     public static Object getBean(String beanName) {
         return mContext.getBean(beanName);
+    }
+
+    public static ICushionInfoService getCushionService() {
+        return (ICushionInfoService) getBean("cushionInfoService");
+    }
+
+    public static IPLCAddrService getPLCAddrService() {
+        return (IPLCAddrService) getBean("plcAddrService");
+    }
+
+    public static IScanLogService getScanLogService() {
+        return (IScanLogService) getBean("scanLogService");
     }
 }
