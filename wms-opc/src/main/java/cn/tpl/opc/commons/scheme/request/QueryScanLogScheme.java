@@ -24,14 +24,14 @@ public class QueryScanLogScheme extends AbsBaseScheme {
     @Schema(description = "日志内容")
     private String msg;
 
-    @Schema(description = "日志类型")
+    @Schema(description = "日志类型，0：普通；1：异常")
     private Short msgType;
 
-    @Schema(description = "开始创建时间")
+    @Schema(description = "开始创建时间，格式为yyyy-MM-dd HH:mm:ss")
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date startTime;
 
-    @Schema(description = "截止创建时间")
+    @Schema(description = "截止创建时间，格式同上")
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date endTime;
 }

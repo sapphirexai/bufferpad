@@ -36,7 +36,7 @@ public class ScanLogEntity implements Serializable {
      */
     private Date createdDate;
     /**
-     * 设备状态，0：普通；1：异常
+     * 日志类型，0：普通；1：异常
      */
     private Short msgType;
 }
