@@ -2,7 +2,6 @@ package cn.tpl.opc.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.tpl.opc.commons.constant.Constants;
-import cn.tpl.opc.commons.constant.Params;
 import cn.tpl.opc.commons.dto.ResultDTO;
 import cn.tpl.opc.commons.dto.result.DeviceInfoDTO;
 import cn.tpl.opc.entity.DeviceInfoEntity;
@@ -64,9 +63,7 @@ public class NettyServiceImpl implements INettyService {
         Connection connection = new Connection();
         BeanUtil.copyProperties(deviceInfo, connection);
         BeanUtil.copyProperties(deviceInfo, deviceInfoDTO);
-        boolean isActive = connector.connect(connection);
-        if (isActive)
-            deviceInfoDTO.setStatus(Params.NETTY_CONNECTION_KEY_STATUS_ACTIVE);
+        connector.connect(connection);
         return deviceInfoDTO;
     }
 

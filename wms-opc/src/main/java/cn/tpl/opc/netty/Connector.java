@@ -28,6 +28,7 @@ import org.greenrobot.eventbus.EventBus;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
@@ -54,33 +55,24 @@ public class Connector {
     /**
      * 定时执行器
      */
-    private final ScheduledExecutorService scheduledExecutorService;
+    private ScheduledExecutorService scheduledExecutorService;
+    private Bootstrap neetyClient;
+    private volatile boolean neetyClientInitialized;
 
-    {
+    @PostConstruct
+    private void init() {
+        neetyClient = fastBuildClient();
         scheduledExecutorService = Executors.newScheduledThreadPool(2);
         startReconnectService();
         startPLCHeartbeatService();
     }
 
-    private Bootstrap fastBuildClient(Connection connection) {
+    private Bootstrap fastBuildClient() {
         Bootstrap client = new Bootstrap();
         client.group(connectionMgr.getWorker())
                 .channel(NioSocketChannel.class)
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, Constants.NETTY_CONNECT_TIMEOUT_MILLIS)
-                .option(ChannelOption.SO_KEEPALIVE, true)
-                .handler(new ChannelInitializer<SocketChannel>() {
-                    @Override
-                    protected void initChannel(SocketChannel sc) {
-                        // 添加一个编码处理器，对数据编码为UTF-8格式
-                        sc.pipeline().addLast(new StringEncoder(CharsetUtil.UTF_8));
-                        // 配置如果对应时间内未触发写事件，就会触发写闲置事件
-                        sc.pipeline().addLast(new IdleStateHandler(0, 30, 0, TimeUnit.SECONDS));
-                        // 添加一个入站处理器，对收到的数据进行处理
-                        sc.pipeline().addLast(new MsgHandler(connection));
-                        // 添加心跳处理器
-                        sc.pipeline().addLast(new HeartbeatHandler(connection));
-                    }
-                });
+                .option(ChannelOption.SO_KEEPALIVE, true);
         return client;
     }
 
@@ -89,14 +81,13 @@ public class Connector {
      * 连接
      *
      * @param conn 连接对象
-     * @return 连接结果
      */
-    public boolean connect(Connection conn) {
+    public void connect(Connection conn) {
         Long id = conn.getId();
-        if (connectionExists(id)) return reconnectExistConnection(id);
+        if (connectionExists(id)) return;
         synchronized (this) {
             // 获取锁后进行二次判断
-            if (connectionExists(id)) return reconnectExistConnection(id);
+            if (connectionExists(id)) return;
             // 保存连接信息到列表
             conn.setOnStatusChangeListener(new Connection.OnStatusChangeListener() {
                 @Override
@@ -112,20 +103,10 @@ public class Connector {
                 }
             });
             connectionMgr.saveConnection(conn);
-            return doConnect(conn);
+            doConnect(conn);
         }
     }
 
-
-    /**
-     * 重连已存在的连接，调用之前判断连接是否已经存在
-     *
-     * @return 重连结果
-     * @see #doReconnect(Connection)
-     */
-    private boolean reconnectExistConnection(Long id) {
-        return doReconnect(connectionMgr.getConnection(id));
-    }
 
     /**
      * 重连设备，需要设备至少连接过一次，无论是否成功只要保存了连接信息就OK
@@ -147,27 +128,26 @@ public class Connector {
      *
      * @param conn 连接信息
      */
-    private boolean doConnect(Connection conn) {
+    private void doConnect(Connection conn) {
         String ip = conn.getIp();
         Integer port = conn.getPort();
         if (isScannerConn(conn))
-            return connectScanner(conn, ip, port);
+            connectScanner(conn, ip, port);
         else
-            return connectPLC(conn, ip, port);
+            connectPLC(conn, ip, port);
     }
 
     /**
      * 重连设备
      *
      * @param conn 连接信息
-     * @return 重连结果
      * @see #doConnect(Connection)
      */
-    private boolean doReconnect(Connection conn) {
-        if (null == conn) return false;
-        if (conn.isActive()) return true;
+    private void doReconnect(Connection conn) {
+        if (null == conn) return;
+        if (conn.isActive()) return;
         log.info("doReconnect, reconnecting...");
-        return doConnect(conn);
+        doConnect(conn);
     }
 
     /**
@@ -175,15 +155,31 @@ public class Connector {
      *
      * @param conn 连接信息
      * @param ip   IP地址
-     * @param port 端口号
+    F     * @param port 端口号
      */
-    private boolean connectScanner(Connection conn, String ip, Integer port) {
+    private void connectScanner(Connection conn, String ip, Integer port) {
         try {
             log.info("connectScanner, connecting => {}", ip + ":" + port);
-            if (NetUtils.pingFailed(ip)) return false;
+            if (NetUtils.pingFailed(ip)) return;
+            if (!neetyClientInitialized) {
+                log.info("connectScanner, neetyClientInit");
+                neetyClientInitialized = true;
+                neetyClient.handler(new ChannelInitializer<SocketChannel>() {
+                    @Override
+                    protected void initChannel(SocketChannel sc) {
+                        // 添加一个编码处理器，对数据编码为UTF-8格式
+                        sc.pipeline().addLast(new StringEncoder(CharsetUtil.UTF_8));
+                        // 配置如果对应时间内未触发写事件，就会触发写闲置事件
+                        sc.pipeline().addLast(new IdleStateHandler(0, 30, 0, TimeUnit.SECONDS));
+                        // 添加一个入站处理器，对收到的数据进行处理
+                        sc.pipeline().addLast(new MsgHandler(conn));
+                        // 添加心跳处理器
+                        sc.pipeline().addLast(new HeartbeatHandler(conn));
+                    }
+                });
+            }
 
-            fastBuildClient(conn)// 创建一个客户端）
-                    .connect(ip, port)
+            neetyClient.connect(ip, port)
                     .addListener(ChannelFutureListener.CLOSE_ON_FAILURE)
                     .addListener((ChannelFutureListener) future -> {
                         if (future.isSuccess()) {
@@ -192,10 +188,8 @@ public class Connector {
                         }
                     });// 发起连接
             log.info("connectScanner, connecting => success status = > {}", conn.isActive());
-            return true;
         } catch (Exception e) {
             log.error("connect, error", e);
-            return false;
         }
     }
 
@@ -207,10 +201,10 @@ public class Connector {
      * @param ip   IP地址
      * @param port 端口号
      */
-    private boolean connectPLC(Connection conn, String ip, Integer port) {
-        if (!conn.isNoPLCNet()) return false;
+    private void connectPLC(Connection conn, String ip, Integer port) {
+        if (!conn.isNoPLCNet()) return;
         log.info("connectPLC, connecting => {}", ip + ":" + port);
-        if (NetUtils.pingFailed(ip)) return false;
+        if (NetUtils.pingFailed(ip)) return;
 
         InovanceTcpNet inovanceTcpNet = null;
         MelsecMcNet melsecMcNet = null;
@@ -226,13 +220,12 @@ public class Connector {
         if (operateResult.IsSuccess) {
             log.info("connectPLC, connecting => success");
             conn.nowActive(melsecMcNet, inovanceTcpNet);
-            return true;
+            return;
         }
 
         log.error("connectPLC, connecting => failed, ip =>{}:{}", ip, port);
         log.error("connectPLC, ErrorCode: {}", operateResult.ErrorCode);
         log.error("connectPLC, ErrorMsg: {}", operateResult.Message);
-        return false;
     }
 
     private void startPLCHeartbeatService() {
@@ -259,7 +252,7 @@ public class Connector {
         PLCAddrEntity plcAddr = plcAddrService.findByTypeAndScannerSeq(Constants.PLC_ADDR_TYPE_HEART_BEAT, conn.getInstallSeq());
         if (null == plcAddr) return;
 
-        EventBus.getDefault().post(new EventBusMsgPlcCmd(null,Constants.PLC_ADDR_TYPE_HEART_BEAT, plcAddr.getAddr(), Constants.HEARTBEAT_2_PLC_VAL, conn.getWorkLine()));
+        EventBus.getDefault().post(new EventBusMsgPlcCmd(null, Constants.PLC_ADDR_TYPE_HEART_BEAT, plcAddr.getAddr(), Constants.HEARTBEAT_2_PLC_VAL, conn.getWorkLine()));
     }
 
     public void startReconnectService() {
