@@ -66,7 +66,6 @@ export default {
       tableData: [],
       loading: true,
       multipleSelection: [],
-      qrCode: '',
       searchFormData: {
         qrCode: '',
         timeValue: [dayjs().startOf('day').format('YYYY-MM-DD HH:mm:ss'), dayjs().endOf('day').format('YYYY-MM-DD HH:mm:ss')],
