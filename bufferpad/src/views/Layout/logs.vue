@@ -13,7 +13,7 @@
       <el-form-item label="日志内容">
         <el-input v-model="searchFormData.msg" style="width: 200px;" placeholder="请输入日志内容" clearable></el-input>
       </el-form-item>
-      <el-form-item label="缓冲垫编号">
+      <el-form-item label="创建时间">
         <el-date-picker
           v-model="searchFormData.timeValue"
           type="datetimerange"
