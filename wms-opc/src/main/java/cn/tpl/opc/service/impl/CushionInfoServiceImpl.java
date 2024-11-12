@@ -2,6 +2,7 @@ package cn.tpl.opc.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.bean.copier.CopyOptions;
+import cn.hutool.core.util.ObjectUtil;
 import cn.tpl.opc.commons.constant.Constants;
 import cn.tpl.opc.commons.constant.Params;
 import cn.tpl.opc.commons.dto.ResultDTO;
@@ -172,9 +173,17 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
      */
     @Override
     public ResultDTO<CushionInfoDTO> onQrCodeReceived(Integer workLine, Integer scannerSeq, String qrCode) {
-        scanLogService.add(qrCode, Constants.SCAN_LOG_MSG_SUCCESS_DATA_FORM_SCANNER + scannerSeq, Constants.SCAN_LOG_TYPE_INFO);
         CushionInfoEntity cushionInfoEntity = findByQrCode(qrCode);
-        if (null == cushionInfoEntity) return onScanNew(workLine, scannerSeq, qrCode);
+        boolean isNew = ObjectUtil.isNull(cushionInfoEntity);
+        if (ObjectUtil.isNull(scannerSeq))
+            if (isNew)
+                scanLogService.add(qrCode, Constants.SCAN_LOG_MSG_SUCCESS_DATA_FORM_MANUAL_NEW, Constants.SCAN_LOG_TYPE_INFO);
+            else
+                scanLogService.add(qrCode, Constants.SCAN_LOG_MSG_SUCCESS_DATA_FORM_MANUAL_WITH_SCANNER + cushionInfoEntity.getScannerSeq(), Constants.SCAN_LOG_TYPE_INFO);
+        else
+            scanLogService.add(qrCode, Constants.SCAN_LOG_MSG_SUCCESS_DATA_FORM_SCANNER + scannerSeq, Constants.SCAN_LOG_TYPE_INFO);
+
+        if (isNew) return onScanNew(workLine, scannerSeq, qrCode);
 
         //若当前与最后一次扫码时间相差不足2小时，则为无效扫码，不进行记录操作
         Date lastScanDate = cushionInfoEntity.getLastScanDate();
