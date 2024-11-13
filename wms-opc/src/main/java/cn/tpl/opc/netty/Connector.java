@@ -56,23 +56,33 @@ public class Connector {
      * 定时执行器
      */
     private ScheduledExecutorService scheduledExecutorService;
-    private Bootstrap neetyClient;
-    private volatile boolean neetyClientInitialized;
 
     @PostConstruct
     private void init() {
-        neetyClient = fastBuildClient();
         scheduledExecutorService = Executors.newScheduledThreadPool(2);
         startReconnectService();
         startPLCHeartbeatService();
     }
 
-    private Bootstrap fastBuildClient() {
+    private Bootstrap fastBuildClient(Connection conn) {
         Bootstrap client = new Bootstrap();
         client.group(connectionMgr.getWorker())
                 .channel(NioSocketChannel.class)
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, Constants.NETTY_CONNECT_TIMEOUT_MILLIS)
-                .option(ChannelOption.SO_KEEPALIVE, true);
+                .option(ChannelOption.SO_KEEPALIVE, true).handler(new ChannelInitializer<SocketChannel>() {
+                    @Override
+                    protected void initChannel(SocketChannel sc) {
+                        // 添加一个编码处理器，对数据编码为UTF-8格式
+                        sc.pipeline().addLast(new StringEncoder(CharsetUtil.UTF_8));
+                        // 配置如果对应时间内未触发写事件，就会触发写闲置事件
+                        sc.pipeline().addLast(new IdleStateHandler(0, 30, 0, TimeUnit.SECONDS));
+                        // 添加一个入站处理器，对收到的数据进行处理
+                        sc.pipeline().addLast(new MsgHandler(conn));
+                        // 添加心跳处理器
+                        sc.pipeline().addLast(new HeartbeatHandler(conn));
+                    }
+                });
+
         return client;
     }
 
@@ -161,25 +171,8 @@ public class Connector {
         try {
             log.info("connectScanner, connecting => {}", ip + ":" + port);
             if (NetUtils.pingFailed(ip)) return;
-            if (!neetyClientInitialized) {
-                log.info("connectScanner, neetyClientInit");
-                neetyClientInitialized = true;
-                neetyClient.handler(new ChannelInitializer<SocketChannel>() {
-                    @Override
-                    protected void initChannel(SocketChannel sc) {
-                        // 添加一个编码处理器，对数据编码为UTF-8格式
-                        sc.pipeline().addLast(new StringEncoder(CharsetUtil.UTF_8));
-                        // 配置如果对应时间内未触发写事件，就会触发写闲置事件
-                        sc.pipeline().addLast(new IdleStateHandler(0, 30, 0, TimeUnit.SECONDS));
-                        // 添加一个入站处理器，对收到的数据进行处理
-                        sc.pipeline().addLast(new MsgHandler(conn));
-                        // 添加心跳处理器
-                        sc.pipeline().addLast(new HeartbeatHandler(conn));
-                    }
-                });
-            }
-
-            neetyClient.connect(ip, port)
+            log.info("connectScanner, neetyClientInit");
+            fastBuildClient(conn).connect(ip, port)
                     .addListener(ChannelFutureListener.CLOSE_ON_FAILURE)
                     .addListener((ChannelFutureListener) future -> {
                         if (future.isSuccess()) {
