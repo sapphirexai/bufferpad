@@ -56,6 +56,12 @@ public class DeviceInfoDTO extends AbsBaseDTO {
     private String name;
 
     /**
+     * 设备位置
+     */
+    @Schema(description = "设备位置")
+    private String position;
+
+    /**
      * 产线
      */
     @Schema(description = "产线")

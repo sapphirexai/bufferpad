@@ -45,6 +45,11 @@ public class DeviceInfoEntity implements Serializable {
     private String name;
 
     /**
+     * 设备位置
+     */
+    private String position;
+
+    /**
      * 产线
      */
     private Integer workLine;
