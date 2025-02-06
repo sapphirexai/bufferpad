@@ -4,6 +4,7 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.tpl.opc.commons.dto.result.DeviceInfoDTO;
 import cn.tpl.opc.commons.dto.result.PageData;
 import cn.tpl.opc.commons.scheme.base.BasePageScheme;
+import cn.tpl.opc.commons.scheme.request.SaveDeviceInfoScheme;
 import cn.tpl.opc.entity.DeviceInfoEntity;
 import cn.tpl.opc.mapper.DeviceInfoEntityMapper;
 import cn.tpl.opc.service.IDeviceInfoService;
@@ -23,6 +24,11 @@ import java.util.List;
 public class DeviceInfoServiceImpl implements IDeviceInfoService {
     @Resource
     private DeviceInfoEntityMapper deviceInfoEntityMapper;
+
+    @Override
+    public boolean save(SaveDeviceInfoScheme scheme) {
+        return deviceInfoEntityMapper.insertSelective(BeanUtil.copyProperties(scheme, DeviceInfoEntity.class)) > 0;
+    }
 
     public boolean deleteById(Long id) {
         return deviceInfoEntityMapper.deleteByPrimaryKey(id) > 0;

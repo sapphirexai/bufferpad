@@ -20,7 +20,7 @@ public class DeviceInfoEntity implements Serializable {
     private Long id;
 
     /**
-     * 设备类型，0: 扫码器；1: PLC
+     * 设备类型，0: 扫码器；1: 三菱PLC；2：汇川PLC
      */
     private Integer type;
 

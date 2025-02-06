@@ -145,12 +145,22 @@ public final class Constants {
 
     /**
      * 接口请求结果消息
+     * RESULT_MSG_PARAMS_ERROR 参数异常
+     * RESULT_MSG_DEVICE_NO_TYPE 设备无类型
+     * RESULT_MSG_DEVICE_NO_IP 设备无IP
+     * RESULT_MSG_DEVICE_NO_PORT 设备无端口
+     * RESULT_MSG_DEVICE_NO_INSTALL_SEQ 设备无安装顺序
      * RESULT_MSG_CUSHION_ADD_FAILED 新增缓冲垫失败
      * RESULT_MSG_CUSHION_ADD_USED_COUNT_FAILED 增加缓冲垫使用次数失败
      * RESULT_MSG_CUSHION_USED_COUNT_REACHED_MAX 使用次数达到最大值
      * RESULT_MSG_CUSHION_INVALID_SCAN 缓冲垫无效扫码
      */
     public static final String
+            RESULT_MSG_PARAMS_ERROR = "参数异常！",
+            RESULT_MSG_DEVICE_NO_TYPE = "设备类型不能为空！",
+            RESULT_MSG_DEVICE_NO_IP = "设备IP不能为空！",
+            RESULT_MSG_DEVICE_NO_PORT = "设备端口不能为空！",
+            RESULT_MSG_DEVICE_NO_INSTALL_SEQ = "设备安装顺序不能为空！",
             RESULT_MSG_CUSHION_ADD_FAILED = "新增缓冲垫失败！",
             RESULT_MSG_CUSHION_ADD_USED_COUNT_FAILED = "增加缓冲垫使用次数失败！",
             RESULT_MSG_CUSHION_USED_COUNT_REACHED_MAX = "使用次数已达到最大次数！",

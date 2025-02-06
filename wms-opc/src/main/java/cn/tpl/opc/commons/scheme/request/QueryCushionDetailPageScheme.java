@@ -1,7 +1,6 @@
 package cn.tpl.opc.commons.scheme.request;
 
 import cn.tpl.opc.commons.scheme.base.BasePageScheme;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;

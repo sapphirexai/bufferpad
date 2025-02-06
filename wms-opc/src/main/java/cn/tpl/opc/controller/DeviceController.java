@@ -4,6 +4,7 @@ import cn.tpl.opc.commons.dto.ResultDTO;
 import cn.tpl.opc.commons.dto.result.DeviceInfoDTO;
 import cn.tpl.opc.commons.dto.result.PageData;
 import cn.tpl.opc.commons.scheme.base.BasePageScheme;
+import cn.tpl.opc.commons.scheme.request.SaveDeviceInfoScheme;
 import cn.tpl.opc.netty.ConnectionMgr;
 import cn.tpl.opc.service.IDeviceInfoService;
 import cn.tpl.opc.service.INettyService;
@@ -14,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import javax.validation.Valid;
 import java.util.List;
 
 /**
@@ -34,6 +36,21 @@ public class DeviceController {
 
     @Resource
     private ConnectionMgr connectionMgr;
+
+    @Operation(summary = "保存设备信息协议")
+    @PostMapping
+    public ResultDTO<Boolean> saveResult(
+            @Valid
+            @Parameter(description = "保存设备信息协议")
+            @RequestBody SaveDeviceInfoScheme scheme) {
+        try {
+            log.info("saveResult, scheme => {}", scheme);
+            boolean result = deviceInfoService.save(scheme);
+            return result ? ResultDTO.success() : ResultDTO.failure(null);
+        } catch (Exception e) {
+            return ResultDTO.exception(e);
+        }
+    }
 
     @Operation(summary = "分页查询设备列表，用于设备配置相关")
     @GetMapping("/devicesPage")

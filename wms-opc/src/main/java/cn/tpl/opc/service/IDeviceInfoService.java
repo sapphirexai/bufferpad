@@ -3,6 +3,7 @@ package cn.tpl.opc.service;
 import cn.tpl.opc.commons.dto.result.DeviceInfoDTO;
 import cn.tpl.opc.commons.dto.result.PageData;
 import cn.tpl.opc.commons.scheme.base.BasePageScheme;
+import cn.tpl.opc.commons.scheme.request.SaveDeviceInfoScheme;
 import cn.tpl.opc.entity.DeviceInfoEntity;
 
 import java.util.List;
@@ -14,6 +15,14 @@ import java.util.List;
  * 设备信息服务接口
  */
 public interface IDeviceInfoService {
+    /**
+     * 根据保存设备信息协议保存设备信息
+     *
+     * @param scheme 保存设备信息协议类
+     * @return 保存结果
+     */
+    boolean save(SaveDeviceInfoScheme scheme);
+
     /**
      * 根据ID删除设备信息
      *
