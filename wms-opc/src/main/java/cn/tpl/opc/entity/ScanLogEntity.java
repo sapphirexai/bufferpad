@@ -1,8 +1,9 @@
 package cn.tpl.opc.entity;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.sql.Timestamp;
-import java.util.Date;
+
 import lombok.Data;
 
 /**
@@ -19,6 +20,7 @@ public class ScanLogEntity implements Serializable {
      *
      * @mbg.generated Fri Nov 08 14:27:17 CST 2024
      */
+    @Serial
     private static final long serialVersionUID = 1L;
     /**
      * 主键ID

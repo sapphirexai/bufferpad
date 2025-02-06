@@ -1,5 +1,6 @@
 package cn.tpl.opc.entity;
 
+import java.io.Serial;
 import java.io.Serializable;
 import lombok.Data;
 
@@ -7,7 +8,7 @@ import lombok.Data;
  * Author: Luo GuoWen
  * Email: luoguowen123@qq.com
  * Time: 2024/01/06
- * 
+ *
  */
 @Data
 public class OpcConfigEntity implements Serializable {
@@ -17,6 +18,7 @@ public class OpcConfigEntity implements Serializable {
      *
      * @mbg.generated Sat Jan 06 12:13:27 CST 2024
      */
+    @Serial
     private static final long serialVersionUID = 1L;
     private Long id;
     private Integer cushionMaxUseCount;

@@ -1,5 +1,6 @@
 package cn.tpl.opc.entity;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Date;
 
@@ -69,5 +70,6 @@ public class DeviceInfoEntity implements Serializable {
      *
      * @mbg.generated Mon Apr 10 15:23:51 CST 2023
      */
+    @Serial
     private static final long serialVersionUID = 1L;
 }

@@ -1,5 +1,6 @@
 package cn.tpl.opc.entity;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Date;
 import lombok.Data;
@@ -18,6 +19,7 @@ public class CushionDetailEntity implements Serializable {
      *
      * @mbg.generated Mon Apr 15 16:08:36 CST 2024
      */
+    @Serial
     private static final long serialVersionUID = 1L;
     /**
      * 主键ID
