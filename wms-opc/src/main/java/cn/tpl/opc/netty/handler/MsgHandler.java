@@ -34,7 +34,7 @@ public class MsgHandler extends ChannelInboundHandlerAdapter {
      * @see Constants#SCANNER_XZ_STX
      * @see Constants#SCANNER_XZ_ETX
      */
-    private static final String XZ_SCANNER_DATA_REGEX = "[\\[][T][P][L][_][S|E][T][X][]]";
+    private static final String XZ_SCANNER_DATA_REGEX = "\\[TPL_[S|E]TX]";
 
     /**
      * 连接信息
