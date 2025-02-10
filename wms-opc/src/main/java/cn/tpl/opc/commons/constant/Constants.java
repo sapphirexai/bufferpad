@@ -6,6 +6,7 @@ package cn.tpl.opc.commons.constant;
  * Time: 2023/4/11
  * 普通常量管理
  */
+@SuppressWarnings("unused")
 public final class Constants {
     private Constants() {
     }
@@ -21,13 +22,13 @@ public final class Constants {
             SCAN_LOG_MSG_SUFFIX_NEW = "，新增",
             SCAN_LOG_MSG_FAILED = "扫码失败",
             SCAN_LOG_MSG_SUCCESS = "扫码成功",
-            SCAN_LOG_MSG_INVALID = "扫码间隔时间不足2小时，无效扫码",
+            SCAN_LOG_MSG_INVALID = "扫码间隔不足2小时，无效扫码",
             SCAN_LOG_MSG_OVER_MAXIMUM = "使用次数已达到最大次数",
             SCAN_LOG_MSG_NOTIFY_PLC_SUCCESS = "通知PLC成功，地址：",
             SCAN_LOG_MSG_NOTIFY_PLC_FAILED = "通知PLC失败，地址：",
             SCAN_LOG_MSG_SUFFIX_NOTIFY_PLC_CMD = "，写入值：",
             SCAN_LOG_MSG_SUCCESS_DATA_FORM_SCANNER = SCAN_LOG_MSG_SUCCESS + SCAN_LOG_MSG_SUFFIX_SCANNER_NUM,
-            SCAN_LOG_MSG_SUCCESS_DATA_FORM_MANUAL_NEW = SCAN_LOG_MSG_SUCCESS + SCAN_LOG_MSG_SUFFIX_MANUAL + SCAN_LOG_MSG_SUFFIX_NEW,
+            SCAN_LOG_MSG_SUCCESS_DATA_FORM_MANUAL_NEW = SCAN_LOG_MSG_SUCCESS + SCAN_LOG_MSG_SUFFIX_NEW,
             SCAN_LOG_MSG_SUCCESS_DATA_FORM_MANUAL_WITH_SCANNER = SCAN_LOG_MSG_SUCCESS + SCAN_LOG_MSG_SUFFIX_MANUAL + SCAN_LOG_MSG_SUFFIX_SCANNER_NUM,
             SCAN_LOG_MSG_INVALID_DATA_FORM_SCANNER = SCAN_LOG_MSG_INVALID + SCAN_LOG_MSG_SUFFIX_SCANNER_NUM,
             SCAN_LOG_MSG_OVER_MAXIMUM_FORM_SCANNER = SCAN_LOG_MSG_OVER_MAXIMUM + SCAN_LOG_MSG_SUFFIX_SCANNER_NUM;
@@ -164,6 +165,6 @@ public final class Constants {
             RESULT_MSG_CUSHION_ADD_FAILED = "新增缓冲垫失败！",
             RESULT_MSG_CUSHION_ADD_USED_COUNT_FAILED = "增加缓冲垫使用次数失败！",
             RESULT_MSG_CUSHION_USED_COUNT_REACHED_MAX = "使用次数已达到最大次数！",
-            RESULT_MSG_CUSHION_INVALID_SCAN = "扫码间隔时间不足2小时，无效扫码！";
+            RESULT_MSG_CUSHION_INVALID_SCAN = "扫码间隔不足2小时，无效扫码！";
 
 }

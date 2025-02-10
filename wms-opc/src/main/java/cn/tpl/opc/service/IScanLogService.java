@@ -32,10 +32,12 @@ public interface IScanLogService {
      * @param qrCode  缓冲垫二维码
      * @param msg 日志内容，可为null，默认：扫码成功或扫码失败
      * @param msgType 日志类型
+     * @param isManualScan 是否手动扫码
+     *
      * @see cn.tpl.opc.commons.constant.Constants#SCAN_LOG_TYPE_INFO
      * @see cn.tpl.opc.commons.constant.Constants#SCAN_LOG_TYPE_ERROR
      */
-    void addScanLog(String scannerHost, String scannerName, String qrCode, String msg, short msgType);
+    void addScanLog(String scannerHost, String scannerName, String qrCode, String msg, short msgType, boolean isManualScan);
 
     /**
      * 根据ID列表查找对应缓冲垫明细

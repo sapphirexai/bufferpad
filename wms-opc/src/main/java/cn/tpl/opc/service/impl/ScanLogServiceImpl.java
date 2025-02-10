@@ -41,11 +41,11 @@ public class ScanLogServiceImpl implements IScanLogService {
     }
 
     @Override
-    public void addScanLog(String scannerHost, String scannerName, String qrCode, String msg, short msgType) {
+    public void addScanLog(String scannerHost, String scannerName, String qrCode, String msg, short msgType, boolean isManualScan) {
         log.info("addScanLog");
         String scanResult = CharSequenceUtil.isEmpty(msg) ? (msgType == Constants.SCAN_LOG_TYPE_INFO ? Constants.SCAN_LOG_MSG_SUCCESS : Constants.SCAN_LOG_MSG_FAILED) : msg;
         scanResult += LOG_DIVIDER;
-        String scanMethod = (CharSequenceUtil.isEmpty(scannerHost) && CharSequenceUtil.isEmpty(scannerName)) ? SCAN_MANUAL : (scannerName + LOG_DIVIDER + scannerHost);
+        String scanMethod = isManualScan ? SCAN_MANUAL : scannerName + LOG_DIVIDER + scannerHost;
         add(qrCode, scanResult + scanMethod, msgType);
     }
 

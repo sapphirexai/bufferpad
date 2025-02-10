@@ -134,14 +134,14 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
         sseService.sendFailMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, cushionInfoEntity, workLine, scannerSeq), Constants.RESULT_MSG_CUSHION_INVALID_SCAN);
         // 扫码成功PLC提示
         if (null == scannerSeq) {
-            scanLogService.addScanLog(scannerHost, scannerName, qrCode, Constants.SCAN_LOG_MSG_INVALID, Constants.SCAN_LOG_TYPE_ERROR);
+            scanLogService.addScanLog(scannerHost, scannerName, qrCode, Constants.SCAN_LOG_MSG_INVALID, Constants.SCAN_LOG_TYPE_ERROR, true);
             // 补码逻辑
             if (null == cushionScannerSeq)
                 notifyAllScannersSates2PLC(qrCode, Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS, workLine);
             else
                 notifyPLC(qrCode, Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS, cushionScannerSeq, workLine);
         } else {
-            scanLogService.addScanLog(scannerHost, scannerName, qrCode, Constants.SCAN_LOG_MSG_INVALID, Constants.SCAN_LOG_TYPE_ERROR);
+            scanLogService.addScanLog(scannerHost, scannerName, qrCode, Constants.SCAN_LOG_MSG_INVALID, Constants.SCAN_LOG_TYPE_ERROR, false);
             notifyPLC(qrCode, Constants.PLC_ADDR_TYPE_SCAN_SUCCESS, scannerSeq, workLine);
         }
         return ResultDTO.failure(Constants.RESULT_MSG_CUSHION_INVALID_SCAN);
@@ -178,11 +178,11 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
         boolean isNew = ObjectUtil.isNull(cushionInfoEntity);
         if (ObjectUtil.isNull(scannerSeq))
             if (isNew)
-                scanLogService.add(qrCode, Constants.SCAN_LOG_MSG_SUCCESS_DATA_FORM_MANUAL_NEW, Constants.SCAN_LOG_TYPE_INFO);
+                scanLogService.addScanLog(scannerHost, scannerName, qrCode, Constants.SCAN_LOG_MSG_SUCCESS_DATA_FORM_MANUAL_NEW, Constants.SCAN_LOG_TYPE_INFO, true);
             else
-                scanLogService.add(qrCode, Constants.SCAN_LOG_MSG_SUCCESS_DATA_FORM_MANUAL_WITH_SCANNER + cushionInfoEntity.getScannerSeq(), Constants.SCAN_LOG_TYPE_INFO);
+                scanLogService.addScanLog(scannerHost, scannerName, qrCode, null, Constants.SCAN_LOG_TYPE_INFO, true);
         else
-            scanLogService.addScanLog(scannerHost, scannerName, qrCode, null, Constants.SCAN_LOG_TYPE_INFO);
+            scanLogService.addScanLog(scannerHost, scannerName, qrCode, null, Constants.SCAN_LOG_TYPE_INFO, false);
 
         if (isNew) return onScanNew(workLine, scannerSeq, qrCode);
 
@@ -268,7 +268,7 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
      */
     private void onScanCodeFailed(Integer workLine, String scannerHost, String scannerName, Integer scannerSeq) {
         log.info("onScanCodeFailed");
-        scanLogService.addScanLog(scannerHost, scannerName, null, null, Constants.SCAN_LOG_TYPE_ERROR);
+        scanLogService.addScanLog(scannerHost, scannerName, null, null, Constants.SCAN_LOG_TYPE_ERROR, false);
         notifyPLC(null, Constants.PLC_ADDR_TYPE_SCAN_FAILED, scannerSeq, workLine);
         CushionInfoDTO cushionInfoDTO = new CushionInfoDTO();
         cushionInfoDTO.setWorkLine(workLine);
