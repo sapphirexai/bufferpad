@@ -24,6 +24,18 @@ public interface IScanLogService {
      */
     void add(String qrCode, String msg, short msgType);
 
+    /**
+     * 新增日志
+     *
+     * @param scannerHost 扫码器地址
+     * @param scannerName 扫码器名字
+     * @param qrCode  缓冲垫二维码
+     * @param msg 日志内容，可为null，默认：扫码成功或扫码失败
+     * @param msgType 日志类型
+     * @see cn.tpl.opc.commons.constant.Constants#SCAN_LOG_TYPE_INFO
+     * @see cn.tpl.opc.commons.constant.Constants#SCAN_LOG_TYPE_ERROR
+     */
+    void addScanLog(String scannerHost, String scannerName, String qrCode, String msg, short msgType);
 
     /**
      * 根据ID列表查找对应缓冲垫明细

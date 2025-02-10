@@ -1,6 +1,8 @@
 package cn.tpl.opc.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.text.CharSequenceUtil;
+import cn.tpl.opc.commons.constant.Constants;
 import cn.tpl.opc.commons.dto.result.ScanLogDTO;
 import cn.tpl.opc.commons.scheme.request.QueryScanLogScheme;
 import cn.tpl.opc.entity.ScanLogEntity;
@@ -21,17 +23,30 @@ import java.util.List;
 @Slf4j
 @Service("scanLogService")
 public class ScanLogServiceImpl implements IScanLogService {
+    public static final String
+            LOG_DIVIDER = "，",
+            SCAN_MANUAL = "手动";
+
     @Resource
     private ScanLogEntityMapper scanLogEntityMapper;
 
     @Override
     public void add(String qrCode, String msg, short msgType) {
-        log.info("addScanLog, qrCode:{}, msg:{}, msgType:{}", qrCode, msg, msgType);
+        log.info("add, qrCode:{}, msg:{}, msgType:{}", qrCode, msg, msgType);
         ScanLogEntity entity = new ScanLogEntity();
         entity.setQrCode(qrCode);
         entity.setMsg(msg);
         entity.setMsgType(msgType);
         scanLogEntityMapper.insertSelective(entity);
+    }
+
+    @Override
+    public void addScanLog(String scannerHost, String scannerName, String qrCode, String msg, short msgType) {
+        log.info("addScanLog");
+        String scanResult = CharSequenceUtil.isEmpty(msg) ? (msgType == Constants.SCAN_LOG_TYPE_INFO ? Constants.SCAN_LOG_MSG_SUCCESS : Constants.SCAN_LOG_MSG_FAILED) : msg;
+        scanResult += LOG_DIVIDER;
+        String scanMethod = (CharSequenceUtil.isEmpty(scannerHost) && CharSequenceUtil.isEmpty(scannerName)) ? SCAN_MANUAL : (scannerName + LOG_DIVIDER + scannerHost);
+        add(qrCode, scanResult + scanMethod, msgType);
     }
 
     @Override

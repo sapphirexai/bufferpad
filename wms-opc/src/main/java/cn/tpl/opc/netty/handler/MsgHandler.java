@@ -61,10 +61,11 @@ public class MsgHandler extends ChannelInboundHandlerAdapter {
 
                 int workLine = mConnection.getWorkLine();
                 int installSeq = mConnection.getInstallSeq();
-
+                String scannerHost = mConnection.getIp() + ":" + mConnection.getPort();
+                String scannerName = mConnection.getName();
                 if (oMsg.contains(Constants.SCANNER_MSG_NO_READ)) {
                     log.info("channelRead, no read");
-                    EventBus.getDefault().post(new EventBusMsgCushionQrCode(null, workLine, installSeq));
+                    EventBus.getDefault().post(new EventBusMsgCushionQrCode(null, workLine, scannerHost, scannerName, installSeq));
 //                    notifyPLC(Constants.PLC_ADDR_TYPE_SCAN_FAILED, installSeq, workLine);
                     return;
                 }
@@ -74,14 +75,14 @@ public class MsgHandler extends ChannelInboundHandlerAdapter {
                     logOutMatched();
                     // 替换帧头和帧尾
                     String fMsg = oMsg.replaceAll(SCANNER_DATA_REGEX, "");
-                    EventBus.getDefault().post(new EventBusMsgCushionQrCode(fMsg, mConnection.getWorkLine(), installSeq));
+                    EventBus.getDefault().post(new EventBusMsgCushionQrCode(fMsg, mConnection.getWorkLine(), scannerHost, scannerName, installSeq));
                 }
 
                 if (oMsg.startsWith(Constants.SCANNER_XZ_STX)) {
                     logOutMatched();
                     // 替换帧头和帧尾
                     String fMsg = oMsg.replaceAll(XZ_SCANNER_DATA_REGEX, "");
-                    EventBus.getDefault().post(new EventBusMsgCushionQrCode(fMsg, mConnection.getWorkLine(), installSeq));
+                    EventBus.getDefault().post(new EventBusMsgCushionQrCode(fMsg, mConnection.getWorkLine(), scannerHost, scannerName, installSeq));
                 }
             }
         } finally {

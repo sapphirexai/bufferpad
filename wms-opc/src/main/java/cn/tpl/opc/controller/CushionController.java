@@ -95,7 +95,7 @@ public class CushionController {
 
             if (StringUtils.isEmpty(qrCode))
                 return ResultDTO.failure("缓冲垫编码不能为空！");
-            return cushionInfoService.onQrCodeReceived(workLine, null, qrCode);
+            return cushionInfoService.onQrCodeReceived(workLine, null, null, null, qrCode);
         } catch (Exception e) {
             return ResultDTO.exception(e);
         }

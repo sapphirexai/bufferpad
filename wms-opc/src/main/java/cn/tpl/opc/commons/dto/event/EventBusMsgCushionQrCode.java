@@ -1,6 +1,7 @@
 package cn.tpl.opc.commons.dto.event;
 
 import cn.tpl.opc.commons.dto.base.AbsBaseDTO;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -13,14 +14,11 @@ import lombok.EqualsAndHashCode;
  */
 @EqualsAndHashCode(callSuper = true)
 @Data
+@AllArgsConstructor
 public class EventBusMsgCushionQrCode extends AbsBaseDTO {
     private String qrCode;
     private Integer workLine;
+    private String scannerHost;
+    private String scannerName;
     private Integer scannerSeq;
-
-    public EventBusMsgCushionQrCode(String qrCode, Integer workLine, Integer scannerSeq) {
-        this.qrCode = qrCode;
-        this.workLine = workLine;
-        this.scannerSeq = scannerSeq;
-    }
 }

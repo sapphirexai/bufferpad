@@ -22,12 +22,14 @@ public interface ICushionInfoService {
     /**
      * 收到来自扫码器或者人工输入的缓冲垫二维码时调用
      *
-     * @param workLine   产线
-     * @param qrCode     缓冲垫二维码
-     * @param scannerSeq 扫码器安装顺序
+     * @param workLine    产线
+     * @param scannerHost 扫码器地址
+     * @param scannerName 扫码器名字
+     * @param scannerSeq  扫码器安装顺序
+     * @param qrCode      缓冲垫二维码
      * @return 对应缓冲垫数据
      */
-    ResultDTO<CushionInfoDTO> onQrCodeReceived(Integer workLine, Integer scannerSeq, String qrCode);
+    ResultDTO<CushionInfoDTO> onQrCodeReceived(Integer workLine, String scannerHost, String scannerName, Integer scannerSeq, String qrCode);
 
     /**
      * 分页查询
