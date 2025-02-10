@@ -3,6 +3,7 @@ package cn.tpl.opc.entity;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Date;
+
 import lombok.Data;
 
 /**
@@ -45,6 +46,10 @@ public class CushionDetailEntity implements Serializable {
      * 扫码器安装顺序
      */
     private Integer scannerSeq;
+    /**
+     * 扫码器安装位置
+     */
+    private String scannerPosition;
     /**
      * 开口数
      */

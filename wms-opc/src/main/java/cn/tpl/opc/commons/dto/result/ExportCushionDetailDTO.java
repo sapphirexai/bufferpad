@@ -31,7 +31,7 @@ public class ExportCushionDetailDTO extends AbsBaseDTO {
      * 扫码器安装顺序
      */
     @ExcelProperty("位置")
-    private String position;
+    private String scannerPosition;
 
     /**
      * 扫码时间

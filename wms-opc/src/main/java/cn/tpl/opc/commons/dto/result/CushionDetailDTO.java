@@ -47,6 +47,12 @@ public class CushionDetailDTO extends AbsBaseDTO {
     @Schema(description = "扫码器安装顺序")
     private Integer scannerSeq;
 
+    /**
+     * 扫码器安装位置
+     */
+    @Schema(description = "扫码器安装位置")
+    private String scannerPosition;
+
 
     /**
      * 创建时间

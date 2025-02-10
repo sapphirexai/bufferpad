@@ -20,5 +20,6 @@ public class EventBusMsgCushionQrCode extends AbsBaseDTO {
     private Integer workLine;
     private String scannerHost;
     private String scannerName;
+    private String scannerPosition;
     private Integer scannerSeq;
 }

@@ -22,14 +22,15 @@ public interface ICushionInfoService {
     /**
      * 收到来自扫码器或者人工输入的缓冲垫二维码时调用
      *
-     * @param workLine    产线
-     * @param scannerHost 扫码器地址
-     * @param scannerName 扫码器名字
-     * @param scannerSeq  扫码器安装顺序
-     * @param qrCode      缓冲垫二维码
+     * @param workLine        产线
+     * @param scannerHost     扫码器地址
+     * @param scannerName     扫码器名字
+     * @param scannerPosition 扫码器位置
+     * @param scannerSeq      扫码器安装顺序
+     * @param qrCode          缓冲垫二维码
      * @return 对应缓冲垫数据
      */
-    ResultDTO<CushionInfoDTO> onQrCodeReceived(Integer workLine, String scannerHost, String scannerName, Integer scannerSeq, String qrCode);
+    ResultDTO<CushionInfoDTO> onQrCodeReceived(Integer workLine, String scannerHost, String scannerName, String scannerPosition, Integer scannerSeq, String qrCode);
 
     /**
      * 分页查询
@@ -42,10 +43,11 @@ public interface ICushionInfoService {
     /**
      * 新增缓冲垫
      *
-     * @param qrCode 缓冲垫二维码
+     * @param scannerPosition 扫码器位置
+     * @param qrCode          缓冲垫二维码
      * @return 添加结果
      */
-    boolean add(Integer workLine, Integer scannerSeq, String qrCode);
+    boolean add(Integer workLine, String scannerPosition, Integer scannerSeq, String qrCode);
 
     /**
      * 根据二维码查找缓冲垫
@@ -80,10 +82,11 @@ public interface ICushionInfoService {
      * 修改已使用次数
      *
      * @param cushionInfoEntity 缓冲垫信息
+     * @param scannerPosition 扫码器位置
      * @param scannerSeq        扫码器安装顺序
      * @return 修改结果
      */
-    boolean modifyUsedCountByQrCode(CushionInfoEntity cushionInfoEntity, Integer scannerSeq);
+    boolean modifyUsedCountByQrCode(CushionInfoEntity cushionInfoEntity, String scannerPosition, Integer scannerSeq);
 
     boolean modifyOpenCountByQrCode(String qrCode, Short openCount);
 

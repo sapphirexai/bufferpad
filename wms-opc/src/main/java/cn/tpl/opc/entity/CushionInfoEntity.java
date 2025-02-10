@@ -54,6 +54,11 @@ public class CushionInfoEntity implements Serializable {
     private Integer workLine;
 
     /**
+     * 当前扫码器来源的安装位置
+     */
+    private String scannerPosition;
+
+    /**
      * 当前扫码器来源的安装顺序
      */
     private Integer scannerSeq;

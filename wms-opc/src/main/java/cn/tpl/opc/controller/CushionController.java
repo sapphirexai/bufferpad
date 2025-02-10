@@ -2,6 +2,7 @@ package cn.tpl.opc.controller;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.date.DateUtil;
+import cn.tpl.opc.commons.constant.Constants;
 import cn.tpl.opc.commons.constant.Params;
 import cn.tpl.opc.commons.dto.ResultDTO;
 import cn.tpl.opc.commons.dto.result.*;
@@ -95,7 +96,7 @@ public class CushionController {
 
             if (StringUtils.isEmpty(qrCode))
                 return ResultDTO.failure("缓冲垫编码不能为空！");
-            return cushionInfoService.onQrCodeReceived(workLine, null, null, null, qrCode);
+            return cushionInfoService.onQrCodeReceived(workLine, null, null, Constants.SCANNER_POSITION_MANUAL, null, qrCode);
         } catch (Exception e) {
             return ResultDTO.exception(e);
         }
@@ -147,7 +148,7 @@ public class CushionController {
                 Integer scannerSeq = data.getScannerSeq();
                 exportData.setCreatedDate(DateUtil.formatDateTime(data.getCreatedDate()));
                 exportData.setLastScanDate(DateUtil.formatDateTime(data.getLastScanDate()));
-                exportData.setPosition(convertSeq2Pos(scannerSeq));
+//                exportData.setPosition(convertSeq2Pos(scannerSeq));
 
                 exportDatas.add(exportData);
             }
@@ -178,7 +179,7 @@ public class CushionController {
                 BeanUtil.copyProperties(data, exportData);
                 Integer scannerSeq = data.getScannerSeq();
                 exportData.setCreatedDate(DateUtil.formatDateTime(data.getCreatedDate()));
-                exportData.setPosition(convertSeq2Pos(scannerSeq));
+//                exportData.setPosition(convertSeq2Pos(scannerSeq));
 
                 exportDatas.add(exportData);
             }
