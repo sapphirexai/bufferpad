@@ -2,6 +2,7 @@ package cn.tpl.opc.controller;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.text.CharSequenceUtil;
 import cn.tpl.opc.commons.constant.Constants;
 import cn.tpl.opc.commons.constant.Params;
 import cn.tpl.opc.commons.dto.ResultDTO;
@@ -148,7 +149,8 @@ public class CushionController {
                 Integer scannerSeq = data.getScannerSeq();
                 exportData.setCreatedDate(DateUtil.formatDateTime(data.getCreatedDate()));
                 exportData.setLastScanDate(DateUtil.formatDateTime(data.getLastScanDate()));
-//                exportData.setPosition(convertSeq2Pos(scannerSeq));
+                if (CharSequenceUtil.isEmpty(exportData.getScannerPosition()))
+                    exportData.setScannerPosition(convertSeq2Pos(scannerSeq));
 
                 exportDatas.add(exportData);
             }
@@ -179,7 +181,8 @@ public class CushionController {
                 BeanUtil.copyProperties(data, exportData);
                 Integer scannerSeq = data.getScannerSeq();
                 exportData.setCreatedDate(DateUtil.formatDateTime(data.getCreatedDate()));
-//                exportData.setPosition(convertSeq2Pos(scannerSeq));
+                if (CharSequenceUtil.isEmpty(exportData.getScannerPosition()))
+                    exportData.setScannerPosition(convertSeq2Pos(scannerSeq));
 
                 exportDatas.add(exportData);
             }
