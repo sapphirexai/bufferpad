@@ -91,7 +91,9 @@
               <span>{{ currentQrCode }}</span>
             </div>
             <div class="cunrrentPosition">
-              <span :class="showCodeClass(currentScannerSeq)">{{ showCodeName(currentScannerSeq) }}</span>
+              <span :class="showCodeClass(currentScannerSeq, currentScannerPosition)">
+                {{ showCodeName(currentScannerSeq, currentScannerPosition) }}
+              </span>
             </div>
           </el-card>
         </el-col>
@@ -150,7 +152,9 @@
       <el-table-column prop="qrCode" label="缓冲垫编号" width="180"></el-table-column>
       <el-table-column prop="scannerSeq" label="缓冲垫位置" width="180">
         <template slot-scope="scope">
-          <span :class="showCodeClass(scope.row.scannerSeq)">{{ showCodeName(scope.row.scannerSeq) }}</span>
+          <span :class="showCodeClass(scope.row.scannerSeq, scope.row.scannerPosition)">
+            {{ showCodeName(scope.row.scannerSeq, scope.row.scannerPosition) }}
+          </span>
         </template>
       </el-table-column>
       <el-table-column prop="openCount" label="开口数" width="180"></el-table-column>
@@ -269,6 +273,7 @@ export default {
       searchQrCode: '',
       currentQrCode: '-',
       currentScannerSeq: '',
+      currentScannerPosition: '',
       dialogVisible: false,
       multipleSelection: []
     };
@@ -290,13 +295,29 @@ export default {
     handleSelectionChange(val) {
       this.multipleSelection = val
     },
-    showCodeName(value) {
-      const name = value ? (value === 1 ? '上' : '下') : '-'
-      return name
+    showCodeName(value, position) {
+      if (position) {
+        return position
+      } else {
+        const name = value ? (value === 1 ? '上' : '下') : '-'
+        return name
+      }
     },
-    showCodeClass(value) {
-      const className = value ? (value === 1 ? 'success' : 'error') : ''
-      return className
+    showCodeClass(value, position) {
+      if (!position) {
+        const className = value ? (value === 1 ? 'success' : 'error') : ''
+        return className
+      } else {
+        let className = '';
+        if (position.indexOf('上') > -1) {
+          className = 'success'
+        } else if (position.indexOf('下') > -1) {
+          className = 'error'
+        } else {
+          className = ''
+        }
+        return className
+      }
     },
     showColor(row) {
       const colorName = row.usedCount >= row.maxUseCount ? 'info' : (row.maxUseCount - row.usedCount > 5 ? 'success' : 'warning')
@@ -342,6 +363,7 @@ export default {
                 this.useCount = res.data.data.usedCount
                 this.currentQrCode = res.data.data.qrCode
                 this.currentScannerSeq = res.data.data.scannerSeq
+                this.currentScannerPosition = res.data.data.scannerPosition
                 this.$message.success('扫码成功')
                 // this.handle = false;
 
@@ -541,6 +563,7 @@ export default {
               // this.ruleForm.qrCode = res.data.data.qrCode
               this.currentQrCode = res.data.data.qrCode
               this.currentScannerSeq = res.data.data.scannerSeq
+              this.currentScannerPosition = res.data.data.scannerPosition
               this.useCount = res.data.data.usedCount
               this.Count = res.data.data.maxUseCount
 

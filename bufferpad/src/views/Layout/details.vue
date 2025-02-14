@@ -19,7 +19,9 @@
       <el-table-column prop="openCount" label="开口数"></el-table-column>
       <el-table-column prop="scannerSeq" label="缓冲垫位置" width="180">
         <template slot-scope="scope">
-          <span :class="showCodeClass(scope.row.scannerSeq)">{{ showCodeName(scope.row.scannerSeq) }}</span>
+          <span :class="showCodeClass(scope.row.scannerSeq, scope.row.scannerPosition)">
+            {{ showCodeName(scope.row.scannerSeq, scope.row.scannerPosition) }}
+          </span>
         </template>
       </el-table-column>
       <el-table-column prop="createdDate" label="扫码时间" :formatter="formatDate"></el-table-column>
@@ -95,13 +97,29 @@ export default {
       }
     },
 
-    showCodeName(value) {
-      const name = value ? (value === 1 ? '上' : '下') : '-'
-      return name
+    showCodeName(value, position) {
+      if (position) {
+        return position
+      } else {
+        const name = value ? (value === 1 ? '上' : '下') : '-'
+        return name
+      }
     },
-    showCodeClass(value) {
-      const className = value ? (value === 1 ? 'success' : 'error') : ''
-      return className
+    showCodeClass(value, position) {
+      if (!position) {
+        const className = value ? (value === 1 ? 'success' : 'error') : ''
+        return className
+      } else {
+        let className = '';
+        if (position.indexOf('上') > -1) {
+          className = 'success'
+        } else if (position.indexOf('下') > -1) {
+          className = 'error'
+        } else {
+          className = ''
+        }
+        return className
+      }
     },
 
     formatDate(row, column, cellValue, index) {
