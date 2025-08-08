@@ -206,6 +206,10 @@ public class CushionController {
                 position = Params.SCANNER_SEQ_VAL_1;
             if (Params.SCANNER_SEQ_KEY_2 == scannerSeq)
                 position = Params.SCANNER_SEQ_VAL_2;
+            if (Params.SCANNER_SEQ_KEY_3 == scannerSeq)
+                position = Params.SCANNER_SEQ_VAL_3;
+            if (Params.SCANNER_SEQ_KEY_4 == scannerSeq)
+                position = Params.SCANNER_SEQ_VAL_4;
         }
         return position;
     }

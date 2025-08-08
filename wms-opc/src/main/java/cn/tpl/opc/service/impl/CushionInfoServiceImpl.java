@@ -102,6 +102,18 @@ public class CushionInfoServiceImpl implements ICushionInfoService, Initializing
             if (isReScan)
                 plcAddrType = Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS_OPEN_COUNT_DOWN;
         }
+
+        if (Params.SCANNER_SEQ_KEY_3 == scannerSeq) {
+            plcAddrType = Constants.PLC_ADDR_TYPE_SCAN_SUCCESS_OPEN_COUNT_MID_1;
+            if (isReScan)
+                plcAddrType = Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS_OPEN_COUNT_MID_1;
+        }
+
+        if (Params.SCANNER_SEQ_KEY_4 == scannerSeq) {
+            plcAddrType = Constants.PLC_ADDR_TYPE_SCAN_SUCCESS_OPEN_COUNT_MID_2;
+            if (isReScan)
+                plcAddrType = Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS_OPEN_COUNT_MID_2;
+        }
         return plcAddrType;
     }
 
