@@ -133,7 +133,7 @@
         <i @click="thresholdSettingVisible = true" class="el-icon-edit"></i>
       </div>
       <div v-if="thresholdSettingVisible">
-        <el-input-number v-model="warningThresholdPer" :min="0" :max="1" :step="0.1" size="small" placeholder="请输入阈值百分比0%~100%"/>
+        <el-input-number v-model="warningThresholdPer" :min="0" :max="1" :step="0.05" size="small" placeholder="请输入阈值百分比0%~100%"/>
         <el-button class="button" type="primary" size="mini" @click="saveToLocalStorage" >确定</el-button>
       </div>
       <div class="table-button">
@@ -284,7 +284,7 @@ export default {
       currentScannerPosition: '',
       dialogVisible: false,
       multipleSelection: [],
-      warningThresholdPer: 0.9,
+      warningThresholdPer: 0.95,
       thresholdSettingVisible: false
     };
   },
