@@ -128,6 +128,14 @@
           <i @click="handleSearchQrCode" slot="suffix" style="cursor: pointer;" class="el-input__icon el-icon-search"></i>
         </el-input>
       </div>
+      <div v-if="!thresholdSettingVisible">
+        <span>{{ '阈值: ' + warningThresholdPer*100 + '%' }}</span>
+        <i @click="thresholdSettingVisible = true" class="el-icon-edit"></i>
+      </div>
+      <div v-if="thresholdSettingVisible">
+        <el-input-number v-model="warningThresholdPer" :min="0" :max="1" :step="0.1" size="small" placeholder="请输入阈值百分比0%~100%"/>
+        <el-button class="button" type="primary" size="mini" @click="saveToLocalStorage" >确定</el-button>
+      </div>
       <div class="table-button">
         <el-button @click="goLogs" size="small" type="primary">日志查询</el-button>
         <el-button @click="openDialog" size="small" type="primary">批量修改</el-button>
@@ -275,8 +283,14 @@ export default {
       currentScannerSeq: '',
       currentScannerPosition: '',
       dialogVisible: false,
-      multipleSelection: []
+      multipleSelection: [],
+      warningThresholdPer: 0.9,
+      thresholdSettingVisible: false
     };
+  },
+  created() {
+    // 从本地存储加载数据
+    this.loadFromLocalStorage();
   },
   methods: {
     openDialog() {
@@ -306,8 +320,16 @@ export default {
     },
     showCodeClass(value, position) {
       if (!position) {
-        const className = value ? (value === 1 ? 'success' : 'error') : ''
-        return className
+        if (!value) {
+          return ''
+        }
+        if (value === 1) {
+          return 'success'
+        } else if (value === 2) {
+          return 'error'
+        } else {
+          return 'warning'
+        }
       } else {
         let className = '';
         if (position.indexOf('上') > -1) {
@@ -315,13 +337,13 @@ export default {
         } else if (position.indexOf('下') > -1) {
           className = 'error'
         } else {
-          className = ''
+          className = 'warning'
         }
         return className
       }
     },
     showColor(row) {
-      const colorName = row.usedCount >= row.maxUseCount ? 'info' : (row.maxUseCount - row.usedCount > 5 ? 'success' : 'warning')
+      const colorName = row.usedCount >= row.maxUseCount ? 'info' : (row.usedCount < row.maxUseCount * this.warningThresholdPer ? 'success' : 'warning')
       return colorName
     },
     updateMaxUseCount(row) {
@@ -653,6 +675,9 @@ export default {
       this.$refs['dialogRuleFormRef'].resetFields()
       this.dialogVisible = false
     },
+    closeThresholdSetting() {
+      this.thresholdSettingVisible = false
+    },
     async exportExcel() {
       if (this.multipleSelection.length === 0) {
         this.$message.warning('请选择导出数据')
@@ -685,6 +710,27 @@ export default {
           qrCode: row.qrCode
         }
       })
+    },
+    // 保存数据到本地存储
+    saveToLocalStorage() {
+      if (this.warningThresholdPer < 0 || this.warningThresholdPer > 1) {
+        this.$message.error('请输入0~1之间的数字')
+        return
+      }
+      const data = {
+        warningThresholdPer: this.warningThresholdPer
+      };
+      localStorage.setItem('bufferPadData', JSON.stringify(data));
+      this.thresholdSettingVisible = false;
+      this.$message.success('预警阈值变更为' + this.warningThresholdPer * 100 + '%');
+    },
+    // 从本地存储加载数据
+    loadFromLocalStorage() {
+      const savedData = localStorage.getItem('bufferPadData');
+      if (savedData) {
+        const data = JSON.parse(savedData);
+        this.warningThresholdPer = data.warningThresholdPer;
+      }
     }
   },
   watch: {
