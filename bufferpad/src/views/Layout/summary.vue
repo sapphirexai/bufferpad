@@ -13,7 +13,7 @@
     >
       <el-table-column prop="qrCode" label="缓冲垫编号" width="180"></el-table-column>
       <el-table-column prop="scannerSeq" label="缓冲垫位置" width="180">
-        <template slot-scope="scope">{{ showCodeName(scope.row.scannerSeq) }}</template>
+        <template slot-scope="scope">{{ showCodeName(scope.row.scannerSeq, scope.row.scannerPosition) }}</template>
       </el-table-column>
       <el-table-column prop="openCount" label="开口数" width="180"></el-table-column>
       <el-table-column prop="address" label="缓冲垫生产厂家"></el-table-column>
@@ -93,9 +93,14 @@ export default {
     rowStyle() {
       return 'text-align:center';
     },
-    showCodeName(value) {
-      const name = value ? (value === 1 ? '上' : '下') : '-'
-      return name
+    showCodeName(value, position) {
+      if (position) {
+        return position
+      } else {
+        let arr = ['-', '上', '下', '间层1', '间层2'];
+        const name = value ? arr[value] : '-'
+        return name
+      }
     }
   },
   mounted() {

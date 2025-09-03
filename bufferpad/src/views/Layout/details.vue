@@ -101,7 +101,8 @@ export default {
       if (position) {
         return position
       } else {
-        const name = value ? (value === 1 ? '上' : '下') : '-'
+        let arr = ['-', '上', '下', '间层1', '间层2'];
+        const name = value ? arr[value] : '-'
         return name
       }
     },

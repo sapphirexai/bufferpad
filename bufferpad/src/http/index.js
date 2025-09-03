@@ -3,7 +3,7 @@ import qs from 'qs'
 import router from '../router'
 // 在开发环境中的测试 development
 if (process.env.NODE_ENV === 'development') {
-    axios.defaults.baseURL = 'api'
+    axios.defaults.baseURL = 'http://localhost:9001'
 }
 // 在生产环境中的测试 production
 if (process.env.NODE_ENV === 'production') {
