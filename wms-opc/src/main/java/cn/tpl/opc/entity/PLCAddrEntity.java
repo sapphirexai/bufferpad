@@ -3,6 +3,7 @@ package cn.tpl.opc.entity;
 import java.io.Serial;
 import java.io.Serializable;
 
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 /**
@@ -11,6 +12,7 @@ import lombok.Data;
  * Time: 2023/08/15
  * PLC寄存器地址
  */
+@TableName("plc_addr")
 @Data
 public class PLCAddrEntity implements Serializable {
     /**

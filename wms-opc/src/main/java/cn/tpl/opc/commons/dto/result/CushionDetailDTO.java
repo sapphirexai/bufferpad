@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.io.Serial;
 import java.util.Date;
 
 /**
@@ -17,6 +18,9 @@ import java.util.Date;
 @Data
 @Schema(description = "缓冲垫明细信息实体类")
 public class CushionDetailDTO extends AbsBaseDTO {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
     /**
      * 主键ID
      */

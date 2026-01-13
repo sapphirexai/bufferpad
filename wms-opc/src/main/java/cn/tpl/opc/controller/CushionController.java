@@ -3,6 +3,7 @@ package cn.tpl.opc.controller;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.text.CharSequenceUtil;
+import cn.hutool.core.util.ObjectUtil;
 import cn.tpl.opc.commons.constant.Constants;
 import cn.tpl.opc.commons.constant.Params;
 import cn.tpl.opc.commons.dto.ResultDTO;
@@ -10,13 +11,17 @@ import cn.tpl.opc.commons.dto.result.*;
 import cn.tpl.opc.commons.scheme.request.ModifyCushionInfoScheme;
 import cn.tpl.opc.commons.scheme.request.QueryCushionDetailPageScheme;
 import cn.tpl.opc.commons.scheme.request.QueryCushionInfoPageScheme;
+import cn.tpl.opc.entity.CushionDetailEntity;
+import cn.tpl.opc.mapper.CushionDetailEntityMapper;
 import cn.tpl.opc.service.ICushionInfoService;
 import cn.tpl.opc.util.EasyExcelUtils;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,6 +30,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -39,6 +45,8 @@ import java.util.List;
 public class CushionController {
     @Resource
     private ICushionInfoService cushionInfoService;
+    @Resource
+    private CushionDetailEntityMapper cushionDetailEntityMapper;
 
     @Operation(summary = "分页查询缓冲垫列表")
     @GetMapping("/cushionsPage")
@@ -165,28 +173,18 @@ public class CushionController {
     @PostMapping("/details/excel")
     public ResultDTO<Boolean> exportCushionDetails(
             @Parameter(hidden = true) HttpServletResponse response,
-            @Parameter(description = "需要导出的缓冲垫明细ID列表")
-            @RequestBody List<Long> ids) {
+            @DateTimeFormat(pattern = "yyyyMMdd") Date startTime, @DateTimeFormat(pattern = "yyyyMMdd") Date endTime) {
         try {
-            log.info("exportCushionDetails, ids => {}", ids);
-            if (CollectionUtils.isEmpty(ids))
-                return ResultDTO.failure("需导出的缓冲垫明细ID不能为空!");
+            List<CushionDetailEntity> entityList = cushionDetailEntityMapper.selectList(new LambdaQueryWrapper<CushionDetailEntity>()
+                    .ge(startTime != null, CushionDetailEntity::getCreatedDate, startTime)
+                    .le(endTime != null, CushionDetailEntity::getCreatedDate, endTime));
+            if (CollectionUtils.isEmpty(entityList)) return ResultDTO.failure("无对应数据!");
 
-            List<CushionDetailDTO> cushionDetails = cushionInfoService.listDetailsByIds(ids);
-            if (CollectionUtils.isEmpty(cushionDetails)) return ResultDTO.failure("无对应数据!");
-
-            List<ExportCushionDetailDTO> exportDatas = new ArrayList<>();
-            for (CushionDetailDTO data : cushionDetails) {
-                ExportCushionDetailDTO exportData = new ExportCushionDetailDTO();
-                BeanUtil.copyProperties(data, exportData);
-                Integer scannerSeq = data.getScannerSeq();
-                exportData.setCreatedDate(DateUtil.formatDateTime(data.getCreatedDate()));
-                if (CharSequenceUtil.isEmpty(exportData.getScannerPosition()))
-                    exportData.setScannerPosition(convertSeq2Pos(scannerSeq));
-
-                exportDatas.add(exportData);
+            List<ExportCushionDetailDTO> exportData = BeanUtil.copyToList(entityList, ExportCushionDetailDTO.class);
+            for (ExportCushionDetailDTO item : exportData) {
+                item.setScannerPosition(ObjectUtil.isEmpty(item.getScannerPosition()) ? convertSeq2Pos(item.getScannerSeq()) : item.getScannerPosition());
             }
-            doExportExcel("Cushion_Details_", exportDatas, ExportCushionDetailDTO.class, response);
+            doExportExcel("Cushion_Details_", exportData, ExportCushionDetailDTO.class, response);
             return ResultDTO.success();
         } catch (Exception e) {
             return ResultDTO.exception(e);
@@ -224,7 +222,7 @@ public class CushionController {
      * @throws IOException IO异常
      */
     private <T> void doExportExcel(String fileName, List<T> exportDatas, Class<?> template, HttpServletResponse response) throws IOException {
-        fileName = fileName + DateUtil.now() + ".xls";
+        fileName = fileName + DateUtil.format(new Date(), "yyyyMMddHHmmss") + ".xls";
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         response.setHeader("Access-Control-Expose-Headers", "Content-Disposition");
         response.setHeader("Content-Disposition", "attachment;filename=" + new String(fileName.getBytes(StandardCharsets.UTF_8), StandardCharsets.ISO_8859_1));

@@ -4,6 +4,7 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.sql.Timestamp;
 
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 /**
@@ -12,6 +13,7 @@ import lombok.Data;
  * Time: 2024/11/08
  *
  */
+@TableName("scan_log")
 @Data
 public class ScanLogEntity implements Serializable {
     /**

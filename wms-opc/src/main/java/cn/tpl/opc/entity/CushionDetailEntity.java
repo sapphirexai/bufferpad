@@ -4,6 +4,10 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.Date;
 
+import com.alibaba.excel.annotation.ExcelIgnore;
+import com.alibaba.excel.annotation.ExcelProperty;
+import com.alibaba.excel.annotation.format.DateTimeFormat;
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 /**
@@ -12,6 +16,7 @@ import lombok.Data;
  * Time: 2024/04/15
  * 缓冲垫明详情表
  */
+@TableName("cushion_detail")
 @Data
 public class CushionDetailEntity implements Serializable {
     /**
@@ -25,33 +30,42 @@ public class CushionDetailEntity implements Serializable {
     /**
      * 主键ID
      */
+    @ExcelProperty("ID")
     private Long id;
     /**
      * 缓冲垫二维码
      */
+    @ExcelProperty("二维码")
     private String qrCode;
     /**
      * 产线，例如：1，2，3...
      */
+    @ExcelProperty("产线")
     private Integer workLine;
-    /**
-     * 创建时间
-     */
-    private Date createdDate;
-    /**
-     * 更新时间
-     */
-    private Date modifiedDate;
     /**
      * 扫码器安装顺序
      */
+    @ExcelProperty("安装顺序")
     private Integer scannerSeq;
     /**
      * 扫码器安装位置
      */
+    @ExcelProperty("位置")
     private String scannerPosition;
     /**
      * 开口数
      */
+    @ExcelProperty("开口数")
     private Short openCount;
+    /**
+     * 创建时间
+     */
+    @ExcelProperty("扫码时间")
+    @DateTimeFormat("yyyy-MM-dd HH:mm:ss")
+    private Date createdDate;
+    /**
+     * 更新时间
+     */
+    @ExcelIgnore
+    private Date modifiedDate;
 }

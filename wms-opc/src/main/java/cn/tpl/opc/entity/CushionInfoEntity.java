@@ -1,5 +1,6 @@
 package cn.tpl.opc.entity;
 
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 import java.io.Serial;
@@ -12,6 +13,7 @@ import java.util.Date;
  * Time: 2023/04/17
  * 缓冲垫信息表
  */
+@TableName("cushion_info")
 @Data
 public class CushionInfoEntity implements Serializable {
     /**

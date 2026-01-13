@@ -4,6 +4,7 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.Date;
 
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 /**
@@ -12,6 +13,7 @@ import lombok.Data;
  * Time: 2023/04/10
  * 设备信息
  */
+@TableName("device_info")
 @Data
 public class DeviceInfoEntity implements Serializable {
     /**

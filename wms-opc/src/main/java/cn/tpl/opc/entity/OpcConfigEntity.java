@@ -2,6 +2,8 @@ package cn.tpl.opc.entity;
 
 import java.io.Serial;
 import java.io.Serializable;
+
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 /**
@@ -10,6 +12,7 @@ import lombok.Data;
  * Time: 2024/01/06
  *
  */
+@TableName("opc_config")
 @Data
 public class OpcConfigEntity implements Serializable {
     /**
