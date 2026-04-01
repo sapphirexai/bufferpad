@@ -170,7 +170,7 @@ public class CushionController {
     }
 
     @Operation(summary = "批量导出指定缓冲垫明细")
-    @PostMapping("/details/excel")
+    @GetMapping("/details/excel")
     public ResultDTO<Boolean> exportCushionDetails(
             @Parameter(hidden = true) HttpServletResponse response,
             @DateTimeFormat(pattern = "yyyyMMdd") Date startTime, @DateTimeFormat(pattern = "yyyyMMdd") Date endTime) {
