@@ -1,11 +1,48 @@
 spring:
   profiles:
-    active: @env@
+    active: test
+  application:
+    name: wms-opc
+  cloud:
+    nacos:
+      discovery:
+        enabled: false
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    druid:
+      filters: stat,wall,slf4j,config
+      initial-size: 5
+      min-idle: 5
+      max-active: 20
+      max-wait: 60000
+      time-between-eviction-runs-millis: 60000
+      min-evictable-idle-time-millis: 300000
+      validation-query: select 'x'
+      test-while-idle: true
+      test-on-borrow: false
+      test-on-return: false
+      pool-prepared-statements: true
+      max-pool-prepared-statement-per-connection-size: 20
+      connection-properties: druid.stat.mergeSql\=true;druid.stat.slowSqlMillis\=5000
+      web-stat-filter:
+        enabled: true
+        url-pattern: /*
+        exclusions: .js,*.gif,*.jpg,*.bmp,*.png,*.css,*.ico,/druid/*
+      stat-view-servlet:
+        enabled: true
+        url-pattern: /druid/*
+        reset-enable: false
+        login-username: root
+        login-password: CHANGE_ME_DB_PASSWORD
+
+server:
+  port: 9001
+
 mybatis-plus:
   mapper-locations: classpath*:mapper/**/*Mapper.xml
   configuration:
     log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
-#监控所有端点
+
 management:
   endpoints:
     web:
