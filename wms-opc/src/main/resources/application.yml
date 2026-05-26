@@ -10,6 +10,7 @@ spring:
   datasource:
     type: com.alibaba.druid.pool.DruidDataSource
     druid:
+      password: CHANGE_ME_DB_PASSWORD
       filters: stat,wall,slf4j,config
       initial-size: 5
       min-idle: 5

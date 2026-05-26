@@ -7,4 +7,3 @@ spring:
     druid:
       url: jdbc:mysql://192.0.2.6:3306/wms_opc?useUnicode=true&characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true
       username: root
-      password: CHANGE_ME_DB_PASSWORD
