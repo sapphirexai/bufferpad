@@ -20,40 +20,8 @@
             </el-option>
           </el-select>
         </div>
-        <div style="display:flex; align-items: center;">
-          <p class="title">PLC状态:</p>
-          <div class="connection-status">
-            <div class="info" v-for="item in devicesMessage.filter(data => data.type !== 0)" :key="item.id">
-              <span class="name">{{ item.name }}</span>
-              <div
-                :class="{'blink': !item.status}"
-                :style="{
-                  width: '14px',
-                  height: '14px',
-                  backgroundColor:item.status ? '#67c23a' : 'red',
-                  borderRadius: '14px'
-                }">
-              </div>
-            </div>
-          </div>
-        </div>
-        <div style="display:flex; align-items: center; ">
-          <p class="title">读码器状态:</p>
-          <div class="connection-status">
-            <div class="info" v-for="item in devicesMessage.filter(data => data.type === 0)" :key="item.id">
-              <span class="name">{{ item.name }}</span>
-              <div
-                :class="{'blink': !item.status}"
-                :style="{
-                  width: '14px',
-                  height: '14px',
-                  backgroundColor: item.status ? '#67c23a' : 'red',
-                  borderRadius: '14px'
-                }">
-              </div>
-            </div>
-          </div>
-        </div>
+        <DeviceStatusPanel title="PLC状态" :devices="plcDevices" />
+        <DeviceStatusPanel title="读码器状态" :devices="scannerDevices" />
       </div>
       <el-divider></el-divider>
     </div>
@@ -196,7 +164,7 @@
       @current-change="handleCurrentChange"
       :current-page.sync="currentPage"
       :page-sizes="pageSizes"
-      :pages-size.sync="pageSize"
+      :page-size.sync="pageSize"
       :pager-count="5"
       layout="total, sizes, prev, pager, next, jumper"
       :total="total"
@@ -224,10 +192,32 @@
   </div>
 </template>
 <script>
-import { getPLCreadCodeStatus, postInfo, getPageInfo, qrCodeGetData, changeMaxCount, exportData } from '../../api';
-import EventSourses from '../../api/eventSourse';
+import DeviceStatusPanel from '../../modules/running/components/DeviceStatusPanel.vue';
+import {
+  exportRunningCushions,
+  loadDeviceStatus,
+  loadRunningCushions,
+  saveCushionLife,
+  submitManualScan
+} from '../../modules/running/services/running.service';
+import { createRunningSse } from '../../modules/running/services/running-sse.service';
+import {
+  isSuccessResponse,
+  pageRows,
+  pageTotal,
+  requestErrorMessage,
+  responseMessage
+} from '../../shared/request/request';
+import { getFilenameFromDisposition, downloadBlob } from '../../shared/utils/download';
+import {
+  centerCellStyle,
+  formatScannerPosition,
+  scannerPositionClass,
+  tableDateFormatter
+} from '../../shared/utils/format';
 export default {
   name: 'Running',
+  components: { DeviceStatusPanel },
   data() {
     return {
       handle: false,
@@ -293,6 +283,28 @@ export default {
     this.loadFromLocalStorage();
   },
   methods: {
+    handleRequestError(error) {
+      this.$message.error(requestErrorMessage(error))
+    },
+    buildPageParams() {
+      return {
+        currentPage: this.currentPage,
+        pageSize: this.pageSize,
+        qrCode: this.searchQrCode
+      }
+    },
+    setRunningTable(res) {
+      const result = pageRows(res)
+      this.tableData = result.filter(item => {
+        return item.workLine === Number(this.ProdLine)
+      }).map(item => {
+        return {
+          ...item,
+          isCheck: false
+        }
+      })
+      this.total = pageTotal(res)
+    },
     openDialog() {
       if (this.multipleSelection.length === 0) {
         this.$message.warning('请选择修改数据')
@@ -310,37 +322,10 @@ export default {
       this.multipleSelection = val
     },
     showCodeName(value, position) {
-      if (position) {
-        return position
-      } else {
-        let arr = ['-', '上', '下', '间层1', '间层2'];
-        const name = value ? arr[value] : '-'
-        return name
-      }
+      return formatScannerPosition(value, position)
     },
     showCodeClass(value, position) {
-      if (!position) {
-        if (!value) {
-          return ''
-        }
-        if (value === 1) {
-          return 'success'
-        } else if (value === 2) {
-          return 'error'
-        } else {
-          return 'warning'
-        }
-      } else {
-        let className = '';
-        if (position.indexOf('上') > -1) {
-          className = 'success'
-        } else if (position.indexOf('下') > -1) {
-          className = 'error'
-        } else {
-          className = 'warning'
-        }
-        return className
-      }
+      return scannerPositionClass(value, position)
     },
     showColor(row) {
       const colorName = row.usedCount >= row.maxUseCount ? 'info' : (row.usedCount < row.maxUseCount * this.warningThresholdPer ? 'success' : 'warning')
@@ -365,23 +350,19 @@ export default {
     },
 
     handleSearchQrCode() {
-      this.InitpageInfo()
+      this.refreshCushionList()
     },
 
     formatDate(row, column, cellValue, index) {
-      // 把传过来的日期进行回炉重造一下，又创建了一个js的 Date对象，进行重新构造，转为String字符串
-      // 最终返回 s 就可以了
-      var s = new Date(cellValue).toLocaleString();
-      return s;
+      return tableDateFormatter(row, column, cellValue, index);
     },
     addItem(flag) {
       if (flag) {
         // 调用添加数据到数据库的api
         this.$refs['ruleForm'].validate(valid => {
           if (valid) {
-            postInfo(this.ProdLine, this.ruleForm.qrCode.trim()).then(res => {
-              console.log('res:', res.data)
-              if (res.data.codeSuccess) {
+            submitManualScan(this.ProdLine, this.ruleForm.qrCode.trim()).then(res => {
+              if (isSuccessResponse(res)) {
                 this.Count = res.data.data.maxUseCount
                 this.useCount = res.data.data.usedCount
                 this.currentQrCode = res.data.data.qrCode
@@ -393,10 +374,12 @@ export default {
                 this.currentPage = 1
                 this.searchQrCode = ''
 
-                this.InitpageInfo();
+                this.refreshCushionList();
               } else {
-                this.$message.error(res.data.msg)
+                this.$message.error(responseMessage(res))
               }
+            }).catch(error => {
+              this.handleRequestError(error)
             }).finally(() => {
               this.ruleForm.qrCode = ''
               this.$refs.inputQrCode.focus()
@@ -407,180 +390,55 @@ export default {
         this.handle = true;
       }
     },
-    async subscribeAll() {
-      while (true) {
-        try {
-          let responses = await Promise.all([
-            getPLCreadCodeStatus(this.ProdLine)
-          ]);
-          for (const response of responses) {
-            if (response.status === 502) {
-              // 状态 502 是连接超时错误，
-              // 连接挂起时间过长时可能会发生，
-              // 远程服务器或代理会关闭它
-              // 让我们重新连接
-              continue;
-            } else if (response.status !== 200) {
-              // 一个 error —— 让我们显示它
-              // showMessage(response.statusText);
-              // 一秒后重新连接
-              await new Promise(resolve => setTimeout(resolve, 3000));
-              continue;
-            } else {
-              // 获取并显示消息
-              let message = await response.statusText;
-              // console.log(message);
-              // showMessage(message);
-              // 再次调用 subscribe() 以获取下一条消息
-              continue;
-            }
-          }
-        } catch (e) {
-          // 处理其他异常，如网络异常等
-          // console.error(e);
-          await new Promise(resolve => setTimeout(resolve, 3000));
-        }
-      }
-    },
-
-    getPLCreadCodeStatus() {
-      getPLCreadCodeStatus(this.ProdLine)
+    refreshDeviceStatus() {
+      loadDeviceStatus(this.ProdLine)
         .then(res => {
-          if (res.status === 200) {
-            if (res.data.codeSuccess) {
-              this.devicesMessage = res.data.data
-            } else {
-              this.$message.error(res.data.msg)
-            }
+          if (isSuccessResponse(res)) {
+            this.devicesMessage = res.data.data || []
+          } else {
+            this.$message.error(responseMessage(res))
           }
         })
         .catch(error => {
-          if (error.code === 'ECONNABORTED') {
-            // 请求超时错误，处理方法
-            this.$message.error('请求超时，请稍后再试！');
-          } else if (error.message === 'Network Error') {
-            // 网络错误，处理方法
-            this.$message.error('网络连接异常，请检查您的网络设置！');
-          } else {
-            // 其他错误，处理方法
-            this.$message.error('发生错误：' + error.message);
-          }
+          this.handleRequestError(error)
         });
     },
     handleSizeChange(val) {
       this.pageSize = val
-      const params = {
-        currentPage: this.currentPage,
-        pageSize: this.pageSize,
-        qrCode: this.searchQrCode
-      }
-      getPageInfo(params)
-        .then(res => {
-          if (res.status === 200) {
-            let result = res.data.data.data;
-            this.tableData = result.filter(item => {
-              return item.workLine === Number(this.ProdLine);
-            }).map(item => {
-              return {
-                ...item,
-                isCheck: false
-              }
-            });
-            this.total = res.data.data.totalPage;
-            this.loading = false;
-          }
-        })
-        .catch(error => {
-          if (error.code === 'ECONNABORTED') {
-            // 请求超时错误，处理方法
-            this.$message.error('请求超时，请稍后再试！');
-          } else if (error.message === 'Network Error') {
-            // 网络错误，处理方法
-            this.$message.error('网络连接异常，请检查您的网络设置！');
-          } else {
-            // 其他错误，处理方法
-            this.$message.error('发生错误：' + error.message);
-          }
-        });
+      this.currentPage = 1
+      this.refreshCushionList()
     },
     handleCurrentChange(val) {
       this.currentPage = val
-      const params = {
-        currentPage: this.currentPage,
-        pageSize: this.pageSize,
-        qrCode: this.searchQrCode
-      }
-      getPageInfo(params)
+      this.refreshCushionList()
+    },
+    refreshCushionList() {
+      this.loading = true
+      loadRunningCushions(this.buildPageParams())
         .then(res => {
-          if (res.status === 200) {
-            let result = res.data.data.data;
-            this.tableData = result.filter(item => {
-              return item.workLine === Number(this.ProdLine);
-            }).map(item => {
-              return {
-                ...item,
-                isCheck: false
-              }
-            });
-            this.total = res.data.data.totalPage;
-            this.loading = false;
+          if (isSuccessResponse(res)) {
+            this.setRunningTable(res)
+          } else {
+            this.$message.error(responseMessage(res))
           }
         })
         .catch(error => {
-          if (error.code === 'ECONNABORTED') {
-            // 请求超时错误，处理方法
-            this.$message.error('请求超时，请稍后再试！');
-          } else if (error.message === 'Network Error') {
-            // 网络错误，处理方法
-            this.$message.error('网络连接异常，请检查您的网络设置！');
-          } else {
-            // 其他错误，处理方法
-            this.$message.error('发生错误：' + error.message);
-          }
-        });
-    },
-    InitpageInfo() {
-      const params = {
-        currentPage: this.currentPage,
-        pageSize: this.pageSize,
-        qrCode: this.searchQrCode
-      }
-      getPageInfo(params)
-        .then(res => {
-          if (res.status === 200) {
-            let result = res.data.data;
-            this.tableData = result ? result.data.filter(item => {
-              return item.workLine === Number(this.ProdLine);
-            }).map(item => {
-              return {
-                ...item,
-                isCheck: false
-              }
-            }) : []
-
-            this.total = result ? res.data.data.totalPage : 0
-            this.loading = false;
-          }
+          this.handleRequestError(error)
         })
-        .catch(error => {
-          if (error.code === 'ECONNABORTED') {
-            // 请求超时错误，处理方法
-            this.$message.error('请求超时，请稍后再试！');
-          } else if (error.message === 'Network Error') {
-            // 网络错误，处理方法
-            this.$message.error('网络连接异常，请检查您的网络设置！');
-          } else {
-            // 其他错误，处理方法
-            this.$message.error('发生错误：' + error.message);
-          }
+        .finally(() => {
+          this.loading = false
         });
     },
-    InitEventSourse() {
+    refreshRunningSse() {
       // 目前的做法是和后端做的单向长链接，这里的接口就不放在 API 列表中处理，直接在这里作为参数传入
-      const url = 'http://localhost:9001/sse/devicesStatus/' + this.ProdLine
-      this.events = new EventSourses(
-        url,
+      if (this.events) {
+        this.events.close()
+        this.events = null
+      }
+      this.events = createRunningSse(
+        this.ProdLine,
         res => {
+          if (!res || !res.data) return
           if (res.data.topic === 'cushionInfo') {
             if (res.data.data !== null) {
               // this.ruleForm.qrCode = res.data.data.qrCode
@@ -594,7 +452,7 @@ export default {
               this.searchQrCode = ''
               this.dialogVisible = false
 
-              this.InitpageInfo();
+              this.refreshCushionList();
               if (res.codeSuccess) {
                 this.$message.success(res.msg)
               } else {
@@ -614,30 +472,36 @@ export default {
             })
 
             this.devicesMessage = [...devicesMessage]
-            console.log('deviceStatus:', this.devicesMessage)
           }
+        },
+        error => {
+          if (error && error.message) this.handleRequestError(error)
         }
       );
     },
     rowStyle() {
-      return 'text-align:center';
+      return centerCellStyle();
     },
     handleEnterKey(event) {
       event.preventDefault();
     },
     async changeMaxUsedCount(data, row) {
-      const params = {...data}
-      const res = await changeMaxCount(params)
-      if (res.data.code === 0) {
-        this.$message.success('修改完成')
-        if (!row) {
-          this.dialogVisible = false
+      try {
+        const params = {...data}
+        const res = await saveCushionLife(params)
+        if (isSuccessResponse(res)) {
+          this.$message.success('修改完成')
+          if (!row) {
+            this.dialogVisible = false
+          } else {
+            row.isCheck = false
+          }
+          this.refreshCushionList()
         } else {
-          row.isCheck = false
+          this.$message.error(responseMessage(res))
         }
-        this.InitpageInfo()
-      } else {
-        this.$message.error(res.data.msg)
+      } catch (error) {
+        this.handleRequestError(error)
       }
     },
     enterChangeMaxCount(row) {
@@ -685,22 +549,17 @@ export default {
       }
 
       const ids = this.multipleSelection.map(item => item.id)
-      const res = await exportData(ids)
+      try {
+        const res = await exportRunningCushions(ids)
 
-      if (res.status === 200) {
-        const fileName = res.headers['content-disposition']
-        const a = document.createElement('a')
-        const blob = new Blob([res.data])
-        const href = window.URL.createObjectURL(blob)
-        a.href = href
-        if (fileName) {
-          a.download = fileName.split('=')[1]
-          document.body.appendChild(a)
-          a.click()
-
-          document.body.removeChild(a)
+        if (res.status === 200) {
+          const fileName = getFilenameFromDisposition(res.headers['content-disposition'], '缓冲垫数据.xlsx')
+          downloadBlob(res.data, fileName)
+        } else {
+          this.$message.error('导出失败')
         }
-        window.URL.revokeObjectURL(href)
+      } catch (error) {
+        this.handleRequestError(error)
       }
     },
     getDetails(row) {
@@ -728,29 +587,30 @@ export default {
     loadFromLocalStorage() {
       const savedData = localStorage.getItem('bufferPadData');
       if (savedData) {
-        const data = JSON.parse(savedData);
-        this.warningThresholdPer = data.warningThresholdPer;
+        try {
+          const data = JSON.parse(savedData);
+          const warningThresholdPer = Number(data.warningThresholdPer);
+          if (warningThresholdPer >= 0 && warningThresholdPer <= 1) {
+            this.warningThresholdPer = warningThresholdPer;
+          }
+        } catch (error) {
+          localStorage.removeItem('bufferPadData');
+        }
       }
     }
   },
   watch: {
     ProdLine: {
       handler(newval, oldval) {
-        this.getPLCreadCodeStatus();
-        this.InitpageInfo();
-        this.InitEventSourse();
+        this.refreshDeviceStatus();
+        this.refreshCushionList();
+        this.refreshRunningSse();
       },
       immediate: true
     },
     currentQrCode(newVal, oldVal) {
       if (newVal === 'NoRead') {
-        new Promise(function(resolve, reject) {
-          setTimeout(function() {
-            resolve();
-          }, 0);
-        }).then(function() {
-          this.$message.warning('扫码失败，请手动输入');
-        });
+        this.$message.warning('扫码失败，请手动输入');
       }
     },
     RemainCount(newval, oldval) {
@@ -762,16 +622,18 @@ export default {
   computed: {
     RemainCount() {
       return this.Count - this.useCount
+    },
+    plcDevices() {
+      return this.devicesMessage.filter(item => item.type !== 0)
+    },
+    scannerDevices() {
+      return this.devicesMessage.filter(item => item.type === 0)
     }
   },
-  mounted() {
-    // this.subscribeAll()
-    this.getPLCreadCodeStatus();
-    this.InitpageInfo();
-    this.InitEventSourse();
-  },
   beforeDestroy() {
-    this.events.close();
+    if (this.events) {
+      this.events.close();
+    }
   }
 };
 </script>

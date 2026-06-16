@@ -1,34 +1,25 @@
 const px2rem = require('postcss-px2rem')
 const config = require('../config')
+
 module.exports = {
   devServer: {
     proxy: config.dev.proxyTable,
+    historyApiFallback: true,
     overlay: {
-        warnings: false,
-        errors: false
+      warnings: false,
+      errors: false
     },
-
-   open:true,
-    
-    
+    open: true
   },
-  css:{
-      loaderOptions:{
-          sass:{},
-          postcss: {                
-              plugins: [require('postcss-px2rem')({                    
-                  remUnit:192  //设计底稿为1920*1080
-              })]
-          }
-      }    
-  }
-,
-    lintOnSave: false, // eslint-loader 是否在保存的时候检查
-  }
-// 引入等比适配插件
-
-
-
-
-  
-  
+  css: {
+    loaderOptions: {
+      sass: {},
+      postcss: {
+        plugins: [px2rem({
+          remUnit: 192
+        })]
+      }
+    }
+  },
+  lintOnSave: false
+}

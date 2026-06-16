@@ -27,7 +27,7 @@
       @current-change="handleCurrentChange"
       :current-page="currentPage"
       :page-sizes="pageSizes"
-      :pages-size="pageSize"
+      :page-size="pageSize"
       :pager-count="5"
       layout="total,sizes,prev, pager, next,jumper"
       :total="total"
@@ -36,75 +36,48 @@
   </div>
 </template>
 <script>
-import { getPageInfo } from '../../api';
+import { getCushionPage } from '../../modules/cushion/api';
+import { isSuccessResponse, responseMessage } from '../../shared/request/request';
+import { createPageListMixin } from '../../shared/mixins/page-list';
+import { centerCellStyle, formatScannerPosition, tableDateFormatter } from '../../shared/utils/format';
 export default {
+  mixins: [createPageListMixin({ pageSize: 10, pageSizes: [10, 20, 30] })],
   data() {
-    return {
-      tableData: [],
-      loading: true,
-      pageSizes: [10, 20, 30],
-      pageSize: 10,
-      currentPage: 1,
-      total: 0
-    };
+    return {};
   },
   methods: {
-    getData() {
+    initData() {
+      this.loading = true
       const params = {
         currentPage: this.currentPage,
         pageSize: this.pageSize
       }
-      getPageInfo(params).then(res => {
-      // eslint-disable-next-line eqeqeq
-        if (res.status == 200) {
-          console.log(res)
-          this.tableData = res.data.data.data || []
-          this.total = res.data.data.totalPage || 0
+      getCushionPage(params)
+        .then(res => {
+          if (isSuccessResponse(res)) {
+            this.setPageResult(res)
+          } else {
+            this.$message.error(responseMessage(res))
+          }
+        })
+        .catch(this.handlePageError)
+        .finally(() => {
           this.loading = false
-        }
-      })
-    },
-    handleSizeChange(val) {
-      getPageInfo(this.currentPage, val).then(res => {
-        if (res.status === 200) {
-          console.log(res)
-          this.tableData = res.data.data.data
-          this.total = res.data.data.totalPage;
-          this.loading = false;
-        }
-      });
-    },
-    handleCurrentChange(val) {
-      getPageInfo(val, this.pageSize).then(res => {
-        if (res.status === 200) {
-          console.log(res);
-          this.tableData = res.data.data.data
-          this.total = res.data.data.totalPage;
-          this.loading = false;
-        }
-      });
+        })
     },
     formatDate(row, column, cellValue, index) {
-      // eslint-disable-next-line no-tabs
-      var s =	new Date(cellValue).toLocaleString();
-      return s;
+      return tableDateFormatter(row, column, cellValue, index);
     },
 
     rowStyle() {
-      return 'text-align:center';
+      return centerCellStyle();
     },
     showCodeName(value, position) {
-      if (position) {
-        return position
-      } else {
-        let arr = ['-', '上', '下', '间层1', '间层2'];
-        const name = value ? arr[value] : '-'
-        return name
-      }
+      return formatScannerPosition(value, position)
     }
   },
   mounted() {
-    this.getData();
+    this.initData();
   }
 };
 </script>

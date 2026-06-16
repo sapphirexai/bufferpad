@@ -31,7 +31,7 @@
       @current-change="handleCurrentChange"
       :current-page.sync="currentPage"
       :page-sizes="pageSizes"
-      :pages-size.sync="pageSize"
+      :page-size.sync="pageSize"
       :pager-count="5"
       layout="total, sizes, prev, pager, next, jumper"
       :total="total"
@@ -40,40 +40,15 @@
   </div>
 </template>
 <script>
-import { getDetails } from '../../api';
+import { getCushionDetails } from '../../modules/cushion/api';
+import { isSuccessResponse, responseMessage } from '../../shared/request/request';
+import { createPageListMixin } from '../../shared/mixins/page-list';
+import { centerCellStyle, formatScannerPosition, scannerPositionClass, tableDateFormatter } from '../../shared/utils/format';
 export default {
   name: 'details',
+  mixins: [createPageListMixin({ pageSize: 8, pageSizes: [8, 15, 20, 100, 10000] })],
   data() {
     return {
-      handle: false,
-      options: [
-        {
-          value: '1',
-          label: '1'
-        },
-        {
-          value: '2',
-          label: '2'
-        },
-        {
-          value: '3',
-          label: '3'
-        },
-        {
-          value: '4',
-          label: '4'
-        },
-        {
-          value: '5',
-          label: '5'
-        }
-      ],
-      tableData: [],
-      loading: true,
-      pageSizes: [8, 15, 20, 100, 10000],
-      pageSize: 8,
-      currentPage: 1,
-      total: 0,
       multipleSelection: [],
       qrCode: ''
     };
@@ -98,139 +73,48 @@ export default {
     },
 
     showCodeName(value, position) {
-      if (position) {
-        return position
-      } else {
-        let arr = ['-', '上', '下', '间层1', '间层2'];
-        const name = value ? arr[value] : '-'
-        return name
-      }
+      return formatScannerPosition(value, position)
     },
     showCodeClass(value, position) {
-      if (!position) {
-        const className = value ? (value === 1 ? 'success' : 'error') : ''
-        return className
-      } else {
-        let className = '';
-        if (position.indexOf('上') > -1) {
-          className = 'success'
-        } else if (position.indexOf('下') > -1) {
-          className = 'error'
-        } else {
-          className = ''
-        }
-        return className
-      }
+      return scannerPositionClass(value, position)
     },
 
     formatDate(row, column, cellValue, index) {
-      var s = new Date(cellValue).toLocaleString();
-      return s;
+      return tableDateFormatter(row, column, cellValue, index);
     },
-    handleSizeChange(val) {
-      this.pageSize = val
+    initData() {
+      this.loading = true
       const params = {
         currentPage: this.currentPage,
         pageSize: this.pageSize,
         qrCode: this.qrCode
       }
-      getDetails(params)
+      getCushionDetails(params)
         .then(res => {
-          if (res.status === 200) {
-            this.tableData = res.data.data.data || [];
-
-            this.total = res.data.data.totalPage || 0
-            this.loading = false;
+          if (isSuccessResponse(res)) {
+            this.setPageResult(res)
+          } else {
+            this.$message.error(responseMessage(res))
           }
         })
-        .catch(error => {
-          if (error.code === 'ECONNABORTED') {
-            // 请求超时错误，处理方法
-            this.$message.error('请求超时，请稍后再试！');
-          } else if (error.message === 'Network Error') {
-            // 网络错误，处理方法
-            this.$message.error('网络连接异常，请检查您的网络设置！');
-          } else {
-            // 其他错误，处理方法
-            this.$message.error('发生错误：' + error.message);
-          }
-        });
-    },
-    handleCurrentChange(val) {
-      this.currentPage = val
-      const params = {
-        currentPage: this.currentPage,
-        pageSize: this.pageSize,
-        qrCode: this.qrCode
-      }
-      getDetails(params)
-        .then(res => {
-          if (res.status === 200) {
-            this.tableData = res.data.data.data || [];
-
-            this.total = res.data.data.totalPage || 0
-            this.loading = false;
-          }
+        .catch(this.handlePageError)
+        .finally(() => {
+          this.loading = false
         })
-        .catch(error => {
-          if (error.code === 'ECONNABORTED') {
-            // 请求超时错误，处理方法
-            this.$message.error('请求超时，请稍后再试！');
-          } else if (error.message === 'Network Error') {
-            // 网络错误，处理方法
-            this.$message.error('网络连接异常，请检查您的网络设置！');
-          } else {
-            // 其他错误，处理方法
-            this.$message.error('发生错误：' + error.message);
-          }
-        });
-    },
-    InitpageInfo() {
-      const params = {
-        currentPage: this.currentPage,
-        pageSize: this.pageSize,
-        qrCode: this.qrCode
-      }
-      getDetails(params)
-      .then(res => {
-          console.log('res:', res)
-          if (res.status === 200) {
-            this.tableData = res.data.data.data || [];
-
-            this.total = res.data.data.totalPage || 0
-            this.loading = false;
-          }
-        })
-        .catch(error => {
-          if (error.code === 'ECONNABORTED') {
-            // 请求超时错误，处理方法
-            this.$message.error('请求超时，请稍后再试！');
-          } else if (error.message === 'Network Error') {
-            // 网络错误，处理方法
-            this.$message.error('网络连接异常，请检查您的网络设置！');
-          } else {
-            // 其他错误，处理方法
-            this.$message.error('发生错误：' + error.message);
-          }
-        });
     },
     rowStyle() {
-      return 'text-align:center';
+      return centerCellStyle();
     }
   },
   mounted() {
-    const href = window.location.href
-    let url = href.split('details?')[1]
-    const urlParams = new URLSearchParams(url)
-    const params = Object.fromEntries(urlParams.entries())
-    this.qrCode = params.qrCode
+    this.qrCode = this.$route.query.qrCode || ''
   },
 
   watch: {
     qrCode: {
       handler(val) {
         if (val) {
-          this.InitpageInfo();
+          this.initData();
         }
       },
       immediate: true

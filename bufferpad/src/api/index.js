@@ -1,42 +1,66 @@
-/*
- * @Date         : 2024-04-16 08:55:40
- * @LastEditTime : 2024-11-11 11:45:43
- * @filePath     : no item name
- * @Description  :
- *
- * Copyright (c) 2024 by Jay@lang, All Rights Reserved.
- */
-import {get, post} from '../http/index.js'
+import { buildBackendUrl } from '../shared/request/request'
+import {
+  exportCushions,
+  getCushionByQrCode,
+  getCushionDetails,
+  getCushionPage,
+  manualScan,
+  updateCushionMaxUseCount
+} from '../modules/cushion/api'
+import { getDeviceConnectionStatus } from '../modules/device/api'
+import { getScanLogs } from '../modules/log/api'
+import {
+  getDeviceTypeOptions,
+  getInstallPositionOptions,
+  getPLCAddrTypeOptions,
+  getPLCDeviceOptions,
+  getScannerDeviceOptions
+} from '../modules/options/api'
+import { getOpcConfigPage, resetOpcConfig, saveOpcConfig } from '../modules/settings/api/opc-config.api'
+import { deleteDevice, getDevicePage, saveDevice } from '../modules/settings/api/device-info.api'
+import { deletePLCAddr, getPLCAddrPage, savePLCAddr } from '../modules/settings/api/plc-addr.api'
+import {
+  deleteInstallPosition,
+  getInstallPositionPage,
+  saveInstallPosition
+} from '../modules/settings/api/install-position.api'
 
-// 封装接口的方法
-export const getPLCreadCodeStatus = (id) => {
-    return get('/device/deviceConnections/' + `${id}`)
+export const getPLCreadCodeStatus = getDeviceConnectionStatus
+
+export const getSseDevicesStatusUrl = id => {
+  return buildBackendUrl('/sse/devicesStatus/' + `${id}`)
 }
 
-export const qrCodeGetData = (qrCode) => {
-    return get('/cushion/cushions/' + `${qrCode}`)
-}
+export const qrCodeGetData = getCushionByQrCode
 
-export const postInfo = (workline, qrcode) => {
-    return post(`/cushion/manualCushionInfo/${workline}/${qrcode}`)
-}
+export const postInfo = manualScan
 
-export const getPageInfo = (params) => {
-    return get('/cushion/cushionsPage', params)
-}
+export const getPageInfo = getCushionPage
 
-export const changeMaxCount = (data) => {
-    return post('cushion/cushions', data)
-}
+export const changeMaxCount = updateCushionMaxUseCount
 
-export const exportData = (data) => {
-    return post('/cushion/cushions/excel', data, 'blob')
-}
+export const exportData = exportCushions
 
-export const getDetails = (params) => {
-    return get('/cushion/detailsPage', params)
-}
+export const getDetails = getCushionDetails
 
-export const getLogs = (params) => {
-    return get('/scanLogs', params)
+export const getLogs = getScanLogs
+
+export {
+  deleteDevice,
+  deleteInstallPosition,
+  deletePLCAddr,
+  getDevicePage,
+  getDeviceTypeOptions,
+  getInstallPositionOptions,
+  getInstallPositionPage,
+  getOpcConfigPage,
+  getPLCAddrPage,
+  getPLCAddrTypeOptions,
+  getPLCDeviceOptions,
+  getScannerDeviceOptions,
+  resetOpcConfig,
+  saveDevice,
+  saveInstallPosition,
+  saveOpcConfig,
+  savePLCAddr
 }

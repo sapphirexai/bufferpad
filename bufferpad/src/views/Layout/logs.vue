@@ -56,8 +56,10 @@
   </div>
 </template>
 <script>
-import { getLogs } from '../../api';
+import { getScanLogs } from '../../modules/log/api';
 import dayjs from 'dayjs';
+import { isSuccessResponse, requestErrorMessage, responseData } from '../../shared/request/request';
+import { centerCellStyle, tableDateFormatter } from '../../shared/utils/format';
 export default {
   name: 'Logs',
   data() {
@@ -124,10 +126,10 @@ export default {
     },
 
     formatDate(row, column, cellValue, index) {
-      var s = new Date(cellValue).toLocaleString();
-      return s;
+      return tableDateFormatter(row, column, cellValue, index);
     },
-    InitpageInfo() {
+    refreshLogList() {
+      this.loading = true
       const params = {
         msg: this.searchFormData.msg,
         qrCode: this.searchFormData.qrCode,
@@ -135,36 +137,28 @@ export default {
         startTime: this.searchFormData.timeValue ? this.searchFormData.timeValue[0] : '',
         endTime: this.searchFormData.timeValue ? this.searchFormData.timeValue[1] : ''
       }
-      getLogs(params)
-      .then(res => {
-          console.log('res:', res)
-          if (res.status === 200) {
-            this.tableData = res.data.data || [];
-            this.loading = false;
+      getScanLogs(params)
+        .then(res => {
+          if (isSuccessResponse(res)) {
+            this.tableData = responseData(res, []);
           }
         })
         .catch(error => {
-          if (error.code === 'ECONNABORTED') {
-            // 请求超时错误，处理方法
-            this.$message.error('请求超时，请稍后再试！');
-          } else if (error.message === 'Network Error') {
-            // 网络错误，处理方法
-            this.$message.error('网络连接异常，请检查您的网络设置！');
-          } else {
-            // 其他错误，处理方法
-            this.$message.error('发生错误：' + error.message);
-          }
+          this.$message.error(requestErrorMessage(error));
+        })
+        .finally(() => {
+          this.loading = false;
         });
     },
     searchList() {
-      this.InitpageInfo()
+      this.refreshLogList()
     },
     rowStyle() {
-      return 'text-align:center';
+      return centerCellStyle();
     }
   },
   mounted() {
-    this.InitpageInfo()
+    this.refreshLogList()
   }
 };
 </script>

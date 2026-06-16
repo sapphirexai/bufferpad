@@ -8,7 +8,8 @@ module.exports = {
     'vue'
   ],
   moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/src/$1'
+    '^@/(.*)$': '<rootDir>/src/$1',
+    '^axios$': '<rootDir>/node_modules/axios/dist/node/axios.cjs'
   },
   transform: {
     '^.+\\.js$': '<rootDir>/node_modules/babel-jest',
@@ -19,7 +20,7 @@ module.exports = {
   ],
   snapshotSerializers: ['<rootDir>/node_modules/jest-serializer-vue'],
   setupFiles: ['<rootDir>/test/unit/setup'],
-  mapCoverage: true,
+  testURL: 'http://localhost/',
   coverageDirectory: '<rootDir>/test/unit/coverage',
   collectCoverageFrom: [
     'src/**/*.{js,vue}',

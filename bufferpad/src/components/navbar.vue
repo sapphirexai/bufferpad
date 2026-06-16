@@ -15,12 +15,24 @@
       :router="true"
       :default-active='this.$route.path'
     >
-      <el-menu-item v-for="(item, i) in navList" :key="i" :index="item.name">
+      <template v-for="item in navList">
+        <el-submenu v-if="item.children" :key="item.name" :index="item.name">
+          <template slot="title">
+            <i :class="item.icon"></i>
+            <span>{{ item.navItem }}</span>
+          </template>
+          <el-menu-item v-for="child in item.children" :key="child.name" :index="child.name">
+            <i :class="child.icon"></i>
+            <span>{{ child.navItem }}</span>
+          </el-menu-item>
+        </el-submenu>
+        <el-menu-item v-else :key="item.name" :index="item.name">
         <template slot="title">
-          <i class="el-icon-s-platform"></i>
+          <i :class="item.icon"></i>
           <span> {{ item.navItem }}</span>
         </template>
-      </el-menu-item>
+        </el-menu-item>
+      </template>
     </el-menu>
     <!-- 二级菜单 -->
     <!-- <template v-if="!item.leaf">
@@ -46,14 +58,53 @@
 <script>
 export default {
   name: 'AppNavbar',
-  data() {
-    return {
-      navList: [
-        { name: '/index', navItem: 'Running' },
-        { name: '/summary', navItem: 'Summary' },
-        { name: '/record', navItem: 'Record' }
-      ]
-    };
+  computed: {
+    navList() {
+      const rootRoute = this.$router.options.routes.find(route => route.path === '/')
+      const children = rootRoute && rootRoute.children ? rootRoute.children : []
+      const groups = {}
+      const menus = []
+
+      children
+        .filter(route => route.meta && route.meta.menu)
+        .sort((a, b) => (a.meta.order || 0) - (b.meta.order || 0))
+        .forEach(route => {
+          const meta = route.meta
+          if (!meta.parent) {
+            menus.push({
+              name: route.path,
+              navItem: meta.title,
+              icon: meta.icon || 'el-icon-menu',
+              order: meta.order || 0
+            })
+            return
+          }
+
+          if (!groups[meta.parent]) {
+            groups[meta.parent] = {
+              name: '/' + meta.parent,
+              navItem: meta.parentTitle || meta.parent,
+              icon: meta.parentIcon || 'el-icon-setting',
+              order: meta.parentOrder || 0,
+              children: []
+            }
+            menus.push(groups[meta.parent])
+          }
+
+          groups[meta.parent].children.push({
+            name: route.path,
+            navItem: meta.title,
+            icon: meta.icon || 'el-icon-menu',
+            order: meta.order || 0
+          })
+        })
+
+      menus.forEach(item => {
+        if (item.children) item.children.sort((a, b) => (a.order || 0) - (b.order || 0))
+      })
+
+      return menus.sort((a, b) => (a.order || 0) - (b.order || 0))
+    }
   },
   methods: {}
 };
