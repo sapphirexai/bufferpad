@@ -48,6 +48,11 @@ public class CushionDetailEntity implements Serializable {
     @ExcelProperty("安装顺序")
     private Integer scannerSeq;
     /**
+     * 扫码器设备ID
+     */
+    @ExcelIgnore
+    private Long scannerId;
+    /**
      * 扫码器安装位置
      */
     @ExcelProperty("位置")

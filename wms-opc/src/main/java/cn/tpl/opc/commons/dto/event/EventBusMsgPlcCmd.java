@@ -25,6 +25,11 @@ public class EventBusMsgPlcCmd extends AbsBaseDTO {
     private Integer addrType;
 
     /**
+     * 目标PLC设备ID
+     */
+    private Long plcId;
+
+    /**
      * 指令地址
      */
     private String address;
@@ -40,8 +45,13 @@ public class EventBusMsgPlcCmd extends AbsBaseDTO {
     private Integer workLine;
 
     public EventBusMsgPlcCmd(String qrCode, Integer addrType, String address, Short cmd, Integer workLine) {
+        this(qrCode, addrType, null, address, cmd, workLine);
+    }
+
+    public EventBusMsgPlcCmd(String qrCode, Integer addrType, Long plcId, String address, Short cmd, Integer workLine) {
         this.qrCode = qrCode;
         this.addrType = addrType;
+        this.plcId = plcId;
         this.address = address;
         this.cmd = cmd;
         this.workLine = workLine;

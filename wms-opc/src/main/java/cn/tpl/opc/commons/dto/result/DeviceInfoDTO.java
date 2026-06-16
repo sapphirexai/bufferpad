@@ -28,6 +28,9 @@ public class DeviceInfoDTO extends AbsBaseDTO {
     @Schema(description = "设备类型，0: 扫码器；1: PLC；2：汇川PLC")
     private Integer type;
 
+    @Schema(description = "设备类型名称")
+    private String typeName;
+
     /**
      * 设备IP
      */
@@ -72,5 +75,8 @@ public class DeviceInfoDTO extends AbsBaseDTO {
      */
     @Schema(description = "安装顺序")
     private Integer installSeq;
+
+    @Schema(description = "安装位置名称")
+    private String installPositionName;
 
 }

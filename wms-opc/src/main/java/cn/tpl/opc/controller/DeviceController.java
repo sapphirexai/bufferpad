@@ -1,11 +1,15 @@
 package cn.tpl.opc.controller;
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.tpl.opc.commons.dto.ResultDTO;
 import cn.tpl.opc.commons.dto.result.DeviceInfoDTO;
 import cn.tpl.opc.commons.dto.result.PageData;
-import cn.tpl.opc.commons.scheme.base.BasePageScheme;
+import cn.tpl.opc.commons.scheme.request.QueryDeviceInfoPageScheme;
 import cn.tpl.opc.commons.scheme.request.SaveDeviceInfoScheme;
+import cn.tpl.opc.entity.DeviceInfoEntity;
+import cn.tpl.opc.netty.Connection;
 import cn.tpl.opc.netty.ConnectionMgr;
+import cn.tpl.opc.netty.Connector;
 import cn.tpl.opc.service.IDeviceInfoService;
 import cn.tpl.opc.service.INettyService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -36,6 +40,8 @@ public class DeviceController {
 
     @Resource
     private ConnectionMgr connectionMgr;
+    @Resource
+    private Connector connector;
 
     @Operation(summary = "保存设备信息协议")
     @PostMapping
@@ -46,18 +52,55 @@ public class DeviceController {
         try {
             log.info("saveResult, scheme => {}", scheme);
             boolean result = deviceInfoService.save(scheme);
+            if (result) refreshConnectionAfterSave(scheme.getId());
             return result ? ResultDTO.success() : ResultDTO.failure(null);
         } catch (Exception e) {
             return ResultDTO.exception(e);
         }
     }
 
+    private void refreshConnectionAfterSave(Long id) {
+        if (id == null || !connectionMgr.connectionExists(id)) return;
+
+        log.info("refreshConnectionAfterSave, refreshing connection, id => {}", id);
+        connectionMgr.removeConnection(id);
+
+        DeviceInfoDTO deviceInfo = deviceInfoService.findById(id);
+        if (deviceInfo == null) return;
+
+        Connection connection = new Connection();
+        BeanUtil.copyProperties(deviceInfo, connection);
+        connector.connect(connection);
+    }
+
     @Operation(summary = "分页查询设备列表，用于设备配置相关")
     @GetMapping("/devicesPage")
-    public ResultDTO<PageData<DeviceInfoDTO>> devicesPage(@Parameter(description = "详情查看<a href=\"#model-BasePageScheme\"> BasePageScheme") BasePageScheme scheme) {
+    public ResultDTO<PageData<DeviceInfoDTO>> devicesPage(@Parameter(description = "详情查看<a href=\"#model-QueryDeviceInfoPageScheme\"> QueryDeviceInfoPageScheme") QueryDeviceInfoPageScheme scheme) {
         try {
             log.debug("devicesPage，scheme：{}", scheme);
             return ResultDTO.success(deviceInfoService.listByPage(scheme));
+        } catch (Exception e) {
+            return ResultDTO.exception(e);
+        }
+    }
+
+    @Operation(summary = "查询设备详情")
+    @GetMapping("{id}")
+    public ResultDTO<DeviceInfoDTO> deviceInfo(@Parameter(description = "设备ID") @PathVariable Long id) {
+        try {
+            if (null == id) return ResultDTO.failure("设备ID不能为空！");
+            return ResultDTO.success(deviceInfoService.findById(id));
+        } catch (Exception e) {
+            return ResultDTO.exception(e);
+        }
+    }
+
+    @Operation(summary = "按设备类型查询列表，不传type则返回全部")
+    @GetMapping("/list")
+    public ResultDTO<List<DeviceInfoEntity>> list(@Parameter(description = "设备类型") Integer type) {
+        try {
+            if (type == null) return ResultDTO.success(deviceInfoService.list());
+            return ResultDTO.success(deviceInfoService.listDeviceInfoByType(type));
         } catch (Exception e) {
             return ResultDTO.exception(e);
         }

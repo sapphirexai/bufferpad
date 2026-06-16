@@ -17,6 +17,7 @@ import lombok.EqualsAndHashCode;
 @AllArgsConstructor
 public class EventBusMsgCushionQrCode extends AbsBaseDTO {
     private String qrCode;
+    private Long scannerId;
     private Integer workLine;
     private String scannerHost;
     private String scannerName;

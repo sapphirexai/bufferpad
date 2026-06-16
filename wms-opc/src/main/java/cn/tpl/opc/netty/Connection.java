@@ -5,7 +5,6 @@ import HslCommunication.Core.Types.OperateResultExOne;
 import HslCommunication.Profinet.Inovance.InovanceTcpNet;
 import HslCommunication.Profinet.Melsec.MelsecMcNet;
 import cn.hutool.core.util.ObjectUtil;
-import cn.tpl.opc.ApplicationContextAwareImpl;
 import cn.tpl.opc.commons.constant.Constants;
 import cn.tpl.opc.commons.constant.Params;
 import cn.tpl.opc.commons.dto.event.EventBusMsgPlcCmd;
@@ -97,6 +96,8 @@ public class Connection {
     private volatile InovanceTcpNet inovanceTcpNet;
 
     private OnStatusChangeListener onStatusChangeListener;
+    private IScanLogService scanLogService;
+    private ICushionInfoService cushionInfoService;
 
     /**
      * Netty连接重置间隔时间
@@ -110,6 +111,11 @@ public class Connection {
 
 
     public Connection() {
+    }
+
+    public void bindServices(IScanLogService scanLogService, ICushionInfoService cushionInfoService) {
+        this.scanLogService = scanLogService;
+        this.cushionInfoService = cushionInfoService;
     }
 
 
@@ -178,10 +184,10 @@ public class Connection {
     public synchronized void nowDead() {
         if (isDead()) {
             log.info("nowDead, already dead, no operation next");
-            return;
+        } else {
+            status2Disconnected();
         }
 
-        status2Disconnected();
         if (null != channelFuture) {
             channelFuture.channel().close();
             channelFuture = null;
@@ -213,11 +219,19 @@ public class Connection {
 
     @Subscribe(threadMode = ThreadMode.POSTING)
     public void onMessageEvent(EventBusMsgPlcCmd event) {
-        if (isDead() && isNotHeartBeat(event.getAddrType())) return;
-
-        if (plcEventCheckNotPassed()) return;
+        if (event.getPlcId() != null && !id.equals(event.getPlcId())) return;
 
         if (!workLine.equals(event.getWorkLine())) return;
+
+        if (isDead() && isNotHeartBeat(event.getAddrType())) {
+            addPlcSkippedLog(event);
+            return;
+        }
+
+        if (plcEventCheckNotPassed()) {
+            if (isNotHeartBeat(event.getAddrType())) addPlcSkippedLog(event);
+            return;
+        }
 
         String addr = event.getAddress();
         Short cmd = event.getCmd();
@@ -233,13 +247,12 @@ public class Connection {
         else
             operateResult = melsecMcNet.Write(addr, cmd);
 
-        IScanLogService scanLogService = ApplicationContextAwareImpl.getScanLogService();
         if (!operateResult.IsSuccess) {
             log.error("onMessageEvent, writing cmd to PLC =>> failed, address: {}, cmd: {}", addr, cmd);
             logOutPLCOperateResult(operateResult);
             if (isNotHeartBeat(event.getAddrType()))
                 scanLogService.add(event.getQrCode(), Constants.SCAN_LOG_MSG_NOTIFY_PLC_FAILED + addr + Constants.SCAN_LOG_MSG_SUFFIX_NOTIFY_PLC_CMD + cmd, Constants.SCAN_LOG_TYPE_ERROR);
-            status2Disconnected();
+            nowDead();
             return;
         }
         if (isNotHeartBeat(event.getAddrType())) {
@@ -253,6 +266,10 @@ public class Connection {
         return Constants.PLC_ADDR_TYPE_HEART_BEAT != addrType;
     }
 
+    private void addPlcSkippedLog(EventBusMsgPlcCmd event) {
+        scanLogService.add(event.getQrCode(), Constants.SCAN_LOG_MSG_NOTIFY_PLC_SKIPPED + event.getAddress() + Constants.SCAN_LOG_MSG_SUFFIX_NOTIFY_PLC_CMD + event.getCmd(), Constants.SCAN_LOG_TYPE_ERROR);
+    }
+
     private void logOutPLCOperateResult(OperateResult operateResult) {
         log.error("onMessageEvent, ErrorCode: {}", operateResult.ErrorCode);
         log.error("onMessageEvent, ErrorMsg: {}", operateResult.Message);
@@ -261,11 +278,19 @@ public class Connection {
     @Subscribe(threadMode = ThreadMode.POSTING)
     public void onMessageEvent(EventBusMsgReadOpenCountFromPLC event) {
         log.info("onMessageEvent, EventBusMsgReadOpenCountFromPLC: {}", event);
-        if (isDead()) return;
-
-        if (plcEventCheckNotPassed()) return;
+        if (event.getPlcId() != null && !id.equals(event.getPlcId())) return;
 
         if (!workLine.equals(event.getWorkLine())) return;
+
+        if (isDead()) {
+            addReadOpenCountSkippedLog(event);
+            return;
+        }
+
+        if (plcEventCheckNotPassed()) {
+            addReadOpenCountSkippedLog(event);
+            return;
+        }
 
         String addr = event.getAddress();
         log.info("onMessageEvent, reading from PLC =>> Address: {}", addr);
@@ -279,7 +304,8 @@ public class Connection {
         if (!operateResult.IsSuccess) {
             log.error("onMessageEvent, reading from PLC =>> failed, address: {}", addr);
             logOutPLCOperateResult(operateResult);
-            status2Disconnected();
+            scanLogService.add(event.getQrCode(), Constants.SCAN_LOG_MSG_READ_OPEN_COUNT_FAILED + addr, Constants.SCAN_LOG_TYPE_ERROR);
+            nowDead();
             return;
         }
 
@@ -290,14 +316,17 @@ public class Connection {
         }
         log.info("onMessageEvent, reading from PLC =>> openCount is {}", content);
 
-        ICushionInfoService cs = ApplicationContextAwareImpl.getCushionService();
-        boolean result = cs.modifyOpenCountByQrCode(event.getQrCode(), content);
+        boolean result = cushionInfoService.modifyOpenCountByQrCode(event.getQrCode(), content);
         log.info("onMessageEvent, reading from PLC =>> success");
         if (result) {
             log.info("onMessageEvent, reading from PLC =>> modify openCount success");
             return;
         }
         log.info("onMessageEvent, reading from PLC =>> modify openCount failed");
+    }
+
+    private void addReadOpenCountSkippedLog(EventBusMsgReadOpenCountFromPLC event) {
+        scanLogService.add(event.getQrCode(), Constants.SCAN_LOG_MSG_READ_OPEN_COUNT_FAILED + event.getAddress(), Constants.SCAN_LOG_TYPE_ERROR);
     }
 
     /**

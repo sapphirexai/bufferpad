@@ -5,11 +5,13 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import javax.annotation.Resource;
@@ -34,7 +36,8 @@ public class SseController {
             log.info("sse设备状态订阅，clientId：{}", clientId);
             return sseService.subscribeDevicesStatus(clientId);
         } catch (Exception e) {
-            return null;
+            log.error("devicesStatus, subscribe SSE failed, clientId => {}", clientId, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "SSE subscribe failed", e);
         }
     }
 }

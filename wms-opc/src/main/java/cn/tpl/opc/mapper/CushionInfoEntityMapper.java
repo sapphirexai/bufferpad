@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import java.util.Date;
 import java.util.List;
 
 @Mapper
@@ -64,7 +65,8 @@ public interface CushionInfoEntityMapper {
 
     List<CushionInfoEntity> listByQrCode(String qrCode);
 
-    int modifyUsedCountByQrCode(CushionInfoEntity cushionInfo);
+    int modifyUsedCountByQrCode(@Param("data") CushionInfoEntity cushionInfo,
+                                @Param("lastScanDateBefore") Date lastScanDateBefore);
 
     int modifyOpenCountByQrCode(CushionInfoEntity cushionInfo);
 

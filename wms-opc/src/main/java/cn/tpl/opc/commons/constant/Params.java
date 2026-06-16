@@ -1,5 +1,7 @@
 package cn.tpl.opc.commons.constant;
 
+import cn.tpl.opc.commons.dto.enums.DeviceTypeEnum;
+
 /**
  * Author: Luo Guowen
  * Email: luoguowen123@qq.com
@@ -17,9 +19,9 @@ public final class Params {
      * DEVICE_TYPE_KEY_HC_PLC 汇川PLC
      */
     public static final int
-            DEVICE_TYPE_KEY_SCANNER = 0,
-            DEVICE_TYPE_KEY_SL_PLC = 1,
-            DEVICE_TYPE_KEY_HC_PLC = 2;
+            DEVICE_TYPE_KEY_SCANNER = DeviceTypeEnum.SCANNER.getCode(),
+            DEVICE_TYPE_KEY_SL_PLC = DeviceTypeEnum.MITSUBISHI_PLC.getCode(),
+            DEVICE_TYPE_KEY_HC_PLC = DeviceTypeEnum.INOVANCE_PLC.getCode();
 
     /**
      * NETTY连接状态名
@@ -41,16 +43,19 @@ public final class Params {
 
 
     /**
-     * 扫码器安装顺序
+     * 扫码器安装顺序历史默认值。当前安装位置已改为 device_install_position 表维护，
+     * device_info.install_seq 保存安装位置表 ID。
      */
+    @Deprecated
     public static final int
             SCANNER_SEQ_KEY_1 = 1,
             SCANNER_SEQ_KEY_2 = 2,
             SCANNER_SEQ_KEY_3 = 3,
             SCANNER_SEQ_KEY_4 = 4;
     /**
-     * 扫码器安装顺序对应位置
+     * 扫码器安装顺序历史默认位置。
      */
+    @Deprecated
     public static final String
             SCANNER_SEQ_VAL_1 = "上",
             SCANNER_SEQ_VAL_2 = "下",

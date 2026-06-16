@@ -1,8 +1,14 @@
 package cn.tpl.opc.mapper;
 
 import cn.tpl.opc.entity.PLCAddrEntity;
+import cn.tpl.opc.commons.scheme.request.QueryPLCAddrPageScheme;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+
+import java.util.List;
 
 @Mapper
 public interface PLCAddrEntityMapper extends BaseMapper<PLCAddrEntity> {
@@ -54,5 +60,18 @@ public interface PLCAddrEntityMapper extends BaseMapper<PLCAddrEntity> {
      */
     int updateByPrimaryKey(PLCAddrEntity record);
 
-    PLCAddrEntity findByTypeAndScannerSeq(PLCAddrEntity record);
+    PLCAddrEntity findByTypeAndScannerId(PLCAddrEntity record);
+
+    PLCAddrEntity findDuplicate(PLCAddrEntity record);
+
+    PLCAddrEntity findDifferentPlcByScannerId(PLCAddrEntity record);
+
+    int countByPlcId(Long plcId);
+
+    int countByScannerId(Long scannerId);
+
+    IPage<PLCAddrEntity> listByPage(@Param("page") Page<PLCAddrEntity> page,
+                                     @Param("data") QueryPLCAddrPageScheme scheme);
+
+    List<PLCAddrEntity> listByPlcIdAndType(PLCAddrEntity record);
 }

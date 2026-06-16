@@ -2,7 +2,7 @@ package cn.tpl.opc.service;
 
 import cn.tpl.opc.commons.dto.result.DeviceInfoDTO;
 import cn.tpl.opc.commons.dto.result.PageData;
-import cn.tpl.opc.commons.scheme.base.BasePageScheme;
+import cn.tpl.opc.commons.scheme.request.QueryDeviceInfoPageScheme;
 import cn.tpl.opc.commons.scheme.request.SaveDeviceInfoScheme;
 import cn.tpl.opc.entity.DeviceInfoEntity;
 
@@ -53,7 +53,7 @@ public interface IDeviceInfoService {
      * @param scheme 分页查询参数协议
      * @return 分页数据
      */
-    PageData<DeviceInfoDTO> listByPage(BasePageScheme scheme);
+    PageData<DeviceInfoDTO> listByPage(QueryDeviceInfoPageScheme scheme);
 
     /**
      * 查询所有设备数据

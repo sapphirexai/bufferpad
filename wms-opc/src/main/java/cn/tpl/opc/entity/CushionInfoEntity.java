@@ -66,6 +66,11 @@ public class CushionInfoEntity implements Serializable {
     private Integer scannerSeq;
 
     /**
+     * 当前扫码器设备ID
+     */
+    private Long scannerId;
+
+    /**
      * 最近一次扫码时间
      */
     private Date lastScanDate;

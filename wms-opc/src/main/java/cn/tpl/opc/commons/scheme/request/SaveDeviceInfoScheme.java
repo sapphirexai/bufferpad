@@ -19,6 +19,9 @@ import javax.validation.constraints.NotNull;
 @Data
 @Schema(description = "保存设备信息协议类")
 public class SaveDeviceInfoScheme extends AbsBaseScheme {
+    @Schema(description = "主键ID，编辑时传入")
+    private Long id;
+
     /**
      * 设备类型，0: 扫码器；1: PLC；2：汇川PLC
      */
@@ -43,6 +46,7 @@ public class SaveDeviceInfoScheme extends AbsBaseScheme {
     /**
      * 设备名字
      */
+    @NotBlank(message = "设备名称不能为空！")
     @Schema(description = "设备名字")
     private String name;
 
@@ -58,4 +62,10 @@ public class SaveDeviceInfoScheme extends AbsBaseScheme {
     @NotNull(message = Constants.RESULT_MSG_DEVICE_NO_INSTALL_SEQ)
     @Schema(description = "安装顺序")
     private Integer installSeq;
+
+    /**
+     * 产线。
+     */
+    @Schema(description = "产线")
+    private Integer workLine;
 }

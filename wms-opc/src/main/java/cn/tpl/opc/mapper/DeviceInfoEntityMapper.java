@@ -1,10 +1,12 @@
 package cn.tpl.opc.mapper;
 
 import cn.tpl.opc.entity.DeviceInfoEntity;
+import cn.tpl.opc.commons.scheme.request.QueryDeviceInfoPageScheme;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
@@ -60,9 +62,16 @@ public interface DeviceInfoEntityMapper extends BaseMapper<DeviceInfoEntity> {
 
     List<DeviceInfoEntity> listDeviceInfoByType(Integer type);
 
-    IPage<DeviceInfoEntity> listByPage(Page<DeviceInfoEntity> page);
+    IPage<DeviceInfoEntity> listByPage(@Param("page") Page<DeviceInfoEntity> page,
+                                       @Param("data") QueryDeviceInfoPageScheme scheme);
 
     List<DeviceInfoEntity> list();
 
     List<DeviceInfoEntity> listByWorkLine(Integer workLine);
+
+    int countByInstallSeq(Integer installSeq);
+
+    List<DeviceInfoEntity> listByInstallSeq(Integer installSeq);
+
+    int updatePositionByInstallSeq(@Param("installSeq") Integer installSeq, @Param("position") String position);
 }

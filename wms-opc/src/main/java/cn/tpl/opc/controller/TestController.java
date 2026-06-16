@@ -1,6 +1,5 @@
 package cn.tpl.opc.controller;
 
-import cn.tpl.opc.ApplicationContextAwareImpl;
 import cn.tpl.opc.entity.PLCAddrEntity;
 import cn.tpl.opc.service.INettyService;
 import cn.tpl.opc.service.IPLCAddrService;
@@ -32,8 +31,7 @@ public class TestController {
 
     @GetMapping("/testPLCAddr")
     public PLCAddrEntity testPLCAddr() {
-        IPLCAddrService ps = (IPLCAddrService) ApplicationContextAwareImpl.getBean("plcAddrService");
-        return ps.findByTypeAndScannerSeq(0, 1);
+        return plcAddrService.findByTypeAndScannerId(0, 1L);
     }
 
     @GetMapping("/testStr")

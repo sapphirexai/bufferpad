@@ -9,9 +9,13 @@ import cn.tpl.opc.commons.constant.Params;
 import cn.tpl.opc.commons.dto.event.EventBusMsgPlcCmd;
 import cn.tpl.opc.commons.dto.result.DeviceInfoDTO;
 import cn.tpl.opc.entity.PLCAddrEntity;
+import cn.tpl.opc.infrastructure.event.DomainEventPublisher;
+import cn.tpl.opc.infrastructure.scanner.ScannerMessageParser;
 import cn.tpl.opc.netty.handler.HeartbeatHandler;
 import cn.tpl.opc.netty.handler.MsgHandler;
+import cn.tpl.opc.service.ICushionInfoService;
 import cn.tpl.opc.service.IPLCAddrService;
+import cn.tpl.opc.service.IScanLogService;
 import cn.tpl.opc.service.ISseService;
 import cn.tpl.opc.util.NetUtils;
 import io.netty.bootstrap.Bootstrap;
@@ -24,7 +28,6 @@ import io.netty.handler.codec.string.StringEncoder;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.CharsetUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.greenrobot.eventbus.EventBus;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
@@ -50,7 +53,15 @@ public class Connector {
     @Resource
     private ISseService sseService;
     @Resource
+    private IScanLogService scanLogService;
+    @Resource
+    private ICushionInfoService cushionInfoService;
+    @Resource
     private IPLCAddrService plcAddrService;
+    @Resource
+    private DomainEventPublisher eventPublisher;
+    @Resource
+    private ScannerMessageParser scannerMessageParser;
 
     /**
      * 定时执行器
@@ -77,7 +88,7 @@ public class Connector {
                         // 配置如果对应时间内未触发写事件，就会触发写闲置事件
                         sc.pipeline().addLast(new IdleStateHandler(0, 30, 0, TimeUnit.SECONDS));
                         // 添加一个入站处理器，对收到的数据进行处理
-                        sc.pipeline().addLast(new MsgHandler(conn));
+                        sc.pipeline().addLast(new MsgHandler(conn, eventPublisher, scannerMessageParser));
                         // 添加心跳处理器
                         sc.pipeline().addLast(new HeartbeatHandler(conn));
                     }
@@ -99,6 +110,7 @@ public class Connector {
             // 获取锁后进行二次判断
             if (connectionExists(id)) return;
             // 保存连接信息到列表
+            conn.bindServices(scanLogService, cushionInfoService);
             conn.setOnStatusChangeListener(new Connection.OnStatusChangeListener() {
                 @Override
                 public void onStatusChanged(Connection conn) {
@@ -242,10 +254,12 @@ public class Connector {
     private void doSendPLCHeartBeat(Connection conn) {
         if (conn.isDead() && conn.isNoPLCNet()) return;
 
-        PLCAddrEntity plcAddr = plcAddrService.findByTypeAndScannerSeq(Constants.PLC_ADDR_TYPE_HEART_BEAT, conn.getInstallSeq());
-        if (null == plcAddr) return;
+        Collection<PLCAddrEntity> plcAddrs = plcAddrService.listByPlcIdAndType(conn.getId(), Constants.PLC_ADDR_TYPE_HEART_BEAT);
+        if (CollectionUtils.isEmpty(plcAddrs)) return;
 
-        EventBus.getDefault().post(new EventBusMsgPlcCmd(null, Constants.PLC_ADDR_TYPE_HEART_BEAT, plcAddr.getAddr(), Constants.HEARTBEAT_2_PLC_VAL, conn.getWorkLine()));
+        for (PLCAddrEntity plcAddr : plcAddrs) {
+            eventPublisher.publish(new EventBusMsgPlcCmd(null, Constants.PLC_ADDR_TYPE_HEART_BEAT, plcAddr.getPlcId(), plcAddr.getAddr(), Constants.HEARTBEAT_2_PLC_VAL, conn.getWorkLine()));
+        }
     }
 
     public void startReconnectService() {

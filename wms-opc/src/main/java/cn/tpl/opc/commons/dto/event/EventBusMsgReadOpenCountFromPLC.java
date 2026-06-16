@@ -25,12 +25,22 @@ public class EventBusMsgReadOpenCountFromPLC extends AbsBaseDTO {
     private String address;
 
     /**
+     * 目标PLC设备ID
+     */
+    private Long plcId;
+
+    /**
      * 产线
      */
     private Integer workLine;
 
     public EventBusMsgReadOpenCountFromPLC(String qrCode, String address, Integer workLine) {
+        this(qrCode, null, address, workLine);
+    }
+
+    public EventBusMsgReadOpenCountFromPLC(String qrCode, Long plcId, String address, Integer workLine) {
         this.qrCode = qrCode;
+        this.plcId = plcId;
         this.address = address;
         this.workLine = workLine;
     }

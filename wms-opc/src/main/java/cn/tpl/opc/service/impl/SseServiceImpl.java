@@ -13,58 +13,75 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
- * Author: Luo GuoWen
- * Email: luoguowen123@qq.com
- * Time: 2023/4/21
- * Sse服务
+ * SSE push service.
  */
 @Slf4j
 @Service("sseService")
 public class SseServiceImpl implements ISseService {
-    /**
-     * 消息发送线程池
-     */
     private static final ExecutorService MSG_SERVICE = new ThreadPoolExecutor(
             Runtime.getRuntime().availableProcessors() * 2,
             Runtime.getRuntime().availableProcessors() * 4,
             5,
             TimeUnit.MINUTES,
             new LinkedBlockingDeque<>(Runtime.getRuntime().availableProcessors() * 4));
-    /**
-     * 订阅Sse消息的客户端，key为clientId
-     */
+
     private static final ConcurrentHashMap<String, SseEmitter> SSE_CLIENTS = new ConcurrentHashMap<>();
 
     @Override
     public SseEmitter subscribeDevicesStatus(String clientId) {
         SseEmitter sseEmitter = new SseEmitter(0L);
-        sseEmitter.onError((err) -> log.error("SseError，clientId：{}，异常：{}", err.getMessage(), clientId));
-        SSE_CLIENTS.remove(clientId);
-        SSE_CLIENTS.put(clientId, sseEmitter);
+        sseEmitter.onCompletion(() -> {
+            log.info("SseCompleted, clientId => {}", clientId);
+            SSE_CLIENTS.remove(clientId, sseEmitter);
+        });
+        sseEmitter.onTimeout(() -> {
+            log.info("SseTimeout, clientId => {}", clientId);
+            removeSseClient(clientId, sseEmitter);
+        });
+        sseEmitter.onError((err) -> {
+            log.error("SseError, clientId => {}", clientId, err);
+            SSE_CLIENTS.remove(clientId, sseEmitter);
+        });
+
+        SseEmitter oldEmitter = SSE_CLIENTS.put(clientId, sseEmitter);
+        if (oldEmitter != null) completeQuietly(oldEmitter);
         return sseEmitter;
     }
 
     @Override
     public <T> void sendMsg(ResultDTO<SseMsgDTO<T>> msg) {
+        if (msg == null || msg.getData() == null || msg.getData().getWorkLine() == null) {
+            log.warn("sendMsg skipped, invalid msg => {}", msg);
+            return;
+        }
+
+        String fMsg;
+        try {
+            fMsg = FastJsonUtils.toJSONString(msg);
+        } catch (Exception e) {
+            log.error("sendMsg serialize failed, msg => {}", msg, e);
+            return;
+        }
+        String workLine = String.valueOf(msg.getData().getWorkLine());
         for (Map.Entry<String, SseEmitter> entry : SSE_CLIENTS.entrySet()) {
             String clientId = entry.getKey();
-            String workLine = String.valueOf(msg.getData().getWorkLine());
-            // 只给当前客户端ID与产线相同的业务推送消息
             if (!clientId.equals(workLine)) continue;
 
-            MSG_SERVICE.execute(() -> {
-                try {
-                    String fMsg = FastJsonUtils.toJSONString(msg);
-                    log.info("sendMsg，msgJson：{}", fMsg);
-                    entry.getValue().send(fMsg);
-                } catch (Exception e) {
-                    log.error("sendMsg，Client：{}，异常", entry.getKey(), e);
-                    SSE_CLIENTS.remove(entry.getKey());
-                }
-            });
+            SseEmitter sseEmitter = entry.getValue();
+            try {
+                MSG_SERVICE.execute(() -> doSendMsg(clientId, sseEmitter, fMsg));
+            } catch (RejectedExecutionException e) {
+                log.error("sendMsg rejected, client => {}", clientId, e);
+                removeSseClient(clientId, sseEmitter);
+            }
         }
     }
 
@@ -86,5 +103,28 @@ public class SseServiceImpl implements ISseService {
             return;
         }
         sendMsg(ResultDTO.success(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, cushionInfo, cushionInfo.getWorkLine(), cushionInfo.getScannerSeq())));
+    }
+
+    private void doSendMsg(String clientId, SseEmitter sseEmitter, String fMsg) {
+        try {
+            log.info("sendMsg, msgJson => {}", fMsg);
+            sseEmitter.send(fMsg);
+        } catch (Exception e) {
+            log.error("sendMsg, client => {}, exception", clientId, e);
+            removeSseClient(clientId, sseEmitter);
+        }
+    }
+
+    private void removeSseClient(String clientId, SseEmitter sseEmitter) {
+        SSE_CLIENTS.remove(clientId, sseEmitter);
+        completeQuietly(sseEmitter);
+    }
+
+    private void completeQuietly(SseEmitter sseEmitter) {
+        try {
+            sseEmitter.complete();
+        } catch (Exception e) {
+            log.debug("complete sse quietly failed", e);
+        }
     }
 }

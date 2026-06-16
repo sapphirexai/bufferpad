@@ -43,7 +43,8 @@ public class PLCAddrEntity implements Serializable {
      */
     private Integer type;
     /**
-     * 扫码器安装顺序，从1开始
+     * 扫码器设备ID，关联 device_info.id。
      */
-    private Integer scannerSeq;
+    private Long scannerId;
+
 }
