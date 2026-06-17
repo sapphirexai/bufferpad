@@ -1,0 +1,11 @@
+packages/*.zip
+packages/*.exe
+app/backend/*.jar
+app/frontend/dist/
+app/db/*.sql
+logs/
+
+!packages/.gitkeep
+!app/backend/.gitkeep
+!app/frontend/.gitkeep
+!app/db/README.md

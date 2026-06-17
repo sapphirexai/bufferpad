@@ -1,0 +1,65 @@
+param(
+    [string]$ServiceName = '{{BACKEND_SERVICE_NAME}}',
+    [int]$IntervalSeconds = {{BACKEND_MONITOR_INTERVAL_SECONDS}},
+    [string]$StopFile = '{{BACKEND_MONITOR_STOP_FILE}}',
+    [string]$LogFile = '{{BACKEND_MONITOR_LOG_FILE}}'
+)
+
+$ErrorActionPreference = 'Stop'
+
+function Write-MonitorLog {
+    param([string]$Message)
+    $line = "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') $Message"
+    New-Item -ItemType Directory -Path (Split-Path -Parent $LogFile) -Force | Out-Null
+    Add-Content -LiteralPath $LogFile -Value $line -Encoding UTF8
+}
+
+$mutexName = 'Global\{{BACKEND_MONITOR_TASK_NAME}}'
+$mutex = New-Object System.Threading.Mutex($false, $mutexName)
+$hasLock = $false
+
+try {
+    $hasLock = $mutex.WaitOne(0)
+    if (-not $hasLock) {
+        Write-MonitorLog "Another backend monitor instance is already running. Exit."
+        exit 0
+    }
+
+    if (Test-Path -LiteralPath $StopFile) {
+        Remove-Item -LiteralPath $StopFile -Force -ErrorAction SilentlyContinue
+    }
+
+    Write-MonitorLog "Backend prod monitor started. Service=$ServiceName Interval=${IntervalSeconds}s"
+    while ($true) {
+        if (Test-Path -LiteralPath $StopFile) {
+            Write-MonitorLog 'Stop file detected. Backend prod monitor exits.'
+            break
+        }
+
+        try {
+            $service = Get-Service -Name $ServiceName -ErrorAction Stop
+            if ($service.Status -ne 'Running') {
+                Write-MonitorLog "Service $ServiceName status is $($service.Status). Starting it."
+                Start-Service -Name $ServiceName -ErrorAction Stop
+                Start-Sleep -Seconds 3
+                $service = Get-Service -Name $ServiceName -ErrorAction Stop
+                Write-MonitorLog "Service $ServiceName status after start: $($service.Status)."
+            }
+        } catch {
+            Write-MonitorLog "Monitor check failed: $($_.Exception.Message)"
+        }
+
+        Start-Sleep -Seconds $IntervalSeconds
+    }
+} catch {
+    Write-MonitorLog "Backend prod monitor failed: $($_.Exception.Message)"
+    exit 1
+} finally {
+    if ($hasLock) {
+        try {
+            $mutex.ReleaseMutex()
+        } catch {
+        }
+    }
+    $mutex.Dispose()
+}

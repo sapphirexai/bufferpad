@@ -1,0 +1,13 @@
+server:
+  port: {{BACKEND_PORT}}
+
+logging:
+  file:
+    name: {{BACKEND_LOG_FILE}}
+
+spring:
+  datasource:
+    druid:
+      url: jdbc:mysql://127.0.0.1:{{MYSQL_PORT}}/{{DB_NAME}}?useUnicode=true&characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+      username: {{DB_USER}}
+      password: {{DB_PASSWORD}}
