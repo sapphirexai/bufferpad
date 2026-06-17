@@ -1,11 +1,19 @@
-FROM nginx
+FROM node:18-bullseye-slim AS build
 
-MAINTAINER GavinRowe<luoguowen123@qq.com> #定义作者信息
+WORKDIR /app
 
-RUN rm /etc/nginx/conf.d/default.conf
+# Webpack 3 uses legacy OpenSSL algorithms on modern Node.js.
+ENV NODE_OPTIONS=--openssl-legacy-provider
 
-# 删除基础镜像中的Nginx配置文件替换成自己写的
-ADD default.conf /etc/nginx/conf.d/
+COPY package*.json ./
+RUN npm ci --legacy-peer-deps
 
-# 将打包好的vue项目复制到基础镜像中Nginx配置文件的指定路径下
-COPY dist/ /usr/share/nginx/html/
+COPY . .
+RUN npm run build
+
+FROM nginx:1.22.1-alpine
+
+COPY default.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/dist/ /usr/share/nginx/bufferpad/
+
+EXPOSE 80

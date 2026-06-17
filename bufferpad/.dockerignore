@@ -1,1 +1,10 @@
+node_modules
+dist
 target
+coverage
+.git
+.idea
+.vscode
+*.log
+*.tar
+npminstall-debug.log
