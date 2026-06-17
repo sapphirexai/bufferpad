@@ -1,0 +1,9 @@
+target/*
+!target/*.jar
+logs
+.git
+.idea
+.vscode
+*.iml
+*.log
+docs

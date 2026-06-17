@@ -1,6 +1,6 @@
 logging:
   file:
-    name: D:\Java\opc_logs\opc_prod.log
+    name: ${LOG_FILE:logs/wms-opc-prod.log}
 
 spring:
   datasource:

@@ -1,6 +1,6 @@
 logging:
   file:
-    name: /home/gitlab-runner/application/wms-opc/opc_test.log
+    name: ${LOG_FILE:logs/wms-opc-test.log}
 
 spring:
   datasource:

@@ -1,5 +1,6 @@
 @echo off
 cd /d %~dp0
+if not exist "%~dp0logs" mkdir "%~dp0logs"
 
 :check
 netstat -ano | findstr ":9001" | findstr "LISTENING" >nul
