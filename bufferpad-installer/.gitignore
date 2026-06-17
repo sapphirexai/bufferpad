@@ -1,8 +1,8 @@
-packages/*.zip
-packages/*.exe
-app/backend/*.jar
-app/frontend/dist/
-app/db/*.sql
+#packages/*.zip
+#packages/*.exe
+#app/backend/*.jar
+#app/frontend/dist/
+#app/db/*.sql
 logs/
 
 !packages/.gitkeep
