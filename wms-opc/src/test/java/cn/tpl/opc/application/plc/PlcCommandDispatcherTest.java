@@ -105,7 +105,7 @@ public class PlcCommandDispatcherTest {
     }
 
     private EventBusMsgPlcCmd command(String readAddress) {
-        return new EventBusMsgPlcCmd("QR-1", Constants.PLC_ADDR_TYPE_SCAN_SUCCESS, 20L,
+        return new EventBusMsgPlcCmd("op-dispatch", "QR-1", Constants.PLC_ADDR_TYPE_SCAN_SUCCESS, 20L,
                 "D6602", (short) 1, 1, 10L, readAddress);
     }
 
@@ -113,5 +113,6 @@ public class PlcCommandDispatcherTest {
         ArgumentCaptor<OperationEventDTO> captor = ArgumentCaptor.forClass(OperationEventDTO.class);
         verify(operationEventService).publish(captor.capture());
         assertEquals(expected.name(), captor.getValue().getCode());
+        assertEquals("op-dispatch", captor.getValue().getOperationId());
     }
 }

@@ -4,6 +4,7 @@
     <resultMap id="BaseResultMap" type="cn.tpl.opc.entity.OperationEventEntity">
         <id column="id" property="id"/>
         <result column="event_id" property="eventId"/>
+        <result column="operation_id" property="operationId"/>
         <result column="code" property="code"/>
         <result column="severity" property="severity"/>
         <result column="title" property="title"/>
@@ -23,16 +24,16 @@
 
     <insert id="insertSelective" parameterType="cn.tpl.opc.entity.OperationEventEntity" useGeneratedKeys="true" keyProperty="id">
         insert into operation_event
-        (event_id, code, severity, title, message, suggestion, work_line, scanner_id, scanner_seq,
+        (event_id, operation_id, code, severity, title, message, suggestion, work_line, scanner_id, scanner_seq,
          device_id, device_name, qr_code, address, error_code, technical_detail, created_date)
         values
-        (#{eventId}, #{code}, #{severity}, #{title}, #{message}, #{suggestion}, #{workLine}, #{scannerId},
+        (#{eventId}, #{operationId}, #{code}, #{severity}, #{title}, #{message}, #{suggestion}, #{workLine}, #{scannerId},
          #{scannerSeq}, #{deviceId}, #{deviceName}, #{qrCode}, #{address}, #{errorCode}, #{technicalDetail},
          #{createdDate})
     </insert>
 
     <select id="listRecent" resultMap="BaseResultMap">
-        select id, event_id, code, severity, title, message, suggestion, work_line, scanner_id, scanner_seq,
+        select id, event_id, operation_id, code, severity, title, message, suggestion, work_line, scanner_id, scanner_seq,
                device_id, device_name, qr_code, address, error_code, technical_detail, created_date
         from operation_event
         <where>

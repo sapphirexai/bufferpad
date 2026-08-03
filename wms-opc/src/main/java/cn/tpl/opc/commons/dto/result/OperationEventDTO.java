@@ -12,6 +12,7 @@ import java.util.Date;
 public class OperationEventDTO extends AbsBaseDTO {
     private Long id;
     private String eventId;
+    private String operationId;
     private String code;
     private String severity;
     private String title;

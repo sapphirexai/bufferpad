@@ -75,6 +75,9 @@ public class OperationEventServiceImpl implements IOperationEventService {
         OperationEventDTO event = new OperationEventDTO();
         BeanUtil.copyProperties(source, event);
         if (event.getEventId() == null) event.setEventId(UUID.randomUUID().toString());
+        if (event.getOperationId() == null || event.getOperationId().isBlank()) {
+            event.setOperationId(event.getEventId());
+        }
         if (event.getOccurredAt() == null) event.setOccurredAt(new Date());
         return event;
     }

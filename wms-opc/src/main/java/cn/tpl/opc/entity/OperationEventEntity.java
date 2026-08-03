@@ -15,6 +15,7 @@ public class OperationEventEntity implements Serializable {
 
     private Long id;
     private String eventId;
+    private String operationId;
     private String code;
     private String severity;
     private String title;

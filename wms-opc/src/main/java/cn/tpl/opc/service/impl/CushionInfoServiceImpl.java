@@ -43,7 +43,15 @@ public class CushionInfoServiceImpl implements ICushionInfoService {
 
     @Override
     public ResultDTO<CushionInfoDTO> onQrCodeReceived(Long scannerId, Integer workLine, String scannerHost, String scannerName, String scannerPosition, Integer scannerSeq, String qrCode) {
-        return scanApplicationService.handleScan(new ScanCommand(scannerId, workLine, scannerHost, scannerName, scannerPosition, scannerSeq, qrCode));
+        return onQrCodeReceived(null, scannerId, workLine, scannerHost, scannerName, scannerPosition, scannerSeq, qrCode);
+    }
+
+    @Override
+    public ResultDTO<CushionInfoDTO> onQrCodeReceived(String operationId, Long scannerId, Integer workLine,
+                                                      String scannerHost, String scannerName,
+                                                      String scannerPosition, Integer scannerSeq, String qrCode) {
+        return scanApplicationService.handleScan(new ScanCommand(operationId, scannerId, workLine, scannerHost,
+                scannerName, scannerPosition, scannerSeq, qrCode));
     }
 
     @Override

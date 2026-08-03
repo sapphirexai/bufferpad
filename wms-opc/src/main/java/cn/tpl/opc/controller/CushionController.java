@@ -20,6 +20,7 @@ import cn.tpl.opc.mapper.CushionDetailEntityMapper;
 import cn.tpl.opc.service.ICushionInfoService;
 import cn.tpl.opc.service.IDeviceInstallPositionService;
 import cn.tpl.opc.util.EasyExcelUtils;
+import cn.tpl.opc.util.OperationIdUtils;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -32,6 +33,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -117,8 +119,10 @@ public class CushionController {
     public ResultDTO<CushionInfoDTO> manualCushionInfo(
             @Valid
             @Parameter(description = "手动扫码请求")
-            @RequestBody ManualCushionInfoScheme scheme) {
-        return doManualCushionInfo(scheme.getWorkLine(), scheme.getQrCode());
+            @RequestBody ManualCushionInfoScheme scheme,
+            @RequestHeader(value = "X-Operation-Id", required = false) String operationId,
+            HttpServletResponse response) {
+        return doManualCushionInfo(scheme.getWorkLine(), scheme.getQrCode(), operationId, response);
     }
 
     @Operation(summary = "手动输入缓冲垫二维码，兼容旧路径")
@@ -127,20 +131,27 @@ public class CushionController {
             @Parameter(description = "产线")
             @PathVariable("workLine") Integer workLine,
             @Parameter(description = "二维码")
-            @PathVariable("qrCode") String qrCode) {
-        return doManualCushionInfo(workLine, qrCode);
+            @PathVariable("qrCode") String qrCode,
+            @RequestHeader(value = "X-Operation-Id", required = false) String operationId,
+            HttpServletResponse response) {
+        return doManualCushionInfo(workLine, qrCode, operationId, response);
     }
 
-    private ResultDTO<CushionInfoDTO> doManualCushionInfo(Integer workLine, String qrCode) {
+    private ResultDTO<CushionInfoDTO> doManualCushionInfo(Integer workLine, String qrCode,
+                                                          String operationId, HttpServletResponse response) {
         try {
-            log.info("manualCushionInfo, workLine => {}, qrCode => {}", workLine, qrCode);
+            String resolvedOperationId = OperationIdUtils.ensure(operationId);
+            response.setHeader("X-Operation-Id", resolvedOperationId);
+            log.info("manualCushionInfo, operationId => {}, workLine => {}, qrCode => {}",
+                    resolvedOperationId, workLine, qrCode);
             if (workLine == null) {
                 return ResultDTO.failure("产线不能为空！");
             }
             if (StringUtils.isEmpty(qrCode)) {
                 return ResultDTO.failure("缓冲垫编码不能为空！");
             }
-            return cushionInfoService.onQrCodeReceived(null, workLine, null, null, Constants.SCANNER_POSITION_MANUAL, null, qrCode);
+            return cushionInfoService.onQrCodeReceived(resolvedOperationId, null, workLine, null, null,
+                    Constants.SCANNER_POSITION_MANUAL, null, qrCode);
         } catch (Exception e) {
             return ResultDTO.exception(e);
         }

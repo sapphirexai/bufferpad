@@ -55,7 +55,7 @@ public class PlcNotifyServiceTest {
         when(plcAddrService.findByTypeAndScannerId(eq(Constants.PLC_ADDR_TYPE_SCAN_SUCCESS_OPEN_COUNT), eq(10L)))
                 .thenReturn(plcAddr(99L, "D110", Constants.PLC_ADDR_TYPE_SCAN_SUCCESS_OPEN_COUNT, 10L));
 
-        service.notifyInvalidScan("QR-001", 10L, 10L, 1);
+        service.notifyInvalidScan("op-001", "QR-001", 10L, 10L, 1);
 
         ArgumentCaptor<Object> captor = ArgumentCaptor.forClass(Object.class);
         verify(eventPublisher).publish(captor.capture());
@@ -64,6 +64,7 @@ public class PlcNotifyServiceTest {
         Assert.assertEquals(Constants.PLC_ADDR_TYPE_SCAN_SUCCESS, cmd.getAddrType().intValue());
         Assert.assertEquals(Integer.valueOf(1), cmd.getWorkLine());
         Assert.assertEquals("D110", cmd.getReadAddress());
+        Assert.assertEquals("op-001", cmd.getOperationId());
     }
 
     @Test
@@ -98,12 +99,13 @@ public class PlcNotifyServiceTest {
         second.setWorkLine(1);
         when(deviceInfoEntityMapper.listDeviceInfoByType(0)).thenReturn(java.util.Arrays.asList(first, second));
 
-        service.notifyScanSuccess("QR-MANUAL-NEW", null, null, 1);
+        service.notifyScanSuccess("op-manual", "QR-MANUAL-NEW", null, null, 1);
 
         ArgumentCaptor<OperationEventDTO> captor = ArgumentCaptor.forClass(OperationEventDTO.class);
         verify(operationEventService).publish(captor.capture());
         Assert.assertEquals(OperationEventCode.PLC_TARGET_NOT_RESOLVED.name(), captor.getValue().getCode());
         Assert.assertEquals(Integer.valueOf(1), captor.getValue().getWorkLine());
+        Assert.assertEquals("op-manual", captor.getValue().getOperationId());
         verify(deviceInfoEntityMapper).listDeviceInfoByType(0);
         verify(eventPublisher, never()).publish(org.mockito.ArgumentMatchers.any());
     }

@@ -14,6 +14,9 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class EventBusMsgPlcCmd extends AbsBaseDTO {
+    /** Correlates all outcomes produced by one scan operation. */
+    private String operationId;
+
     /**
      * 二维码
      */
@@ -60,6 +63,12 @@ public class EventBusMsgPlcCmd extends AbsBaseDTO {
 
     public EventBusMsgPlcCmd(String qrCode, Integer addrType, Long plcId, String address, Short cmd,
                              Integer workLine, Long scannerId, String readAddress) {
+        this(null, qrCode, addrType, plcId, address, cmd, workLine, scannerId, readAddress);
+    }
+
+    public EventBusMsgPlcCmd(String operationId, String qrCode, Integer addrType, Long plcId, String address,
+                             Short cmd, Integer workLine, Long scannerId, String readAddress) {
+        this.operationId = operationId;
         this.qrCode = qrCode;
         this.addrType = addrType;
         this.plcId = plcId;

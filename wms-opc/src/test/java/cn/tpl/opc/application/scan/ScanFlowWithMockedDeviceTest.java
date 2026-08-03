@@ -8,6 +8,7 @@ import cn.tpl.opc.commons.dto.ResultDTO;
 import cn.tpl.opc.commons.dto.event.EventBusMsgCushionQrCode;
 import cn.tpl.opc.commons.dto.event.EventBusMsgPlcCmd;
 import cn.tpl.opc.commons.dto.result.CushionInfoDTO;
+import cn.tpl.opc.commons.dto.result.OperationEventDTO;
 import cn.tpl.opc.domain.scan.ScanPolicy;
 import cn.tpl.opc.entity.CushionDetailEntity;
 import cn.tpl.opc.entity.CushionInfoEntity;
@@ -135,7 +136,11 @@ public class ScanFlowWithMockedDeviceTest {
         List<Object> events = publishedPlcEvents();
         Assert.assertEquals(1, events.size());
         assertPlcCmd(events.get(0), qrCode, Constants.PLC_ADDR_TYPE_SCAN_SUCCESS, "D102", Constants.DEFAULT_2_PLC_VAL);
-        Assert.assertEquals("D106", ((EventBusMsgPlcCmd) events.get(0)).getReadAddress());
+        EventBusMsgPlcCmd command = (EventBusMsgPlcCmd) events.get(0);
+        Assert.assertEquals("D106", command.getReadAddress());
+        ArgumentCaptor<OperationEventDTO> operationCaptor = ArgumentCaptor.forClass(OperationEventDTO.class);
+        verify(operationEventService, atLeastOnce()).publish(operationCaptor.capture());
+        operationCaptor.getAllValues().forEach(event -> Assert.assertEquals(command.getOperationId(), event.getOperationId()));
         verify(sseService, atLeastOnce()).sendCushionMsg(any(CushionInfoDTO.class));
     }
 
@@ -373,6 +378,7 @@ public class ScanFlowWithMockedDeviceTest {
         Assert.assertEquals(address, cmdEvent.getAddress());
         Assert.assertEquals(cmd, cmdEvent.getCmd());
         Assert.assertEquals(WORK_LINE, cmdEvent.getWorkLine());
+        Assert.assertNotNull(cmdEvent.getOperationId());
     }
 
     private void preloadedCushion(String qrCode, int usedCount, int maxUseCount, Date lastScanDate,

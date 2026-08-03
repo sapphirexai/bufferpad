@@ -96,7 +96,8 @@ public class PlcCommandDispatcher implements InitializingBean, DisposableBean {
         }
 
         if (event.getReadAddress() != null && !event.getReadAddress().isBlank()) {
-            readOpenCount(event.getQrCode(), event.getScannerId(), event.getWorkLine(), connection, event.getReadAddress());
+            readOpenCount(event.getOperationId(), event.getQrCode(), event.getScannerId(),
+                    event.getWorkLine(), connection, event.getReadAddress());
         }
     }
 
@@ -108,7 +109,7 @@ public class PlcCommandDispatcher implements InitializingBean, DisposableBean {
             scanLogService.add(event.getQrCode(), Constants.SCAN_LOG_MSG_READ_OPEN_COUNT_FAILED + event.getAddress(), Constants.SCAN_LOG_TYPE_ERROR);
             return;
         }
-        readOpenCount(event.getQrCode(), null, event.getWorkLine(), connection, event.getAddress());
+        readOpenCount(null, event.getQrCode(), null, event.getWorkLine(), connection, event.getAddress());
     }
 
     private void handleWriteFailure(EventBusMsgPlcCmd event, Connection connection, PlcIoResult<Void> result) {
@@ -131,7 +132,8 @@ public class PlcCommandDispatcher implements InitializingBean, DisposableBean {
         publishFailure(code, event, connection, result.getErrorCode(), result.getMessage());
     }
 
-    private void readOpenCount(String qrCode, Long scannerId, Integer workLine, Connection connection, String address) {
+    private void readOpenCount(String operationId, String qrCode, Long scannerId, Integer workLine,
+                               Connection connection, String address) {
         PlcIoResult<Short> result = connection.readInt16(address);
         if (!result.isSuccess()) {
             PlcFailureType failureType = plcErrorClassifier.classify(result.getErrorCode(), result.getMessage());
@@ -141,7 +143,8 @@ public class PlcCommandDispatcher implements InitializingBean, DisposableBean {
                 connection.markDegraded(result.getErrorCode(), operatorReason(result));
             }
             scanLogService.add(qrCode, Constants.SCAN_LOG_MSG_READ_OPEN_COUNT_FAILED + address, Constants.SCAN_LOG_TYPE_ERROR);
-            OperationEventDTO event = baseEvent(OperationEventCode.PLC_READ_FAILED, qrCode, scannerId, workLine, connection);
+            OperationEventDTO event = baseEvent(OperationEventCode.PLC_READ_FAILED, operationId,
+                    qrCode, scannerId, workLine, connection);
             event.setAddress(address);
             event.setErrorCode(result.getErrorCode());
             event.setTechnicalDetail(result.getMessage());
@@ -151,7 +154,8 @@ public class PlcCommandDispatcher implements InitializingBean, DisposableBean {
 
         connection.markOnline("PLC通信正常");
         if (result.getContent() == null || !cushionInfoService.modifyOpenCountByQrCode(qrCode, result.getContent())) {
-            OperationEventDTO event = baseEvent(OperationEventCode.PLC_READ_FAILED, qrCode, scannerId, workLine, connection);
+            OperationEventDTO event = baseEvent(OperationEventCode.PLC_READ_FAILED, operationId,
+                    qrCode, scannerId, workLine, connection);
             event.setAddress(address);
             event.setMessage("PLC已返回开口数，但系统未能更新对应缓冲垫");
             operationEventService.publish(event);
@@ -159,7 +163,7 @@ public class PlcCommandDispatcher implements InitializingBean, DisposableBean {
     }
 
     private void publishSuccess(EventBusMsgPlcCmd command, Connection connection) {
-        OperationEventDTO event = baseEvent(OperationEventCode.PLC_NOTIFY_SUCCEEDED, command.getQrCode(),
+        OperationEventDTO event = baseEvent(OperationEventCode.PLC_NOTIFY_SUCCEEDED, command.getOperationId(), command.getQrCode(),
                 command.getScannerId(), command.getWorkLine(), connection);
         event.setAddress(command.getAddress());
         event.setMessage("PLC已成功写入 " + command.getAddress() + "，写入值 " + command.getCmd());
@@ -168,7 +172,7 @@ public class PlcCommandDispatcher implements InitializingBean, DisposableBean {
 
     private void publishFailure(OperationEventCode code, EventBusMsgPlcCmd command, Connection connection,
                                 Integer errorCode, String technicalDetail) {
-        OperationEventDTO event = baseEvent(code, command.getQrCode(), command.getScannerId(),
+        OperationEventDTO event = baseEvent(code, command.getOperationId(), command.getQrCode(), command.getScannerId(),
                 command.getWorkLine(), connection);
         event.setAddress(command.getAddress());
         event.setErrorCode(errorCode);
@@ -176,9 +180,10 @@ public class PlcCommandDispatcher implements InitializingBean, DisposableBean {
         operationEventService.publish(event);
     }
 
-    private OperationEventDTO baseEvent(OperationEventCode code, String qrCode, Long scannerId,
+    private OperationEventDTO baseEvent(OperationEventCode code, String operationId, String qrCode, Long scannerId,
                                         Integer workLine, Connection connection) {
         OperationEventDTO event = OperationEventDTO.of(code, workLine);
+        event.setOperationId(operationId);
         event.setQrCode(qrCode);
         event.setScannerId(scannerId);
         event.setDeviceId(connection == null ? null : connection.getId());

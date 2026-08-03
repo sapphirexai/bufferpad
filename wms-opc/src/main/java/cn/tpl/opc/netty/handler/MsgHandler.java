@@ -13,6 +13,8 @@ import io.netty.util.CharsetUtil;
 import io.netty.util.ReferenceCountUtil;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.UUID;
+
 /**
  * Netty scanner data handler.
  */
@@ -60,6 +62,7 @@ public class MsgHandler extends ChannelInboundHandlerAdapter {
 
     private void publishScanEvent(String qrCode) {
         eventPublisher.publish(new EventBusMsgCushionQrCode(
+                UUID.randomUUID().toString(),
                 qrCode,
                 connection.getId(),
                 connection.getWorkLine(),

@@ -33,6 +33,10 @@ public interface ICushionInfoService {
      */
     ResultDTO<CushionInfoDTO> onQrCodeReceived(Long scannerId, Integer workLine, String scannerHost, String scannerName, String scannerPosition, Integer scannerSeq, String qrCode);
 
+    ResultDTO<CushionInfoDTO> onQrCodeReceived(String operationId, Long scannerId, Integer workLine,
+                                               String scannerHost, String scannerName, String scannerPosition,
+                                               Integer scannerSeq, String qrCode);
+
     /**
      * 分页查询
      *

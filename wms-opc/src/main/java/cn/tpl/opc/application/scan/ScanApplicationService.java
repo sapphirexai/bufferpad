@@ -86,7 +86,7 @@ public class ScanApplicationService {
         log.info("onScanCodeFailed");
         scanLogService.addScanLog(command.getScannerHost(), command.getScannerName(), null, null, Constants.SCAN_LOG_TYPE_ERROR, false);
         publishScanEvent(OperationEventCode.SCAN_NO_READ, command, null, null);
-        plcNotifyService.notifyScanCodeFailed(command.getScannerId(), command.getWorkLine());
+        plcNotifyService.notifyScanCodeFailed(command.getOperationId(), command.getScannerId(), command.getWorkLine());
 
         CushionInfoDTO cushionInfoDTO = new CushionInfoDTO();
         cushionInfoDTO.setWorkLine(command.getWorkLine());
@@ -117,7 +117,8 @@ public class ScanApplicationService {
         publishScanEvent(OperationEventCode.SCAN_REPEATED, command, cushionInfoEntity,
                 "缓冲垫 " + qrCode + " 两小时内已扫描，本次未增加使用次数，当前为 " + cushionInfoEntity.getUsedCount() + " 次");
         scanLogService.addScanLog(command.getScannerHost(), command.getScannerName(), qrCode, Constants.SCAN_LOG_MSG_INVALID, Constants.SCAN_LOG_TYPE_ERROR, scanPolicy.isManualScan(command.getScannerId()));
-        plcNotifyService.notifyInvalidScan(qrCode, command.getScannerId(), cushionScannerId, command.getWorkLine());
+        plcNotifyService.notifyInvalidScan(command.getOperationId(), qrCode, command.getScannerId(),
+                cushionScannerId, command.getWorkLine());
         return ResultDTO.failure(Constants.RESULT_MSG_CUSHION_INVALID_SCAN);
     }
 
@@ -137,14 +138,16 @@ public class ScanApplicationService {
             publishScanEvent(OperationEventCode.CUSHION_MAX_REACHED, command, cushionInfoEntity,
                     "缓冲垫 " + cushionInfoEntity.getQrCode() + " 当前 " + cushionInfoEntity.getUsedCount()
                             + " 次，已达到寿命上限 " + cushionInfoEntity.getMaxUseCount() + " 次");
-            plcNotifyService.notifyScanMax(cushionInfoEntity.getQrCode(), command.getScannerId(), cushionInfoEntity.getScannerId(), command.getWorkLine());
+            plcNotifyService.notifyScanMax(command.getOperationId(), cushionInfoEntity.getQrCode(),
+                    command.getScannerId(), cushionInfoEntity.getScannerId(), command.getWorkLine());
             sseService.sendFailMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, cushionInfoEntity, command.getWorkLine(), scannerSeq), Constants.RESULT_MSG_CUSHION_USED_COUNT_REACHED_MAX);
             return ResultDTO.failure(cushionInfoDTO, Constants.RESULT_MSG_CUSHION_USED_COUNT_REACHED_MAX);
         }
 
         publishScanEvent(OperationEventCode.SCAN_COUNTED, command, cushionInfoEntity,
                 "缓冲垫 " + cushionInfoEntity.getQrCode() + " 已完成计数，当前使用 " + cushionInfoEntity.getUsedCount() + " 次");
-        plcNotifyService.notifyScanSuccess(cushionInfoEntity.getQrCode(), command.getScannerId(), cushionInfoEntity.getScannerId(), command.getWorkLine());
+        plcNotifyService.notifyScanSuccess(command.getOperationId(), cushionInfoEntity.getQrCode(),
+                command.getScannerId(), cushionInfoEntity.getScannerId(), command.getWorkLine());
         sseService.sendCushionMsg(cushionInfoDTO);
         return ResultDTO.success(cushionInfoDTO);
     }
@@ -234,6 +237,7 @@ public class ScanApplicationService {
 
     private void publishScanEvent(OperationEventCode code, ScanCommand command, CushionInfoEntity cushionInfo, String message) {
         OperationEventDTO event = OperationEventDTO.of(code, command.getWorkLine());
+        event.setOperationId(command.getOperationId());
         event.setScannerId(command.getScannerId());
         event.setScannerSeq(command.getScannerSeq());
         event.setDeviceId(command.getScannerId());

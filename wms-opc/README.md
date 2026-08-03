@@ -95,7 +95,7 @@ PLC 结果处理说明：
 
 ## 运行事件与前端提示
 
-扫码、计数和 PLC 处理会生成结构化 `operation_event`，并通过 SSE 的 `operationEvent` topic 推送前端。主要事件包括：
+扫码、计数和 PLC 处理会生成结构化 `operation_event`，并通过 SSE 的 `operationEvent` topic 推送前端。每次扫码都有一个最长64字符的 `operation_id`，同一次扫码产生的计数、地址检查、PLC写入和开口数回读事件共用该编号，供前端合并为一条操作反馈。手动扫码可通过 `X-Operation-Id` 请求头传入编号，未传入以及扫码器扫码时由后端自动生成。主要事件包括：
 
 - 扫码计数完成、未读码、两小时内重复扫码、达到寿命、计数失败
 - PLC 地址未配置、手动扫码目标无法确定、开口数地址未配置
@@ -116,7 +116,7 @@ operation-event:
     cleanup-cron: "0 15 2 * * ?"
 ```
 
-已有数据库需要执行 `docs/sql/20260803_operation_event_retention.sql` 补充 `created_date` 索引；该脚本不删除数据，可以重复执行。新建数据库使用 `docs/sql/20260803_operation_event.sql`，建表时已包含索引。
+已有数据库需要执行 `docs/sql/20260803_operation_event_retention.sql` 补充 `created_date` 索引，并执行 `docs/sql/20260804_operation_event_correlation.sql` 增加操作关联字段和索引；两个脚本均可重复执行。关联脚本会用原 `event_id` 回填历史记录，不删除业务数据。新建数据库使用 `docs/sql/20260803_operation_event.sql`，建表时已包含全部字段和索引。
 
 ## 主要数据表
 
@@ -190,6 +190,7 @@ GET /actuator/health
 | --- | --- |
 | `docs/sql/20260803_operation_event.sql` | 创建运行事件表 |
 | `docs/sql/20260803_operation_event_retention.sql` | 为已有事件表补充清理索引，不删除数据 |
+| `docs/sql/20260804_operation_event_correlation.sql` | 为已有事件表补充 `operation_id` 和关联索引 |
 | `docs/sql/20260803_test_data.sql` | 测试环境前端验收数据，可重复执行 |
 
 `20260803_test_data.sql` 只创建业务测试数据，不创建模拟设备，避免后端把测试设备当成真实扫码器或 PLC 发起连接。

@@ -33,6 +33,7 @@ public class ScanEventListener implements InitializingBean, DisposableBean {
     public void onMessageEvent(EventBusMsgCushionQrCode event) {
         log.info("onMessageEvent, qrCode => {}", event);
         ScanCommand command = new ScanCommand(
+                event.getOperationId(),
                 event.getScannerId(),
                 event.getWorkLine(),
                 event.getScannerHost(),
