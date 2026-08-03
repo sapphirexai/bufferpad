@@ -11,6 +11,10 @@
 - MySQL、后端、nginx 的 Windows 服务
 - 后端 prod 服务监控计划任务
 
+当前随包应用提供缓冲垫扫码计数、两小时防重复计数、寿命预警、PLC 联动、设备状态、
+运行告警和最近操作。运行事件写入 `operation_event` 并通过 SSE 实时显示，后端默认每天
+清理30天前的事件数据。
+
 ## 开机启动
 
 安装脚本会注册并配置以下开机启动项：
@@ -77,7 +81,15 @@ C:\bufferpad\data       MySQL 数据目录
 
 ## 在开发机准备安装包
 
-在项目根目录执行：
+先在项目根目录完成测试和正式构建：
+
+```powershell
+mvn -f .\wms-opc\pom.xml -Pprod clean package
+npm --prefix .\bufferpad run unit -- --runInBand
+npm --prefix .\bufferpad run build
+```
+
+测试和构建成功后执行：
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\bufferpad-installer\scripts\prepare-app.ps1
@@ -85,6 +97,14 @@ powershell -ExecutionPolicy Bypass -File .\bufferpad-installer\scripts\collect-p
 ```
 
 `prepare-app.ps1` 会复制当前后端 jar 和前端 dist 到安装包目录。
+
+它会完整替换 `app\frontend\dist`，避免旧哈希资源被误打包，并把最新后端制品统一命名为
+`app\backend\opc.jar`。执行后应确认两个文件的修改时间属于本次构建：
+
+```powershell
+Get-Item .\bufferpad-installer\app\backend\opc.jar
+Get-Item .\bufferpad-installer\app\frontend\dist\index.html
+```
 
 `collect-packages.ps1` 会从指定目录收集离线安装包，例如：
 
@@ -103,6 +123,10 @@ wms_opc.sql
 bufferpad-installer\app\db\wms_opc.sql
 ```
 
+数据库备份必须包含当前表结构，尤其是 `device_install_position`、`operation_event` 以及
+`operation_event.created_date` 的索引 `idx_operation_event_created_date`。否则安装后运行监控
+无法查询最近操作，或30天定时清理效率会明显下降。
+
 如果 `packages` 目录缺少安装包，也可以尝试从官方地址下载：
 
 ```powershell
@@ -110,6 +134,12 @@ powershell -ExecutionPolicy Bypass -File .\bufferpad-installer\scripts\download-
 ```
 
 准备完成后，把整个 `bufferpad-installer` 目录复制到目标 Windows 机器。
+
+提交安装程序仓库前建议执行完整静态检查：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\bufferpad-installer\scripts\test-installer.ps1 -CheckPackages
+```
 
 ## 一键安装
 
