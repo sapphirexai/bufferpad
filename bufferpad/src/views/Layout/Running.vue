@@ -215,7 +215,8 @@ import {
 } from '../../modules/running/services/running.service';
 import { createRunningSse } from '../../modules/running/services/running-sse.service';
 import { loadRecentOperationEvents } from '../../modules/running/services/operation-event.service';
-import { normalizeSeverity, prependOperationEvent } from '../../modules/running/models/operation-event';
+import { groupOperationEvents, normalizeSeverity, prependOperationEvent } from '../../modules/running/models/operation-event';
+import { createOperationFeedbackCenter } from '../../modules/running/services/operation-feedback-center';
 import {
   buildUsageMetrics,
   currentCushionText,
@@ -230,6 +231,7 @@ import {
   responseMessage
 } from '../../shared/request/request';
 import { getFilenameFromDisposition, downloadBlob } from '../../shared/utils/download';
+import { createOperationId } from '../../shared/utils/operation-id';
 import {
   centerCellStyle,
   formatScannerPosition,
@@ -302,7 +304,9 @@ export default {
       deviceStatusLoading: true,
       sseConnected: false,
       sseOpenedOnce: false,
-      lastSseErrorAt: 0
+      lastSseErrorAt: 0,
+      feedbackCenter: null,
+      pageMessage: null
     };
   },
   created() {
@@ -310,8 +314,41 @@ export default {
     this.loadFromLocalStorage();
   },
   methods: {
+    ensureFeedbackCenter() {
+      if (this.feedbackCenter) return this.feedbackCenter
+      this.feedbackCenter = createOperationFeedbackCenter({
+        delay: 1500,
+        terminalDelay: 180,
+        onFeedback: (feedback, showNotice) => {
+          this.currentOperationEvent = feedback
+          if (!showNotice) return
+          const message = feedback.secondaryMessage
+            ? feedback.title + '：' + feedback.message + '；' + feedback.secondaryMessage
+            : feedback.title + '：' + feedback.message
+          const severity = normalizeSeverity(feedback.severity)
+          this.showPageMessage(severity === 'ERROR' ? 'error' : (severity === 'WARNING' ? 'warning' : 'success'), message)
+        }
+      })
+      return this.feedbackCenter
+    },
+    resetFeedbackCenter() {
+      if (this.feedbackCenter) this.feedbackCenter.destroy()
+      this.feedbackCenter = null
+      this.operationEvents = []
+      this.currentOperationEvent = null
+      this.ensureFeedbackCenter()
+    },
+    showPageMessage(type, message) {
+      if (this.pageMessage && typeof this.pageMessage.close === 'function') this.pageMessage.close()
+      this.pageMessage = this.$message({
+        type: type || 'info',
+        message,
+        showClose: true,
+        duration: type === 'success' ? 2600 : 5000
+      })
+    },
     handleRequestError(error) {
-      this.$message.error(requestErrorMessage(error))
+      this.showPageMessage('error', requestErrorMessage(error))
     },
     buildPageParams() {
       return {
@@ -334,7 +371,7 @@ export default {
     },
     openDialog() {
       if (this.multipleSelection.length === 0) {
-        this.$message.warning('请选择修改数据')
+        this.showPageMessage('warning', '请选择修改数据')
         return
       }
       this.dialogVisible = true
@@ -388,23 +425,36 @@ export default {
         // 调用添加数据到数据库的api
         this.$refs['ruleForm'].validate(valid => {
           if (valid) {
-            submitManualScan(this.ProdLine, this.ruleForm.qrCode.trim()).then(res => {
+            const qrCode = this.ruleForm.qrCode.trim()
+            const operationId = createOperationId()
+            submitManualScan(this.ProdLine, qrCode, operationId).then(res => {
               if (isSuccessResponse(res)) {
                 this.Count = res.data.data.maxUseCount
                 this.useCount = res.data.data.usedCount
                 this.currentQrCode = res.data.data.qrCode
                 this.currentScannerSeq = res.data.data.scannerSeq
                 this.currentScannerPosition = res.data.data.scannerPosition
-                this.$message.success('扫码成功')
                 // this.handle = false;
 
                 this.currentPage = 1
                 this.searchQrCode = ''
 
                 this.refreshCushionList();
-              } else {
-                this.$message.error(responseMessage(res))
               }
+              const message = responseMessage(res, isSuccessResponse(res) ? '扫码计数完成' : '扫码处理失败')
+              const repeated = message.indexOf('2小时') >= 0 || message.indexOf('间隔不足') >= 0
+              const reachedMax = message.indexOf('最大') >= 0 || message.indexOf('上限') >= 0 || message.indexOf('寿命') >= 0
+              this.handleOperationEvent({
+                eventId: 'http-' + operationId,
+                operationId,
+                code: 'HTTP_SCAN_RESULT',
+                severity: isSuccessResponse(res) ? 'INFO' : (reachedMax ? 'ERROR' : 'WARNING'),
+                title: isSuccessResponse(res) ? '扫码计数完成' : (repeated ? '扫码未计数' : '扫码处理未完成'),
+                message,
+                occurredAt: new Date().toISOString(),
+                workLine: Number(this.ProdLine),
+                qrCode
+              }, true)
             }).catch(error => {
               this.handleRequestError(error)
             }).finally(() => {
@@ -424,7 +474,7 @@ export default {
           if (isSuccessResponse(res)) {
             this.devicesMessage = res.data.data || []
           } else {
-            this.$message.error(responseMessage(res))
+            this.showPageMessage('error', responseMessage(res))
           }
         })
         .catch(error => {
@@ -439,7 +489,9 @@ export default {
         .then(res => {
           const events = responseData(res, [])
           this.operationEvents = Array.isArray(events) ? events : []
-          this.currentOperationEvent = this.operationEvents.length > 0 ? this.operationEvents[0] : null
+          const groups = groupOperationEvents(this.operationEvents, 20)
+          this.currentOperationEvent = groups.length > 0 ? groups[0] : null
+          this.ensureFeedbackCenter().seed(this.operationEvents)
         })
         .catch(error => {
           this.handleRequestError(error)
@@ -447,12 +499,8 @@ export default {
     },
     handleOperationEvent(event, showNotice) {
       if (!event) return
-      this.operationEvents = prependOperationEvent(this.operationEvents, event, 20)
-      this.currentOperationEvent = event
-      if (!showNotice) return
-      const severity = normalizeSeverity(event.severity)
-      if (severity === 'ERROR') this.$message.error(event.title + '：' + event.message)
-      if (severity === 'WARNING') this.$message.warning(event.title + '：' + event.message)
+      this.operationEvents = prependOperationEvent(this.operationEvents, event, 60)
+      this.ensureFeedbackCenter().ingest(event, showNotice)
     },
     handleSseDisconnected() {
       this.sseConnected = false
@@ -502,7 +550,7 @@ export default {
           if (isSuccessResponse(res)) {
             this.setRunningTable(res)
           } else {
-            this.$message.error(responseMessage(res))
+            this.showPageMessage('error', responseMessage(res))
           }
         })
         .catch(error => {
@@ -536,14 +584,8 @@ export default {
               this.dialogVisible = false
 
               this.refreshCushionList();
-              if (res.codeSuccess) {
-                this.$message.success(res.msg)
-              } else {
-                this.$message.error(res.msg)
-              }
             } else {
               this.currentQrCode = 'NoRead';
-              this.$message.error(res.msg)
             }
           }
           if (res.data.topic === 'deviceStatus') {
@@ -574,7 +616,7 @@ export default {
         const params = {...data}
         const res = await saveCushionLife(params)
         if (isSuccessResponse(res)) {
-          this.$message.success('修改完成')
+          this.showPageMessage('success', '修改完成')
           if (!row) {
             this.dialogVisible = false
           } else {
@@ -582,7 +624,7 @@ export default {
           }
           this.refreshCushionList()
         } else {
-          this.$message.error(responseMessage(res))
+          this.showPageMessage('error', responseMessage(res))
         }
       } catch (error) {
         this.handleRequestError(error)
@@ -590,9 +632,9 @@ export default {
     },
     enterChangeMaxCount(row) {
       if (!row.maxUseCount) {
-        this.$message.error('请填入有效数字')
+        this.showPageMessage('error', '请填入有效数字')
       } else if (row.maxUseCount < 0) {
-        this.$message.error('使用寿命不能小于 0')
+        this.showPageMessage('error', '使用寿命不能小于 0')
       } else {
         const params = {
           maxUseCount: row.maxUseCount,
@@ -606,7 +648,7 @@ export default {
       this.$refs['dialogRuleFormRef'].validate(valid => {
         if (valid) {
           if (this.dialogRuleForm.maxUseCount < 0) {
-            this.$message.error('使用寿命不能小于 0')
+            this.showPageMessage('error', '使用寿命不能小于 0')
             return
           }
           const ids = this.multipleSelection.map(item => item.id)
@@ -628,7 +670,7 @@ export default {
     },
     async exportExcel() {
       if (this.multipleSelection.length === 0) {
-        this.$message.warning('请选择导出数据')
+        this.showPageMessage('warning', '请选择导出数据')
         return false
       }
 
@@ -640,7 +682,7 @@ export default {
           const fileName = getFilenameFromDisposition(res.headers['content-disposition'], '缓冲垫数据.xlsx')
           downloadBlob(res.data, fileName)
         } else {
-          this.$message.error('导出失败')
+          this.showPageMessage('error', '导出失败')
         }
       } catch (error) {
         this.handleRequestError(error)
@@ -657,7 +699,7 @@ export default {
     // 保存数据到本地存储
     saveToLocalStorage() {
       if (this.warningThresholdPer < 0 || this.warningThresholdPer > 1) {
-        this.$message.error('请输入0~1之间的数字')
+        this.showPageMessage('error', '请输入0~1之间的数字')
         return
       }
       const data = {
@@ -665,7 +707,7 @@ export default {
       };
       localStorage.setItem('bufferPadData', JSON.stringify(data));
       this.thresholdSettingVisible = false;
-      this.$message.success('预警阈值变更为' + this.warningThresholdPer * 100 + '%');
+      this.showPageMessage('success', '预警阈值变更为' + this.warningThresholdPer * 100 + '%');
     },
     // 从本地存储加载数据
     loadFromLocalStorage() {
@@ -686,6 +728,7 @@ export default {
   watch: {
     ProdLine: {
       handler(newval, oldval) {
+        this.resetFeedbackCenter()
         this.refreshDeviceStatus();
         this.refreshCushionList();
         this.refreshOperationEvents();
@@ -694,16 +737,6 @@ export default {
         this.refreshRunningSse();
       },
       immediate: true
-    },
-    currentQrCode(newVal, oldVal) {
-      if (newVal === 'NoRead') {
-        this.$message.warning('扫码失败，请手动输入');
-      }
-    },
-    RemainCount(newval, oldval) {
-      if (newval === 0) {
-        this.$message.error('扫码次数达上限')
-      }
     }
   },
   computed: {
@@ -752,6 +785,8 @@ export default {
     if (this.events) {
       this.events.close();
     }
+    if (this.feedbackCenter) this.feedbackCenter.destroy()
+    if (this.pageMessage && typeof this.pageMessage.close === 'function') this.pageMessage.close()
   }
 };
 </script>
@@ -833,7 +868,7 @@ export default {
 .scan-form-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
+  align-items: start;
   gap: 8px;
   margin-top: 9px;
 }
@@ -863,7 +898,8 @@ export default {
 
 .scan-form-row > .el-button {
   min-width: 80px;
-  margin: 1px 0 0;
+  margin: 0;
+  line-height: 12px;
 }
 
 .current-cushion {

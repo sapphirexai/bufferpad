@@ -1,11 +1,16 @@
-import { get, post } from '../../shared/request/request'
+import { get, post, request } from '../../shared/request/request'
 
 export function getCushionByQrCode(qrCode) {
   return get('/cushion/cushions', { qrCode })
 }
 
-export function manualScan(workLine, qrCode) {
-  return post('/cushion/manualCushionInfo', { workLine, qrCode })
+export function manualScan(workLine, qrCode, operationId) {
+  return request({
+    method: 'post',
+    url: '/cushion/manualCushionInfo',
+    data: { workLine, qrCode },
+    headers: { 'X-Operation-Id': operationId }
+  })
 }
 
 export function getCushionPage(params) {
@@ -23,4 +28,3 @@ export function exportCushions(data) {
 export function getCushionDetails(params) {
   return get('/cushion/detailsPage', params)
 }
-

@@ -1,4 +1,6 @@
 import {
+  buildOperationFeedback,
+  groupOperationEvents,
   isAttentionEvent,
   normalizeSeverity,
   prependOperationEvent,
@@ -32,5 +34,46 @@ describe('operation event helpers', () => {
     expect(isAttentionEvent({ severity: 'ERROR' })).toBe(true)
     expect(isAttentionEvent({ severity: 'WARNING' })).toBe(true)
     expect(isAttentionEvent({ severity: 'INFO' })).toBe(false)
+  })
+
+  it('groups one scan and its PLC outcome into one operation', () => {
+    const events = [
+      {
+        eventId: 'event-2',
+        operationId: 'operation-1',
+        code: 'PLC_OFFLINE',
+        severity: 'ERROR',
+        title: 'PLC未连接',
+        message: '缓冲垫已计数，但PLC当前不可用',
+        occurredAt: '2026-08-03T12:00:01Z'
+      },
+      {
+        eventId: 'event-1',
+        operationId: 'operation-1',
+        code: 'SCAN_COUNTED',
+        severity: 'INFO',
+        title: '扫码计数完成',
+        message: '当前使用26次',
+        occurredAt: '2026-08-03T12:00:00Z'
+      }
+    ]
+
+    const groups = groupOperationEvents(events, 20)
+
+    expect(groups).toHaveLength(1)
+    expect(groups[0].severity).toBe('ERROR')
+    expect(groups[0].eventCount).toBe(2)
+    expect(groups[0].title).toBe('PLC未连接')
+    expect(groups[0].secondaryMessage).toBe('当前使用26次')
+  })
+
+  it('selects the repeated-scan result as the operator-facing conclusion', () => {
+    const feedback = buildOperationFeedback([
+      { operationId: 'operation-2', code: 'PLC_TARGET_NOT_RESOLVED', severity: 'WARNING', message: '未发送PLC指令' },
+      { operationId: 'operation-2', code: 'SCAN_REPEATED', severity: 'WARNING', title: '扫码未计数', message: '两小时内已扫描，本次未增加次数' }
+    ])
+
+    expect(feedback.title).toBe('扫码未计数')
+    expect(feedback.secondaryMessage).toBe('未发送PLC指令')
   })
 })

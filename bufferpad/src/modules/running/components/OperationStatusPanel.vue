@@ -5,7 +5,7 @@
       <el-tag v-if="currentEvent" size="mini" :type="tagType">{{ severityText }}</el-tag>
       <strong class="result-title">{{ currentEvent ? currentEvent.title : '等待扫码' }}</strong>
       <span class="result-message">
-        {{ currentEvent ? currentEvent.message : '系统已就绪，等待读码器或手动输入' }}
+        {{ currentEvent ? currentMessage : '系统已就绪，等待读码器或手动输入' }}
       </span>
       <time v-if="currentEvent">{{ formatTime(currentEvent.occurredAt) }}</time>
     </div>
@@ -13,17 +13,18 @@
     <div class="operation-actions">
       <button
         type="button"
-        class="attention-count"
-        :class="{ 'has-attention': attentionEvents.length > 0 }"
+        class="operation-action attention-count"
+        :class="{ 'has-attention': attentionGroups.length > 0 }"
         @click="drawerVisible = true"
       >
-        <i class="el-icon-bell"></i>
+        <span class="action-icon" aria-hidden="true"><i class="el-icon-bell"></i></span>
         <span>运行告警</span>
-        <strong>{{ attentionEvents.length }}条</strong>
+        <strong>{{ attentionGroups.length }}条</strong>
       </button>
-      <el-button type="text" size="small" icon="el-icon-document" @click="drawerVisible = true">
-        查看详情
-      </el-button>
+      <button type="button" class="operation-action detail-action" @click="drawerVisible = true">
+        <span class="action-icon" aria-hidden="true"><i class="el-icon-document"></i></span>
+        <span>查看详情</span>
+      </button>
     </div>
 
     <el-drawer
@@ -34,24 +35,41 @@
       custom-class="operation-event-drawer"
     >
       <div class="event-list">
-        <div v-for="item in events" :key="item.eventId || item.id" class="event-row">
-          <span class="event-dot" :class="severityClass(item.severity)"></span>
+        <article v-for="group in operationGroups" :key="group.operationId" class="event-row">
+          <span class="event-dot" :class="severityClass(group.severity)"></span>
           <div class="event-body">
             <div class="event-row-title">
-              <strong>{{ item.title }}</strong>
-              <time>{{ formatTime(item.occurredAt) }}</time>
+              <div>
+                <strong>{{ group.title }}</strong>
+                <el-tag v-if="group.eventCount > 1" size="mini" type="info">
+                  本次操作 {{ group.eventCount }} 项结果
+                </el-tag>
+              </div>
+              <time>{{ formatTime(group.occurredAt) }}</time>
             </div>
-            <p>{{ item.message }}</p>
-            <p v-if="item.suggestion" class="event-advice">处理建议：{{ item.suggestion }}</p>
+            <p>{{ group.message }}</p>
+            <p v-if="group.secondaryMessage" class="event-secondary">{{ group.secondaryMessage }}</p>
+            <p v-if="group.suggestion" class="event-advice">处理建议：{{ group.suggestion }}</p>
             <div class="event-technical">
-              <span v-if="item.qrCode">缓冲垫：{{ item.qrCode }}</span>
-              <span v-if="item.deviceName">设备：{{ item.deviceName }}</span>
-              <span v-if="item.address">地址：{{ item.address }}</span>
-              <span v-if="item.errorCode !== null && item.errorCode !== undefined">错误码：{{ item.errorCode }}</span>
+              <span v-if="group.qrCode">缓冲垫：{{ group.qrCode }}</span>
+              <span v-if="group.deviceName">设备：{{ group.deviceName }}</span>
+              <span v-if="group.address">地址：{{ group.address }}</span>
+              <span v-if="group.errorCode !== null && group.errorCode !== undefined">错误码：{{ group.errorCode }}</span>
             </div>
+            <details v-if="group.eventCount > 1" class="event-details">
+              <summary>查看本次操作完整过程</summary>
+              <div v-for="item in group.events" :key="item.eventId || item.id" class="event-detail-row">
+                <span :class="severityClass(item.severity)">{{ severityLabel(item.severity) }}</span>
+                <div>
+                  <strong>{{ item.title }}</strong>
+                  <p>{{ item.message }}</p>
+                  <small v-if="item.technicalDetail">技术信息：{{ item.technicalDetail }}</small>
+                </div>
+              </div>
+            </details>
           </div>
-        </div>
-        <el-empty v-if="events.length === 0" description="暂无运行记录"></el-empty>
+        </article>
+        <el-empty v-if="operationGroups.length === 0" description="暂无运行记录"></el-empty>
       </div>
     </el-drawer>
   </section>
@@ -60,6 +78,7 @@
 <script>
 import dayjs from 'dayjs'
 import {
+  groupOperationEvents,
   isAttentionEvent,
   normalizeSeverity,
   severityElementType,
@@ -101,8 +120,17 @@ export default {
       if (this.normalizedSeverity === 'WARNING') return 'el-icon-warning-outline'
       return this.currentEvent ? 'el-icon-circle-check' : 'el-icon-time'
     },
-    attentionEvents() {
-      return this.events.filter(isAttentionEvent)
+    currentMessage() {
+      if (!this.currentEvent) return ''
+      return this.currentEvent.secondaryMessage
+        ? this.currentEvent.message + '；' + this.currentEvent.secondaryMessage
+        : this.currentEvent.message
+    },
+    operationGroups() {
+      return groupOperationEvents(this.events, 20)
+    },
+    attentionGroups() {
+      return this.operationGroups.filter(isAttentionEvent)
     }
   },
   methods: {
@@ -113,7 +141,8 @@ export default {
     },
     severityClass(severity) {
       return 'is-' + normalizeSeverity(severity).toLowerCase()
-    }
+    },
+    severityLabel
   }
 }
 </script>
@@ -194,20 +223,35 @@ export default {
   border-left: 1px solid rgba(144, 147, 153, 0.2);
 }
 
-.attention-count {
+.operation-action {
+  height: 32px;
   display: inline-flex;
   align-items: center;
   gap: 5px;
   padding: 0;
   border: 0;
   background: transparent;
-  color: #67c23a;
+  color: #409eff;
+  font: inherit;
+  line-height: 20px;
   cursor: pointer;
   white-space: nowrap;
 }
 
+.action-icon {
+  width: 16px;
+  height: 20px;
+  display: inline-flex;
+  flex: 0 0 16px;
+  align-items: center;
+  justify-content: center;
+  line-height: 20px;
+}
+
+.action-icon i { display: block; line-height: 20px; }
+.attention-count { color: #67c23a; }
 .attention-count.has-attention { color: #c45656; }
-.attention-count strong { font-size: 14px; }
+.attention-count strong { font-size: 14px; line-height: 20px; }
 
 .event-list { padding: 0 22px 24px; }
 .event-row { display: flex; gap: 12px; padding: 14px 0; border-bottom: 1px solid #ebeef5; }
@@ -216,11 +260,21 @@ export default {
 .event-dot.is-error { background: #f56c6c; }
 .event-body { min-width: 0; flex: 1; }
 .event-row-title { display: flex; justify-content: space-between; gap: 12px; }
+.event-row-title > div { min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 7px; }
 .event-row-title strong { overflow-wrap: anywhere; }
 .event-row-title time { flex: 0 0 auto; color: #909399; font-size: 12px; }
 .event-body p { margin: 6px 0 0; line-height: 1.5; overflow-wrap: anywhere; }
+.event-secondary { color: #606266; }
 .event-advice { color: #606266; }
 .event-technical { display: flex; flex-wrap: wrap; gap: 6px 12px; margin-top: 7px; color: #909399; font-size: 12px; }
+.event-details { margin-top: 9px; color: #606266; }
+.event-details summary { color: #409eff; cursor: pointer; }
+.event-detail-row { display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 8px; padding: 9px 0 0 8px; }
+.event-detail-row > span { font-size: 12px; color: #67c23a; }
+.event-detail-row > span.is-warning { color: #e6a23c; }
+.event-detail-row > span.is-error { color: #f56c6c; }
+.event-detail-row p { margin-top: 2px; }
+.event-detail-row small { display: block; margin-top: 3px; color: #909399; overflow-wrap: anywhere; }
 
 @media (max-width: 900px) {
   .operation-status { grid-template-columns: minmax(0, 1fr); }

@@ -14,8 +14,8 @@ export function loadRunningCushions(params) {
   return getCushionPage(params)
 }
 
-export function submitManualScan(workLine, qrCode) {
-  return manualScan(workLine, qrCode)
+export function submitManualScan(workLine, qrCode, operationId) {
+  return manualScan(workLine, qrCode, operationId)
 }
 
 export function saveCushionLife(data) {
@@ -25,4 +25,3 @@ export function saveCushionLife(data) {
 export function exportRunningCushions(ids) {
   return exportCushions(ids)
 }
-
