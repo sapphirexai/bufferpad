@@ -5,7 +5,6 @@ export function getRunningSseUrl(workLine) {
   return buildBackendUrl('/sse/devicesStatus/' + `${workLine}`)
 }
 
-export function createRunningSse(workLine, onMessage, onError) {
-  return new SseClient(getRunningSseUrl(workLine), onMessage, onError)
+export function createRunningSse(workLine, onMessage, onError, onOpen) {
+  return new SseClient(getRunningSseUrl(workLine), onMessage, onError, onOpen)
 }
-

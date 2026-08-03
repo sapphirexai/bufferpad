@@ -1,13 +1,12 @@
 <template>
   <div class="page">
-    <div ref="lineRef">
-      <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 100px;">
-        <div style=" display: flex; align-items: center;">
-          <p class="title" style="width: 20%;">产线:</p>
+    <div ref="lineRef" class="monitor-header">
+      <div class="line-status-bar">
+        <div class="line-selector">
+          <span class="title">产线</span>
           <el-select
             v-model="ProdLine"
             placeholder="请选择"
-            style="flex: 1;"
             :popper-append-to-body="false"
           >
             <el-option
@@ -20,70 +19,81 @@
             </el-option>
           </el-select>
         </div>
-        <DeviceStatusPanel title="PLC状态" :devices="plcDevices" />
-        <DeviceStatusPanel title="读码器状态" :devices="scannerDevices" />
+        <DeviceHealthOverview
+          :plc-devices="plcDevices"
+          :scanner-devices="scannerDevices"
+          :loading="deviceStatusLoading"
+        />
       </div>
-      <el-divider></el-divider>
     </div>
-    <div ref="cardRef">
-      <el-row style="display: flex; align-items: center; justify-content:space-between;">
-        <el-col :span="4">
-          <el-card>
-            <p class="title" style="text-align: center; margin-bottom: 16px;">缓冲垫编号</p>
-            <el-form style="width: 100%;" :model="ruleForm" label-position="right" :rules="rules" ref="ruleForm">
-              <el-form-item prop="qrCode">
-                <el-input
-                  v-model="ruleForm.qrCode"
-                  size="small"
-                  ref="inputQrCode"
-                  placeholder="接收数据中..."
-                  :disabled="!handle"
-                  name="qrCode"
-                  @keydown.enter.native="handleEnterKey($event)"
-                ></el-input>
-              </el-form-item>
-            </el-form>
-            <el-button
-              type="success"
-              style="width: 100%"
-              size="small"
-              @click="addItem(handle)"
-              >{{ handle ? "确定" : "手动输入" }}</el-button
-            >
-          </el-card>
-        </el-col>
-        <el-col :span="4" style="height: 100%;">
-          <el-card class="card" style="flex-direction:column;height:100%;">
-            <p class="title">当前缓冲垫</p>
-            <div class="cunrrentId">
-              <span>{{ currentQrCode }}</span>
-            </div>
-            <div class="cunrrentPosition">
-              <span :class="showCodeClass(currentScannerSeq, currentScannerPosition)">
-                {{ showCodeName(currentScannerSeq, currentScannerPosition) }}
-              </span>
-            </div>
-          </el-card>
-        </el-col>
-        <el-col :span="4" style="height: 100%;">
-          <el-card class="card" style="flex-direction:column;height:100%;">
-            <p class="title">使用次数</p>
-            <div class="count" style="font-size: 56px; text-align: center;">
-              <span :class="RemainCount === 0 ? 'error': (RemainCount > 5 ? 'success': 'warning')">{{ useCount }}</span>
-            </div>
-          </el-card>
-        </el-col>
-        <el-col :span="4" style="height: 100%;">
-          <el-card class="card" style="flex-direction:column;height: 100%;">
-            <p class="title">剩余次数</p>
-            <div class="count" style="font-size: 56px; text-align: center;">
-              <span :class="RemainCount === 0 ? 'error': (RemainCount > 5 ? 'success': 'warning')">{{RemainCount}}</span>
-            </div>
-          </el-card>
-        </el-col>
-      </el-row>
-      <el-divider></el-divider>
-    </div>
+    <OperationStatusPanel
+      :current-event="currentOperationEvent"
+      :events="operationEvents"
+    />
+    <section class="scan-workbench" :class="usageStateClass">
+      <div class="scan-control">
+        <div class="workbench-label">
+          <i class="el-icon-full-screen"></i>
+          <span>扫码输入</span>
+        </div>
+        <div class="scan-form-row">
+          <el-form
+            ref="ruleForm"
+            class="scan-form"
+            :model="ruleForm"
+            :rules="rules"
+          >
+            <el-form-item prop="qrCode">
+              <el-input
+                ref="inputQrCode"
+                v-model="ruleForm.qrCode"
+                size="small"
+                :placeholder="handle ? '请输入缓冲垫编号' : '等待读码器扫码'"
+                :disabled="!handle"
+                name="qrCode"
+                @keydown.enter.native="handleEnterKey($event)"
+              ></el-input>
+            </el-form-item>
+          </el-form>
+          <el-button type="primary" size="small" @click="addItem(handle)">
+            {{ handle ? '确定' : '手动输入' }}
+          </el-button>
+        </div>
+      </div>
+
+      <div class="current-cushion">
+        <span class="workbench-label">当前缓冲垫</span>
+        <strong :title="currentCushionDisplay">{{ currentCushionDisplay }}</strong>
+        <span
+          v-if="hasCurrentCushionData"
+          class="position"
+          :class="showCodeClass(currentScannerSeq, currentScannerPosition)"
+        >
+          {{ showCodeName(currentScannerSeq, currentScannerPosition) }}
+        </span>
+        <span v-else class="position is-muted">尚无缓冲垫数据</span>
+      </div>
+
+      <div class="usage-summary">
+        <div class="usage-values">
+          <div class="usage-metric">
+            <span>已用 / 寿命</span>
+            <strong>{{ displayUsedCount }} <small>/ {{ displayMaxCount }}</small></strong>
+          </div>
+          <div class="usage-divider"></div>
+          <div class="usage-metric remaining-metric">
+            <span>剩余次数</span>
+            <strong>{{ displayRemainCount }}</strong>
+          </div>
+        </div>
+        <el-progress
+          :percentage="currentUsageMetrics.percentage"
+          :show-text="false"
+          :stroke-width="6"
+          :color="usageProgressColor"
+        ></el-progress>
+      </div>
+    </section>
     <div ref="actionRef" class="table-action">
       <div class="search-input">
         <span class="text">搜索缓冲垫：</span>
@@ -111,13 +121,14 @@
       </div>
     </div>
     <el-table
+      class="cushion-table"
       :data="tableData"
       style="width: 100%"
+      size="small"
       :row-class-name="tableRowClassName"
       v-loading="loading"
       empty-text="暂无数据"
       border
-      height="600"
       element-loading-text="数据玩命加载中"
       :cell-style="rowStyle"
       :cell-class-name="isCheckCell"
@@ -125,23 +136,23 @@
       @selection-change="handleSelectionChange"
     >
       <el-table-column type="selection" width="55"></el-table-column>
-      <el-table-column prop="qrCode" label="缓冲垫编号" width="180"></el-table-column>
-      <el-table-column prop="scannerSeq" label="缓冲垫位置" width="180">
+      <el-table-column prop="qrCode" label="缓冲垫编号" width="170" show-overflow-tooltip></el-table-column>
+      <el-table-column prop="scannerSeq" label="缓冲垫位置" width="130">
         <template slot-scope="scope">
           <span :class="showCodeClass(scope.row.scannerSeq, scope.row.scannerPosition)">
             {{ showCodeName(scope.row.scannerSeq, scope.row.scannerPosition) }}
           </span>
         </template>
       </el-table-column>
-      <el-table-column prop="openCount" label="开口数" width="180"></el-table-column>
-      <el-table-column prop="createdDate" label="第一次使用时间" :formatter="formatDate"></el-table-column>
-      <el-table-column prop="lastScanDate" label="最后一次使用时间" :formatter="formatDate"></el-table-column>
-      <el-table-column prop="usedCount" label="当前使用次数">
+      <el-table-column prop="openCount" label="开口数" width="80"></el-table-column>
+      <el-table-column prop="createdDate" label="第一次使用时间" min-width="150" show-overflow-tooltip :formatter="formatDate"></el-table-column>
+      <el-table-column prop="lastScanDate" label="最后一次使用时间" min-width="150" show-overflow-tooltip :formatter="formatDate"></el-table-column>
+      <el-table-column prop="usedCount" label="当前使用次数" width="110">
         <template slot-scope="scope">
           <span :class="showColor(scope.row)">{{ scope.row.usedCount }}</span>
         </template>
       </el-table-column>
-      <el-table-column prop="maxUseCount" width="260px" label="使用寿命">
+      <el-table-column prop="maxUseCount" width="170" label="使用寿命">
         <template slot-scope="scope">
           <div class="update-maxUseCount" v-if="!scope.row.isCheck">
             <span>{{ scope.row.maxUseCount }}</span>
@@ -153,13 +164,14 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="操作">
+      <el-table-column label="操作" width="80">
         <template slot-scope="scope">
           <el-button class="button" type="text" size="mini" @click="getDetails(scope.row)" >明细</el-button>
         </template>
       </el-table-column>
     </el-table>
     <el-pagination
+      class="cushion-pagination"
       @size-change="handleSizeChange"
       @current-change="handleCurrentChange"
       :current-page.sync="currentPage"
@@ -192,7 +204,8 @@
   </div>
 </template>
 <script>
-import DeviceStatusPanel from '../../modules/running/components/DeviceStatusPanel.vue';
+import DeviceHealthOverview from '../../modules/running/components/DeviceHealthOverview.vue';
+import OperationStatusPanel from '../../modules/running/components/OperationStatusPanel.vue';
 import {
   exportRunningCushions,
   loadDeviceStatus,
@@ -201,10 +214,18 @@ import {
   submitManualScan
 } from '../../modules/running/services/running.service';
 import { createRunningSse } from '../../modules/running/services/running-sse.service';
+import { loadRecentOperationEvents } from '../../modules/running/services/operation-event.service';
+import { normalizeSeverity, prependOperationEvent } from '../../modules/running/models/operation-event';
+import {
+  buildUsageMetrics,
+  currentCushionText,
+  hasCurrentCushion
+} from '../../modules/running/models/scan-view';
 import {
   isSuccessResponse,
   pageRows,
   pageTotal,
+  responseData,
   requestErrorMessage,
   responseMessage
 } from '../../shared/request/request';
@@ -217,7 +238,7 @@ import {
 } from '../../shared/utils/format';
 export default {
   name: 'Running',
-  components: { DeviceStatusPanel },
+  components: { DeviceHealthOverview, OperationStatusPanel },
   data() {
     return {
       handle: false,
@@ -249,10 +270,10 @@ export default {
       input: '',
       events: null,
       useCount: 0,
-      devicesMessage: [{type: 0, status: 0}, {type: 1, status: 0}, {type: 2, status: 0}],
+      devicesMessage: [],
       loading: true,
-      pageSizes: [8, 15, 20, 100, 10000],
-      pageSize: 8,
+      pageSizes: [10, 15, 20, 100, 10000],
+      pageSize: 10,
       currentPage: 1,
       total: 0,
       Count: 0,
@@ -275,7 +296,13 @@ export default {
       dialogVisible: false,
       multipleSelection: [],
       warningThresholdPer: 0.95,
-      thresholdSettingVisible: false
+      thresholdSettingVisible: false,
+      operationEvents: [],
+      currentOperationEvent: null,
+      deviceStatusLoading: true,
+      sseConnected: false,
+      sseOpenedOnce: false,
+      lastSseErrorAt: 0
     };
   },
   created() {
@@ -343,7 +370,7 @@ export default {
     },
     tableRowClassName({ row, rowIndex }) {
       if (row.usedCount >= row.maxUseCount) {
-        return 'warning-row';
+        return 'running-expired-row';
       } else {
         return '';
       }
@@ -391,6 +418,7 @@ export default {
       }
     },
     refreshDeviceStatus() {
+      this.deviceStatusLoading = true
       loadDeviceStatus(this.ProdLine)
         .then(res => {
           if (isSuccessResponse(res)) {
@@ -401,7 +429,62 @@ export default {
         })
         .catch(error => {
           this.handleRequestError(error)
+        })
+        .finally(() => {
+          this.deviceStatusLoading = false
         });
+    },
+    refreshOperationEvents() {
+      loadRecentOperationEvents(Number(this.ProdLine), 20)
+        .then(res => {
+          const events = responseData(res, [])
+          this.operationEvents = Array.isArray(events) ? events : []
+          this.currentOperationEvent = this.operationEvents.length > 0 ? this.operationEvents[0] : null
+        })
+        .catch(error => {
+          this.handleRequestError(error)
+        })
+    },
+    handleOperationEvent(event, showNotice) {
+      if (!event) return
+      this.operationEvents = prependOperationEvent(this.operationEvents, event, 20)
+      this.currentOperationEvent = event
+      if (!showNotice) return
+      const severity = normalizeSeverity(event.severity)
+      if (severity === 'ERROR') this.$message.error(event.title + '：' + event.message)
+      if (severity === 'WARNING') this.$message.warning(event.title + '：' + event.message)
+    },
+    handleSseDisconnected() {
+      this.sseConnected = false
+      const now = Date.now()
+      if (now - this.lastSseErrorAt < 10000) return
+      this.lastSseErrorAt = now
+      this.handleOperationEvent({
+        eventId: 'sse-disconnected-' + this.ProdLine + '-' + now,
+        code: 'SSE_DISCONNECTED',
+        severity: 'WARNING',
+        title: '实时消息连接中断',
+        message: '页面正在自动重新连接，期间可手动刷新数据',
+        suggestion: '长时间未恢复时，请检查后端服务和网络',
+        workLine: Number(this.ProdLine),
+        occurredAt: new Date().toISOString()
+      }, false)
+    },
+    handleSseOpened() {
+      const wasDisconnected = this.sseOpenedOnce && !this.sseConnected
+      this.sseConnected = true
+      this.sseOpenedOnce = true
+      if (wasDisconnected && this.currentOperationEvent && this.currentOperationEvent.code === 'SSE_DISCONNECTED') {
+        this.handleOperationEvent({
+          eventId: 'sse-connected-' + this.ProdLine + '-' + Date.now(),
+          code: 'SSE_CONNECTED',
+          severity: 'INFO',
+          title: '实时消息连接已恢复',
+          message: '运行数据将继续自动更新',
+          workLine: Number(this.ProdLine),
+          occurredAt: new Date().toISOString()
+        }, false)
+      }
     },
     handleSizeChange(val) {
       this.pageSize = val
@@ -464,19 +547,20 @@ export default {
             }
           }
           if (res.data.topic === 'deviceStatus') {
-            const devicesMessage = this.devicesMessage
-            devicesMessage.forEach((e, index) => {
-              if (res.data.data.id === e.id) {
-                devicesMessage[index] = res.data.data
-              }
-            })
-
-            this.devicesMessage = [...devicesMessage]
+            const devicesMessage = [...this.devicesMessage]
+            const deviceIndex = devicesMessage.findIndex(item => item.id === res.data.data.id)
+            if (deviceIndex >= 0) devicesMessage.splice(deviceIndex, 1, res.data.data)
+            else devicesMessage.push(res.data.data)
+            this.devicesMessage = devicesMessage
+          }
+          if (res.data.topic === 'operationEvent') {
+            this.handleOperationEvent(res.data.data, true)
           }
         },
-        error => {
-          if (error && error.message) this.handleRequestError(error)
-        }
+        () => {
+          this.handleSseDisconnected()
+        },
+        () => this.handleSseOpened()
       );
     },
     rowStyle() {
@@ -604,6 +688,9 @@ export default {
       handler(newval, oldval) {
         this.refreshDeviceStatus();
         this.refreshCushionList();
+        this.refreshOperationEvents();
+        this.sseConnected = false
+        this.sseOpenedOnce = false
         this.refreshRunningSse();
       },
       immediate: true
@@ -621,7 +708,38 @@ export default {
   },
   computed: {
     RemainCount() {
-      return this.Count - this.useCount
+      return Math.max(0, this.Count - this.useCount)
+    },
+    hasCurrentCushionData() {
+      return hasCurrentCushion(this.currentQrCode)
+    },
+    currentCushionDisplay() {
+      return currentCushionText(this.currentQrCode)
+    },
+    currentUsageMetrics() {
+      return buildUsageMetrics(this.currentQrCode, this.useCount, this.Count)
+    },
+    displayUsedCount() {
+      return this.currentUsageMetrics.hasCurrent ? this.currentUsageMetrics.usedCount : '--'
+    },
+    displayMaxCount() {
+      return this.currentUsageMetrics.hasCurrent ? this.currentUsageMetrics.maxUseCount : '--'
+    },
+    displayRemainCount() {
+      return this.currentUsageMetrics.hasCurrent ? this.currentUsageMetrics.remainingCount : '--'
+    },
+    usageStateClass() {
+      if (!this.currentUsageMetrics.hasCurrent) return 'is-idle'
+      if (this.currentUsageMetrics.remainingCount === 0) return 'is-expired'
+      return this.currentUsageMetrics.percentage >= this.warningThresholdPer * 100
+        ? 'is-warning'
+        : 'is-normal'
+    },
+    usageProgressColor() {
+      if (!this.currentUsageMetrics.hasCurrent) return '#dcdfe6'
+      if (this.currentUsageMetrics.remainingCount === 0) return '#f56c6c'
+      if (this.currentUsageMetrics.percentage >= this.warningThresholdPer * 100) return '#e6a23c'
+      return '#67c23a'
     },
     plcDevices() {
       return this.devicesMessage.filter(item => item.type !== 0)
@@ -639,57 +757,236 @@ export default {
 </script>
 <style lang="less">
 .page {
-  height: 100%;
+  min-height: 100%;
+  padding: 4px 6px 24px;
+}
+
+.monitor-header {
+  margin-bottom: 8px;
+}
+
+.line-status-bar {
+  display: grid;
+  grid-template-columns: minmax(200px, 250px) minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.line-selector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  .title {
+    flex: 0 0 auto;
+    font-size: 14px;
+    font-weight: 600;
+    color: #303133;
+  }
+
+  .el-select {
+    min-width: 0;
+    flex: 1;
+  }
+}
+
+.operation-status {
+  margin-bottom: 8px;
+}
+
+.scan-workbench {
+  min-height: 94px;
+  display: grid;
+  grid-template-columns: minmax(300px, 1.1fr) minmax(220px, 0.9fr) minmax(300px, 1fr);
+  align-items: stretch;
+  margin-bottom: 8px;
+  border: 1px solid #e4e7ed;
+  border-radius: 4px;
+  background: #fff;
+}
+
+.scan-control,
+.current-cushion,
+.usage-summary {
+  min-width: 0;
+  padding: 13px 16px;
+}
+
+.scan-control,
+.current-cushion {
+  border-right: 1px solid #ebeef5;
+}
+
+.workbench-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #606266;
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.workbench-label i {
+  color: #409eff;
+}
+
+.scan-form-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  margin-top: 9px;
+}
+
+.scan-form {
+  min-width: 0;
+  flex: 1;
+}
+
+.scan-form .el-form-item {
+  margin-bottom: 0;
+}
+
+.scan-form .el-form-item__content {
+  line-height: 32px;
+}
+
+.scan-form .el-input,
+.scan-form .el-input__inner,
+.scan-form-row > .el-button {
+  height: 32px;
+}
+
+.scan-form .el-input {
+  display: block;
+}
+
+.scan-form-row > .el-button {
+  min-width: 80px;
+  margin: 1px 0 0;
+}
+
+.current-cushion {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto 1fr auto;
+  align-items: start;
+}
+
+.current-cushion strong {
+  min-width: 0;
+  overflow: hidden;
+  color: #303133;
+  font-size: 17px;
+  line-height: 24px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.current-cushion .position {
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.current-cushion .position.is-muted {
+  color: #909399;
+  font-size: 12px;
+}
+
+.usage-summary {
   display: flex;
   flex-direction: column;
+  justify-content: center;
 }
-.el-table .warning-row {
-  background: rgb(255, 0, 0);
+
+.usage-values {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 1px minmax(0, 0.8fr);
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.usage-divider {
+  width: 1px;
+  height: 34px;
+  background: #ebeef5;
+}
+
+.usage-metric {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 10px;
+}
+
+.usage-metric > span {
+  color: #909399;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.usage-metric strong {
+  color: #67c23a;
+  font-size: 24px;
+  line-height: 28px;
+  white-space: nowrap;
+}
+
+.usage-metric strong small {
+  color: #606266;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.scan-workbench.is-idle .usage-metric strong {
+  color: #909399;
+}
+
+.scan-workbench.is-warning .usage-metric strong {
+  color: #e6a23c;
+}
+
+.scan-workbench.is-expired .usage-metric strong {
+  color: #f56c6c;
+}
+
+.el-table .running-expired-row > td {
+  background: #fff1f1;
+  color: #9f1d2b;
+}
+
+.el-table .running-expired-row:hover > td {
+  background: #ffe4e6 !important;
 }
 
 .el-table .success-row {
   background: #f0f9eb;
 }
-.card {
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-  align-items: center;
-
-  .cunrrentId {
-    font-size: 18px;
-    margin: 26.5px 0;
-    text-align: center;
-  }
-
-  .cunrrentPosition {
-    font-size: 24px;
-    text-align: center;
-  }
-}
-
 .table-action {
   display: flex;
+  gap: 12px;
+  align-items: center;
   justify-content: space-between;
-  padding-bottom: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  margin: 0 -6px;
+  padding: 7px 6px 8px;
+  background: #fff;
 
   .search-input {
     display: flex;
     align-items: center;
     & .text {
-      width: 140px;
+      width: 118px;
       font-size: 14px;
       font-weight: normal;
       color: #606266;
     }
   }
-}
-
-.card .title {
-  font-size: 16px;
-  font-weight: bold;
-  color: #333;
-  text-align: center;
 }
 .title {
   font-size: 16px;
@@ -697,17 +994,23 @@ export default {
   color: #333;
 }
 
-.card .code {
-  font-size: 16px;
-  font-weight: bold;
-  margin-top: 16px;
+.cushion-table {
+  min-height: 248px;
 }
 
-.card .count {
-  font-weight: bold;
-  color: #67C23A;
-  margin-top: 33px;
+.cushion-table /deep/ th,
+.cushion-table /deep/ td {
+  padding: 6px 0;
+}
 
+.cushion-table /deep/ .cell {
+  line-height: 20px;
+  white-space: nowrap;
+}
+
+.cushion-pagination {
+  padding: 8px 0 2px;
+  text-align: left;
 }
 .error {
   color: #F56C6C;
@@ -725,32 +1028,8 @@ export default {
   color: #909399;
 }
 
-.connection-status {
-  max-height: 120px;
-  margin-left: 16px;
-  padding: 8px;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-
-  .info {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 4px;
-    &:last-child {
-      margin-bottom: 0px;
-    }
-
-    .name {
-      display: inline-block;
-      margin-right: 16px;
-    }
-  }
-}
-
 .isCheckCell {
-  padding: 7.5px 0 !important;
+  padding: 4px 0 !important;
 }
 
 .update-maxUseCount i{
@@ -766,8 +1045,12 @@ export default {
   justify-content: center;
 
   .button {
-    margin-left: 24px;
+    margin-left: 8px;
     height: 28px;
+  }
+
+  .el-input-number {
+    width: 90px;
   }
 }
 
@@ -784,6 +1067,87 @@ export default {
   }
   51%, 100% {
     opacity: 0;
+  }
+}
+
+@media (max-width: 1200px) {
+  .line-status-bar {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .line-selector {
+    max-width: 240px;
+  }
+
+  .scan-workbench {
+    grid-template-columns: minmax(260px, 1fr) minmax(200px, 0.8fr) minmax(280px, 1fr);
+  }
+}
+
+@media (max-width: 960px) {
+
+  .line-selector {
+    max-width: 260px;
+  }
+
+  .scan-workbench {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .usage-summary {
+    grid-column: 1 / -1;
+    border-top: 1px solid #ebeef5;
+  }
+
+  .current-cushion {
+    border-right: 0;
+  }
+
+  .table-action {
+    flex-wrap: wrap;
+
+    .search-input {
+      min-width: 260px;
+      flex: 1;
+    }
+  }
+}
+
+@media (max-width: 600px) {
+  .line-status-bar,
+  .scan-workbench {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .line-selector {
+    grid-column: auto;
+  }
+
+  .page {
+    padding-right: 0;
+    padding-left: 0;
+  }
+
+  .scan-control,
+  .current-cushion {
+    border-right: 0;
+    border-bottom: 1px solid #ebeef5;
+  }
+
+  .usage-summary {
+    grid-column: auto;
+    border-top: 0;
+  }
+
+  .table-button {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .table-button .el-button {
+    margin-left: 0;
   }
 }
 </style>

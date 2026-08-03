@@ -1,8 +1,9 @@
 export default class SseClient {
-  constructor(url, onMessage, onError) {
+  constructor(url, onMessage, onError, onOpen) {
     this.url = url
     this.onMessage = onMessage
     this.onError = onError
+    this.onOpen = onOpen
     this.eventSource = null
     this.open()
   }
@@ -14,6 +15,10 @@ export default class SseClient {
 
     this.close()
     this.eventSource = new EventSource(this.url)
+
+    this.eventSource.onopen = event => {
+      if (typeof this.onOpen === 'function') this.onOpen(event)
+    }
 
     this.eventSource.onmessage = event => {
       if (!event.data || typeof event.data !== 'string') return
