@@ -5,8 +5,11 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PreDestroy;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -40,7 +43,7 @@ public class ConnectionMgr {
     public List<Connection> getConnectionsByWorkLine(int workLine) {
         List<Connection> connByWorkLine = new ArrayList<>();
         for (Connection conn : CONNECTIONS.values()) {
-            if (conn.getWorkLine() == workLine) connByWorkLine.add(conn);
+            if (Objects.equals(conn.getWorkLine(), workLine)) connByWorkLine.add(conn);
         }
         return connByWorkLine;
     }
@@ -63,7 +66,8 @@ public class ConnectionMgr {
     }
 
     public Integer getStatusById(Long key) {
-        return getConnection(key).getStatus();
+        Connection connection = getConnection(key);
+        return connection == null ? null : connection.getStatus();
     }
 
 //    public void removeAllConnections() {
@@ -86,5 +90,14 @@ public class ConnectionMgr {
 
     public EventLoopGroup getWorker() {
         return WORKER;
+    }
+
+    @PreDestroy
+    public void destroy() {
+        for (Connection connection : CONNECTIONS.values()) {
+            if (connection != null) connection.nowDead("服务正在关闭", null);
+        }
+        CONNECTIONS.clear();
+        WORKER.shutdownGracefully();
     }
 }

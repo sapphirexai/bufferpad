@@ -4,352 +4,179 @@ import HslCommunication.Core.Types.OperateResult;
 import HslCommunication.Core.Types.OperateResultExOne;
 import HslCommunication.Profinet.Inovance.InovanceTcpNet;
 import HslCommunication.Profinet.Melsec.MelsecMcNet;
-import cn.hutool.core.util.ObjectUtil;
 import cn.tpl.opc.commons.constant.Constants;
 import cn.tpl.opc.commons.constant.Params;
-import cn.tpl.opc.commons.dto.event.EventBusMsgPlcCmd;
-import cn.tpl.opc.commons.dto.event.EventBusMsgReadOpenCountFromPLC;
-import cn.tpl.opc.service.ICushionInfoService;
-import cn.tpl.opc.service.IScanLogService;
-import cn.tpl.opc.util.NetUtils;
+import cn.tpl.opc.commons.dto.enums.DeviceConnectionState;
+import cn.tpl.opc.infrastructure.plc.PlcIoResult;
 import io.netty.channel.ChannelFuture;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.greenrobot.eventbus.EventBus;
-import org.greenrobot.eventbus.Subscribe;
-import org.greenrobot.eventbus.ThreadMode;
 
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.Date;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Author: Luo GuoWen
- * Email: luoguowen123@qq.com
- * Time: 2023/4/11
- * 连接信息
+ * Runtime connection state. PLC commands are routed by PlcCommandDispatcher;
+ * this object only owns transport resources and exposes testable I/O methods.
  */
 @Data
 @Slf4j
 public class Connection {
-    /**
-     * 主键ID
-     */
     private Long id;
-
-    /**
-     * 设备类型
-     *
-     * @see Params#DEVICE_TYPE_KEY_SCANNER
-     * @see Params#DEVICE_TYPE_KEY_SL_PLC
-     * @see Params#DEVICE_TYPE_KEY_HC_PLC
-     */
     private Integer type;
-
-    /**
-     * IP地址
-     */
     private String ip;
-
-    /**
-     * 端口号
-     */
     private Integer port;
-
-    /**
-     * 连接状态
-     *
-     * @see Params#NETTY_CONNECTION_KEY_STATUS_DISCONNECTED
-     * @see Params#NETTY_CONNECTION_KEY_STATUS_ACTIVE
-     */
     private volatile Integer status = Params.NETTY_CONNECTION_KEY_STATUS_DISCONNECTED;
-
-    /**
-     * 设备名字
-     */
+    private volatile String statusCode = DeviceConnectionState.OFFLINE.name();
+    private volatile String statusReason = "尚未连接";
+    private volatile Date statusChangedAt = new Date();
+    private volatile Date lastCommunicationAt;
+    private volatile Integer lastErrorCode;
     private String name;
-
-    /**
-     * 设备位置
-     */
     private String position;
-
-    /**
-     * 产线
-     */
     private Integer workLine;
-
-    /**
-     * 安装顺序
-     */
     private Integer installSeq;
-
-    /**
-     * Netty连接之后产生的I/O操作通道
-     */
     private volatile ChannelFuture channelFuture;
-
-    /**
-     * PLC连接后产生的I/O操作通道
-     */
     private volatile MelsecMcNet melsecMcNet;
     private volatile InovanceTcpNet inovanceTcpNet;
-
     private OnStatusChangeListener onStatusChangeListener;
-    private IScanLogService scanLogService;
-    private ICushionInfoService cushionInfoService;
-
-    /**
-     * Netty连接重置间隔时间
-     */
     private final AtomicLong connectionResetInterval = new AtomicLong(Constants.NETTY_CONNECTION_RESET_INTERVAL_SEC);
+    private final AtomicBoolean connecting = new AtomicBoolean(false);
 
-    /**
-     * 定时执行器
-     */
-    private final ScheduledExecutorService connectionCheckService = Executors.newScheduledThreadPool(1);
-
-
-    public Connection() {
-    }
-
-    public void bindServices(IScanLogService scanLogService, ICushionInfoService cushionInfoService) {
-        this.scanLogService = scanLogService;
-        this.cushionInfoService = cushionInfoService;
-    }
-
-
-    /**
-     * 判断连接是否处于活跃状态
-     *
-     * @return 活跃状态
-     */
     public boolean isActive() {
         return Params.NETTY_CONNECTION_KEY_STATUS_ACTIVE == status;
     }
 
-    /**
-     * 判断连接是否已断开
-     *
-     * @return 连接状态
-     */
     public boolean isDead() {
         return Params.NETTY_CONNECTION_KEY_STATUS_DISCONNECTED == status;
     }
 
-    /**
-     * 重置连接重置间隔时间
-     */
+    public boolean tryBeginConnect() {
+        return connecting.compareAndSet(false, true);
+    }
+
+    public void endConnect() {
+        connecting.set(false);
+    }
+
     public void resetConnectionResetInterval() {
         connectionResetInterval.set(Constants.NETTY_CONNECTION_RESET_INTERVAL_SEC);
     }
 
-    private void nowActiveLogOut() {
-        log.info("nowActive, already activated, no operation next");
+    public synchronized void markConnecting() {
+        status = Params.NETTY_CONNECTION_KEY_STATUS_DISCONNECTED;
+        transition(DeviceConnectionState.CONNECTING, "正在连接", null, false);
     }
 
-    /**
-     * 改变连接状态为活跃
-     *
-     * @param cf 通道
-     */
-    public synchronized void nowActive(ChannelFuture cf) {
-        if (isActive()) {
-            nowActiveLogOut();
-            return;
-        }
-
-        log.info("nowActive, activated, set status active");
-        status2Active();
-
+    public synchronized void nowActive(ChannelFuture future) {
+        this.channelFuture = future;
         resetConnectionResetInterval();
-        setChannelFuture(cf);
+        markOnline("连接正常");
     }
 
-    public synchronized void nowActive(MelsecMcNet melsecMcNet, InovanceTcpNet inovanceTcpNet) {
-        if (isActive()) {
-            nowActiveLogOut();
-            return;
-        }
-        status2Active();
-        setMelsecMcNet(melsecMcNet);
-        setInovanceTcpNet(inovanceTcpNet);
-        if (!EventBus.getDefault().isRegistered(this))
-            EventBus.getDefault().register(this);
+    public synchronized void nowActive(MelsecMcNet melsecClient, InovanceTcpNet inovanceClient) {
+        this.melsecMcNet = melsecClient;
+        this.inovanceTcpNet = inovanceClient;
+        resetConnectionResetInterval();
+        markOnline("PLC通信正常");
     }
 
-    /**
-     * 改变连接状态为断开
-     */
+    public synchronized void markOnline(String reason) {
+        status = Params.NETTY_CONNECTION_KEY_STATUS_ACTIVE;
+        lastCommunicationAt = new Date();
+        transition(DeviceConnectionState.ONLINE, reason, null, true);
+    }
+
+    public synchronized void markDegraded(Integer errorCode, String reason) {
+        status = Params.NETTY_CONNECTION_KEY_STATUS_ACTIVE;
+        transition(DeviceConnectionState.DEGRADED, reason, errorCode, false);
+    }
+
     public synchronized void nowDead() {
-        if (isDead()) {
-            log.info("nowDead, already dead, no operation next");
-        } else {
-            status2Disconnected();
-        }
-
-        if (null != channelFuture) {
-            channelFuture.channel().close();
-            channelFuture = null;
-        }
-
-        if (ObjectUtil.isNotNull(melsecMcNet)) {
-            melsecMcNet.ConnectClose();
-            melsecMcNet = null;
-        }
-
-        if (ObjectUtil.isNotNull(inovanceTcpNet)) {
-            inovanceTcpNet.ConnectClose();
-            inovanceTcpNet = null;
-        }
-
-        if (EventBus.getDefault().isRegistered(this))
-            EventBus.getDefault().unregister(this);
+        nowDead("连接已断开", null);
     }
 
-    public interface OnStatusChangeListener {
-        void onStatusChanged(Connection conn);
+    public synchronized void nowDead(String reason, Integer errorCode) {
+        closeResources();
+        status = Params.NETTY_CONNECTION_KEY_STATUS_DISCONNECTED;
+        transition(DeviceConnectionState.OFFLINE, reason == null ? "连接已断开" : reason, errorCode, false);
     }
 
-    private boolean plcEventCheckNotPassed() {
-        if (isNoPLCNet()) return true;
-        if (ObjectUtil.isNotNull(melsecMcNet) && NetUtils.pingFailed(melsecMcNet.getIpAddress())) return true;
-        return ObjectUtil.isNotNull(inovanceTcpNet) && NetUtils.pingFailed(inovanceTcpNet.getIpAddress());
+    public PlcIoResult<Void> write(String address, Short command) {
+        if (command == null) return PlcIoResult.failure(-1, "PLC写入值为空");
+        if (isNoPLCNet()) return PlcIoResult.failure(10000, "PLC连接不可用");
+        try {
+            OperateResult result = melsecMcNet != null
+                    ? melsecMcNet.Write(address, command)
+                    : inovanceTcpNet.Write(address, command);
+            return result.IsSuccess
+                    ? PlcIoResult.success(null)
+                    : PlcIoResult.failure(result.ErrorCode, result.Message);
+        } catch (Exception e) {
+            return PlcIoResult.failure(10000, e.getMessage());
+        }
     }
 
-    @Subscribe(threadMode = ThreadMode.POSTING)
-    public void onMessageEvent(EventBusMsgPlcCmd event) {
-        if (event.getPlcId() != null && !id.equals(event.getPlcId())) return;
-
-        if (!workLine.equals(event.getWorkLine())) return;
-
-        if (isDead() && isNotHeartBeat(event.getAddrType())) {
-            addPlcSkippedLog(event);
-            return;
+    public PlcIoResult<Short> readInt16(String address) {
+        if (isNoPLCNet()) return PlcIoResult.failure(10000, "PLC连接不可用");
+        try {
+            OperateResultExOne<Short> result = melsecMcNet != null
+                    ? melsecMcNet.ReadInt16(address)
+                    : inovanceTcpNet.ReadInt16(address);
+            return result.IsSuccess
+                    ? PlcIoResult.success(result.Content)
+                    : PlcIoResult.failure(result.ErrorCode, result.Message);
+        } catch (Exception e) {
+            return PlcIoResult.failure(10000, e.getMessage());
         }
-
-        if (plcEventCheckNotPassed()) {
-            if (isNotHeartBeat(event.getAddrType())) addPlcSkippedLog(event);
-            return;
-        }
-
-        String addr = event.getAddress();
-        Short cmd = event.getCmd();
-        if (isNotHeartBeat(event.getAddrType())) {
-            log.info("onMessageEvent, writing cmd to PLC =>> Address: {}, Cmd: {}", addr, cmd);
-        }
-
-        if (null == cmd) return;
-
-        OperateResult operateResult;
-        if (ObjectUtil.isNull(melsecMcNet))
-            operateResult = inovanceTcpNet.Write(addr, cmd);
-        else
-            operateResult = melsecMcNet.Write(addr, cmd);
-
-        if (!operateResult.IsSuccess) {
-            log.error("onMessageEvent, writing cmd to PLC =>> failed, address: {}, cmd: {}", addr, cmd);
-            logOutPLCOperateResult(operateResult);
-            if (isNotHeartBeat(event.getAddrType()))
-                scanLogService.add(event.getQrCode(), Constants.SCAN_LOG_MSG_NOTIFY_PLC_FAILED + addr + Constants.SCAN_LOG_MSG_SUFFIX_NOTIFY_PLC_CMD + cmd, Constants.SCAN_LOG_TYPE_ERROR);
-            nowDead();
-            return;
-        }
-        if (isNotHeartBeat(event.getAddrType())) {
-            scanLogService.add(event.getQrCode(), Constants.SCAN_LOG_MSG_NOTIFY_PLC_SUCCESS + addr + Constants.SCAN_LOG_MSG_SUFFIX_NOTIFY_PLC_CMD + cmd, Constants.SCAN_LOG_TYPE_INFO);
-            log.info("onMessageEvent, writing cmd to PLC =>> success");
-        }
-        status2Active();
     }
 
-    private boolean isNotHeartBeat(Integer addrType) {
-        return Constants.PLC_ADDR_TYPE_HEART_BEAT != addrType;
-    }
-
-    private void addPlcSkippedLog(EventBusMsgPlcCmd event) {
-        scanLogService.add(event.getQrCode(), Constants.SCAN_LOG_MSG_NOTIFY_PLC_SKIPPED + event.getAddress() + Constants.SCAN_LOG_MSG_SUFFIX_NOTIFY_PLC_CMD + event.getCmd(), Constants.SCAN_LOG_TYPE_ERROR);
-    }
-
-    private void logOutPLCOperateResult(OperateResult operateResult) {
-        log.error("onMessageEvent, ErrorCode: {}", operateResult.ErrorCode);
-        log.error("onMessageEvent, ErrorMsg: {}", operateResult.Message);
-    }
-
-    @Subscribe(threadMode = ThreadMode.POSTING)
-    public void onMessageEvent(EventBusMsgReadOpenCountFromPLC event) {
-        log.info("onMessageEvent, EventBusMsgReadOpenCountFromPLC: {}", event);
-        if (event.getPlcId() != null && !id.equals(event.getPlcId())) return;
-
-        if (!workLine.equals(event.getWorkLine())) return;
-
-        if (isDead()) {
-            addReadOpenCountSkippedLog(event);
-            return;
-        }
-
-        if (plcEventCheckNotPassed()) {
-            addReadOpenCountSkippedLog(event);
-            return;
-        }
-
-        String addr = event.getAddress();
-        log.info("onMessageEvent, reading from PLC =>> Address: {}", addr);
-        OperateResultExOne<Short> operateResult;
-        if (ObjectUtil.isNull(melsecMcNet))
-            operateResult = inovanceTcpNet.ReadInt16(addr);
-        else
-            operateResult = melsecMcNet.ReadInt16(addr);
-
-
-        if (!operateResult.IsSuccess) {
-            log.error("onMessageEvent, reading from PLC =>> failed, address: {}", addr);
-            logOutPLCOperateResult(operateResult);
-            scanLogService.add(event.getQrCode(), Constants.SCAN_LOG_MSG_READ_OPEN_COUNT_FAILED + addr, Constants.SCAN_LOG_TYPE_ERROR);
-            nowDead();
-            return;
-        }
-
-        Short content = operateResult.Content;
-        if (null == content) {
-            log.error("onMessageEvent, reading from PLC =>> openCount is null");
-            return;
-        }
-        log.info("onMessageEvent, reading from PLC =>> openCount is {}", content);
-
-        boolean result = cushionInfoService.modifyOpenCountByQrCode(event.getQrCode(), content);
-        log.info("onMessageEvent, reading from PLC =>> success");
-        if (result) {
-            log.info("onMessageEvent, reading from PLC =>> modify openCount success");
-            return;
-        }
-        log.info("onMessageEvent, reading from PLC =>> modify openCount failed");
-    }
-
-    private void addReadOpenCountSkippedLog(EventBusMsgReadOpenCountFromPLC event) {
-        scanLogService.add(event.getQrCode(), Constants.SCAN_LOG_MSG_READ_OPEN_COUNT_FAILED + event.getAddress(), Constants.SCAN_LOG_TYPE_ERROR);
-    }
-
-    /**
-     * 验证PLC网络操作类是否为空
-     *
-     * @return 验证结果, true: 空; false: 非空
-     */
     public boolean isNoPLCNet() {
-        return ObjectUtil.isNull(melsecMcNet) && ObjectUtil.isNull(inovanceTcpNet);
+        return melsecMcNet == null && inovanceTcpNet == null;
     }
 
     public void status2Disconnected() {
-        if (isDead()) return;
-        status = Params.NETTY_CONNECTION_KEY_STATUS_DISCONNECTED;
-        if (null != onStatusChangeListener)
-            onStatusChangeListener.onStatusChanged(this);
+        nowDead();
     }
 
     public void status2Active() {
-        if (isActive()) return;
-        status = Params.NETTY_CONNECTION_KEY_STATUS_ACTIVE;
-        if (null != onStatusChangeListener)
-            onStatusChangeListener.onStatusChanged(this);
+        markOnline("通信恢复正常");
     }
 
+    private void transition(DeviceConnectionState newState, String reason, Integer errorCode, boolean clearError) {
+        String newCode = newState.name();
+        boolean changed = !newCode.equals(statusCode)
+                || !java.util.Objects.equals(reason, statusReason)
+                || !java.util.Objects.equals(errorCode, lastErrorCode);
+        statusCode = newCode;
+        statusReason = reason;
+        if (clearError) {
+            lastErrorCode = null;
+        } else if (errorCode != null) {
+            lastErrorCode = errorCode;
+        }
+        if (!changed) return;
+        statusChangedAt = new Date();
+        if (onStatusChangeListener != null) onStatusChangeListener.onStatusChanged(this);
+    }
+
+    private void closeResources() {
+        if (channelFuture != null) {
+            channelFuture.channel().close();
+            channelFuture = null;
+        }
+        if (melsecMcNet != null) {
+            melsecMcNet.ConnectClose();
+            melsecMcNet = null;
+        }
+        if (inovanceTcpNet != null) {
+            inovanceTcpNet.ConnectClose();
+            inovanceTcpNet = null;
+        }
+    }
+
+    public interface OnStatusChangeListener {
+        void onStatusChanged(Connection connection);
+    }
 }

@@ -6,7 +6,9 @@ import cn.hutool.core.util.ObjectUtil;
 import cn.tpl.opc.application.plc.PlcNotifyService;
 import cn.tpl.opc.commons.constant.Constants;
 import cn.tpl.opc.commons.dto.ResultDTO;
+import cn.tpl.opc.commons.dto.enums.OperationEventCode;
 import cn.tpl.opc.commons.dto.result.CushionInfoDTO;
+import cn.tpl.opc.commons.dto.result.OperationEventDTO;
 import cn.tpl.opc.commons.dto.result.SseMsgDTO;
 import cn.tpl.opc.domain.scan.ScanPolicy;
 import cn.tpl.opc.entity.CushionDetailEntity;
@@ -16,6 +18,7 @@ import cn.tpl.opc.mapper.CushionDetailEntityMapper;
 import cn.tpl.opc.mapper.CushionInfoEntityMapper;
 import cn.tpl.opc.mapper.OpcConfigEntityMapper;
 import cn.tpl.opc.service.IScanLogService;
+import cn.tpl.opc.service.IOperationEventService;
 import cn.tpl.opc.service.ISseService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -32,6 +35,8 @@ public class ScanApplicationService {
     private ScanPolicy scanPolicy;
     @Resource
     private IScanLogService scanLogService;
+    @Resource
+    private IOperationEventService operationEventService;
     @Resource
     private ISseService sseService;
     @Resource
@@ -73,12 +78,14 @@ public class ScanApplicationService {
         }
 
         sseService.sendFailMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, cushionInfoEntity, command.getWorkLine(), command.getScannerSeq()), Constants.RESULT_MSG_CUSHION_ADD_USED_COUNT_FAILED);
+        publishScanEvent(OperationEventCode.SCAN_COUNT_FAILED, command, cushionInfoEntity, null);
         return ResultDTO.failure(Constants.RESULT_MSG_CUSHION_ADD_USED_COUNT_FAILED);
     }
 
     public void handleScanCodeFailed(ScanCommand command) {
         log.info("onScanCodeFailed");
         scanLogService.addScanLog(command.getScannerHost(), command.getScannerName(), null, null, Constants.SCAN_LOG_TYPE_ERROR, false);
+        publishScanEvent(OperationEventCode.SCAN_NO_READ, command, null, null);
         plcNotifyService.notifyScanCodeFailed(command.getScannerId(), command.getWorkLine());
 
         CushionInfoDTO cushionInfoDTO = new CushionInfoDTO();
@@ -98,6 +105,7 @@ public class ScanApplicationService {
             return completeScan(command, command.getScannerPosition(), command.getScannerSeq(), newCushionInfo);
         }
         sseService.sendFailMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, null, command.getWorkLine(), command.getScannerSeq()), Constants.RESULT_MSG_CUSHION_ADD_FAILED);
+        publishScanEvent(OperationEventCode.SCAN_COUNT_FAILED, command, null, null);
         return ResultDTO.failure(Constants.RESULT_MSG_CUSHION_ADD_FAILED);
     }
 
@@ -106,6 +114,8 @@ public class ScanApplicationService {
         Integer effectiveScannerSeq = getEffectiveScannerSeq(command.getScannerId(), command.getScannerSeq(), cushionInfoEntity);
         String qrCode = cushionInfoEntity.getQrCode();
         sseService.sendFailMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, cushionInfoEntity, command.getWorkLine(), effectiveScannerSeq), Constants.RESULT_MSG_CUSHION_INVALID_SCAN);
+        publishScanEvent(OperationEventCode.SCAN_REPEATED, command, cushionInfoEntity,
+                "缓冲垫 " + qrCode + " 两小时内已扫描，本次未增加使用次数，当前为 " + cushionInfoEntity.getUsedCount() + " 次");
         scanLogService.addScanLog(command.getScannerHost(), command.getScannerName(), qrCode, Constants.SCAN_LOG_MSG_INVALID, Constants.SCAN_LOG_TYPE_ERROR, scanPolicy.isManualScan(command.getScannerId()));
         plcNotifyService.notifyInvalidScan(qrCode, command.getScannerId(), cushionScannerId, command.getWorkLine());
         return ResultDTO.failure(Constants.RESULT_MSG_CUSHION_INVALID_SCAN);
@@ -124,11 +134,16 @@ public class ScanApplicationService {
         CushionInfoDTO cushionInfoDTO = buildScanResultDTO(cushionInfoEntity, cushionInfoEntity.getScannerId(), scannerPosition, scannerSeq);
         if (scanPolicy.isMaxReached(cushionInfoEntity)) {
             logMaxReached(command, cushionInfoEntity);
+            publishScanEvent(OperationEventCode.CUSHION_MAX_REACHED, command, cushionInfoEntity,
+                    "缓冲垫 " + cushionInfoEntity.getQrCode() + " 当前 " + cushionInfoEntity.getUsedCount()
+                            + " 次，已达到寿命上限 " + cushionInfoEntity.getMaxUseCount() + " 次");
             plcNotifyService.notifyScanMax(cushionInfoEntity.getQrCode(), command.getScannerId(), cushionInfoEntity.getScannerId(), command.getWorkLine());
             sseService.sendFailMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, cushionInfoEntity, command.getWorkLine(), scannerSeq), Constants.RESULT_MSG_CUSHION_USED_COUNT_REACHED_MAX);
             return ResultDTO.failure(cushionInfoDTO, Constants.RESULT_MSG_CUSHION_USED_COUNT_REACHED_MAX);
         }
 
+        publishScanEvent(OperationEventCode.SCAN_COUNTED, command, cushionInfoEntity,
+                "缓冲垫 " + cushionInfoEntity.getQrCode() + " 已完成计数，当前使用 " + cushionInfoEntity.getUsedCount() + " 次");
         plcNotifyService.notifyScanSuccess(cushionInfoEntity.getQrCode(), command.getScannerId(), cushionInfoEntity.getScannerId(), command.getWorkLine());
         sseService.sendCushionMsg(cushionInfoDTO);
         return ResultDTO.success(cushionInfoDTO);
@@ -215,5 +230,16 @@ public class ScanApplicationService {
         BeanUtil.copyProperties(cushionInfo, cushionDetail, copyOptions);
         cushionDetail.setCreatedDate(new Date());
         cushionDetailEntityMapper.insertSelective(cushionDetail);
+    }
+
+    private void publishScanEvent(OperationEventCode code, ScanCommand command, CushionInfoEntity cushionInfo, String message) {
+        OperationEventDTO event = OperationEventDTO.of(code, command.getWorkLine());
+        event.setScannerId(command.getScannerId());
+        event.setScannerSeq(command.getScannerSeq());
+        event.setDeviceId(command.getScannerId());
+        event.setDeviceName(command.getScannerName());
+        event.setQrCode(cushionInfo == null ? command.getQrCode() : cushionInfo.getQrCode());
+        if (message != null) event.setMessage(message);
+        operationEventService.publish(event);
     }
 }

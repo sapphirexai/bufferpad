@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.servers.Server;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * Author: Luo GuoWen
@@ -14,6 +15,7 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 @OpenAPIDefinition(servers = {@Server(url = "/", description = "默认当前域名地址为服务地址")})
 @SpringBootApplication
 @EnableDiscoveryClient
+@EnableScheduling
 public class OpcApplication {
     public static void main(String[] args) {
         SpringApplication.run(OpcApplication.class, args);

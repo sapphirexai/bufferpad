@@ -64,7 +64,8 @@ public class NettyServiceImpl implements INettyService {
         BeanUtil.copyProperties(deviceInfo, connection);
         BeanUtil.copyProperties(deviceInfo, deviceInfoDTO);
         connector.connect(connection);
-        deviceInfoDTO.setStatus(connectionMgr.getStatusById(connection.getId()));
+        Connection managedConnection = connectionMgr.getConnection(connection.getId());
+        if (managedConnection != null) BeanUtil.copyProperties(managedConnection, deviceInfoDTO);
         return deviceInfoDTO;
     }
 

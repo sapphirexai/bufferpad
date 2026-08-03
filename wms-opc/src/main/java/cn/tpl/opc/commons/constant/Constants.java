@@ -164,7 +164,8 @@ public final class Constants {
      */
     public static final String
             SSE_MSG_TOPIC_DEVICE_STATUS = "deviceStatus",
-            SSE_MSG_TOPIC_CUSHION_INFO = "cushionInfo";
+            SSE_MSG_TOPIC_CUSHION_INFO = "cushionInfo",
+            SSE_MSG_TOPIC_OPERATION_EVENT = "operationEvent";
 
     /**
      * 接口请求结果消息

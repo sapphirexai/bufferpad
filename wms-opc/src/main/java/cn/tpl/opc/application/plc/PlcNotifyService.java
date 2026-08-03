@@ -2,8 +2,9 @@ package cn.tpl.opc.application.plc;
 
 import cn.tpl.opc.commons.constant.Constants;
 import cn.tpl.opc.commons.dto.enums.PlcAddrTypeEnum;
+import cn.tpl.opc.commons.dto.enums.OperationEventCode;
 import cn.tpl.opc.commons.dto.event.EventBusMsgPlcCmd;
-import cn.tpl.opc.commons.dto.event.EventBusMsgReadOpenCountFromPLC;
+import cn.tpl.opc.commons.dto.result.OperationEventDTO;
 import cn.tpl.opc.entity.DeviceInfoEntity;
 import cn.tpl.opc.entity.PLCAddrEntity;
 import cn.tpl.opc.infrastructure.event.DomainEventPublisher;
@@ -11,9 +12,9 @@ import cn.tpl.opc.mapper.DeviceInfoEntityMapper;
 import cn.tpl.opc.netty.Connection;
 import cn.tpl.opc.netty.ConnectionMgr;
 import cn.tpl.opc.service.IPLCAddrService;
+import cn.tpl.opc.service.IOperationEventService;
 import cn.tpl.opc.service.IScanLogService;
 import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
 import java.util.List;
@@ -22,6 +23,8 @@ import java.util.List;
 public class PlcNotifyService {
     @Resource
     private IScanLogService scanLogService;
+    @Resource
+    private IOperationEventService operationEventService;
     @Resource
     private DeviceInfoEntityMapper deviceInfoEntityMapper;
     @Resource
@@ -33,11 +36,8 @@ public class PlcNotifyService {
 
     public void notifyScanSuccess(String qrCode, Long sourceScannerId, Long effectiveScannerId, Integer workLine) {
         if (isManualScan(sourceScannerId)) {
-            if (effectiveScannerId == null) {
-                notifyAllScanners(qrCode, Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS, workLine);
-            } else {
-                notifyPLC(qrCode, Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS, effectiveScannerId, workLine);
-            }
+            Long targetScannerId = resolveManualScannerId(effectiveScannerId, workLine);
+            notifyPLC(qrCode, Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS, targetScannerId, workLine);
             return;
         }
         notifyPLC(qrCode, Constants.PLC_ADDR_TYPE_SCAN_SUCCESS, sourceScannerId, workLine);
@@ -49,11 +49,8 @@ public class PlcNotifyService {
 
     public void notifyScanMax(String qrCode, Long sourceScannerId, Long cushionScannerId, Integer workLine) {
         if (isManualScan(sourceScannerId)) {
-            if (cushionScannerId == null) {
-                notifyAllScanners(qrCode, Constants.PLC_ADDR_TYPE_RE_SCAN_OVER_MAXIMUM, workLine);
-            } else {
-                notifyPLC(qrCode, Constants.PLC_ADDR_TYPE_RE_SCAN_OVER_MAXIMUM, cushionScannerId, workLine);
-            }
+            Long targetScannerId = resolveManualScannerId(cushionScannerId, workLine);
+            notifyPLC(qrCode, Constants.PLC_ADDR_TYPE_RE_SCAN_OVER_MAXIMUM, targetScannerId, workLine);
             return;
         }
         notifyPLC(qrCode, Constants.PLC_ADDR_TYPE_SCAN_OVER_MAXIMUM, sourceScannerId, workLine);
@@ -63,16 +60,22 @@ public class PlcNotifyService {
         notifyPLC(null, Constants.PLC_ADDR_TYPE_SCAN_FAILED, scannerId, workLine);
     }
 
-    private void notifyAllScanners(String qrCode, int plcAddrType, Integer workLine) {
-        List<DeviceInfoEntity> deviceInfoEntities = deviceInfoEntityMapper.listDeviceInfoByType(0);
-        if (CollectionUtils.isEmpty(deviceInfoEntities)) return;
+    private boolean isManualScan(Long scannerId) {
+        return scannerId == null;
+    }
 
-        for (DeviceInfoEntity deviceInfo : deviceInfoEntities) {
-            if (!isTargetWorkLine(workLine, deviceInfo.getWorkLine())) continue;
-            Long scannerId = deviceInfo.getId();
-            if (scannerId == null) continue;
-            notifyPLC(qrCode, plcAddrType, scannerId, workLine);
+    private Long resolveManualScannerId(Long effectiveScannerId, Integer workLine) {
+        if (effectiveScannerId != null) return effectiveScannerId;
+
+        List<DeviceInfoEntity> scanners = deviceInfoEntityMapper.listDeviceInfoByType(0);
+        Long resolvedId = null;
+        if (scanners == null) return null;
+        for (DeviceInfoEntity scanner : scanners) {
+            if (scanner == null || scanner.getId() == null || !isTargetWorkLine(workLine, scanner.getWorkLine())) continue;
+            if (resolvedId != null && !resolvedId.equals(scanner.getId())) return null;
+            resolvedId = scanner.getId();
         }
+        return resolvedId;
     }
 
     private boolean isTargetWorkLine(Integer targetWorkLine, Integer deviceWorkLine) {
@@ -81,36 +84,37 @@ public class PlcNotifyService {
                 || targetWorkLine.equals(deviceWorkLine);
     }
 
-    private boolean isManualScan(Long scannerId) {
-        return scannerId == null;
-    }
-
     private void notifyPLC(String qrCode, Integer plcAddrType, Long scannerId, Integer workLine) {
-        if (plcAddrType == null || scannerId == null) {
+        if (scannerId == null) {
+            scanLogService.add(qrCode, "手动扫码未关联具体扫码器，未发送PLC指令", Constants.SCAN_LOG_TYPE_ERROR);
+            OperationEventDTO event = OperationEventDTO.of(OperationEventCode.PLC_TARGET_NOT_RESOLVED, workLine);
+            event.setQrCode(qrCode);
+            operationEventService.publish(event);
+            return;
+        }
+        if (plcAddrType == null) {
             scanLogService.add(qrCode, Constants.SCAN_LOG_MSG_PLC_ADDR_NOT_CONFIGURED + PlcAddrTypeEnum.labelOf(plcAddrType), Constants.SCAN_LOG_TYPE_ERROR);
+            publishAddressNotConfigured(qrCode, plcAddrType, scannerId, workLine);
             return;
         }
 
         PLCAddrEntity plcAddr = plcAddrService.findByTypeAndScannerId(plcAddrType, scannerId);
         if (plcAddr == null) {
             scanLogService.add(qrCode, Constants.SCAN_LOG_MSG_PLC_ADDR_NOT_CONFIGURED + PlcAddrTypeEnum.labelOf(plcAddrType), Constants.SCAN_LOG_TYPE_ERROR);
+            publishAddressNotConfigured(qrCode, plcAddrType, scannerId, workLine);
             return;
         }
 
         if (isPlcConnectionUnavailable(plcAddr.getPlcId())) {
             scanLogService.add(qrCode, Constants.SCAN_LOG_MSG_NOTIFY_PLC_SKIPPED + plcAddr.getAddr() + Constants.SCAN_LOG_MSG_SUFFIX_NOTIFY_PLC_CMD + Constants.DEFAULT_2_PLC_VAL, Constants.SCAN_LOG_TYPE_ERROR);
+            publishPlcOffline(qrCode, scannerId, plcAddr, workLine);
+            return;
         }
 
         Integer eventWorkLine = resolveEventWorkLine(workLine, scannerId);
-        eventPublisher.publish(new EventBusMsgPlcCmd(qrCode, plcAddrType, plcAddr.getPlcId(), plcAddr.getAddr(), Constants.DEFAULT_2_PLC_VAL, eventWorkLine));
-
-        if (Constants.PLC_ADDR_TYPE_SCAN_SUCCESS == plcAddrType) {
-            readOpenCountFromPLC(false, qrCode, scannerId, eventWorkLine);
-        }
-
-        if (Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS == plcAddrType) {
-            readOpenCountFromPLC(true, qrCode, scannerId, eventWorkLine);
-        }
+        String readAddress = resolveOpenCountAddress(plcAddrType, qrCode, scannerId, eventWorkLine);
+        eventPublisher.publish(new EventBusMsgPlcCmd(qrCode, plcAddrType, plcAddr.getPlcId(), plcAddr.getAddr(),
+                Constants.DEFAULT_2_PLC_VAL, eventWorkLine, scannerId, readAddress));
     }
 
     private boolean isPlcConnectionUnavailable(Long plcId) {
@@ -119,21 +123,21 @@ public class PlcNotifyService {
         return connection == null || connection.isDead() || connection.isNoPLCNet();
     }
 
-    private void readOpenCountFromPLC(boolean isReScan, String qrCode, Long scannerId, Integer workLine) {
-        if (scannerId == null) return;
+    private String resolveOpenCountAddress(Integer writeType, String qrCode, Long scannerId, Integer workLine) {
+        boolean scanSuccess = Constants.PLC_ADDR_TYPE_SCAN_SUCCESS == writeType;
+        boolean reScanSuccess = Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS == writeType;
+        if ((!scanSuccess && !reScanSuccess) || scannerId == null) return null;
 
-        Integer plcAddrType = getOpenCountPlcAddrType(isReScan);
+        Integer plcAddrType = getOpenCountPlcAddrType(reScanSuccess);
         PLCAddrEntity plcAddr = plcAddrService.findByTypeAndScannerId(plcAddrType, scannerId);
         if (plcAddr == null) {
             scanLogService.add(qrCode, Constants.SCAN_LOG_MSG_PLC_ADDR_NOT_CONFIGURED + PlcAddrTypeEnum.labelOf(plcAddrType), Constants.SCAN_LOG_TYPE_ERROR);
-            return;
+            OperationEventDTO event = baseEvent(OperationEventCode.PLC_READ_ADDRESS_NOT_CONFIGURED, qrCode, scannerId, workLine);
+            event.setMessage("缓冲垫已计数，但未配置“" + PlcAddrTypeEnum.labelOf(plcAddrType) + "”地址");
+            operationEventService.publish(event);
+            return null;
         }
-
-        if (isPlcConnectionUnavailable(plcAddr.getPlcId())) {
-            scanLogService.add(qrCode, Constants.SCAN_LOG_MSG_READ_OPEN_COUNT_FAILED + plcAddr.getAddr(), Constants.SCAN_LOG_TYPE_ERROR);
-        }
-
-        eventPublisher.publish(new EventBusMsgReadOpenCountFromPLC(qrCode, plcAddr.getPlcId(), plcAddr.getAddr(), workLine));
+        return plcAddr.getAddr();
     }
 
     private Integer getOpenCountPlcAddrType(boolean isReScan) {
@@ -151,5 +155,30 @@ public class PlcNotifyService {
 
         DeviceInfoEntity scanner = deviceInfoEntityMapper.selectByPrimaryKey(scannerId);
         return scanner == null || scanner.getWorkLine() == null ? workLine : scanner.getWorkLine();
+    }
+
+    private void publishAddressNotConfigured(String qrCode, Integer plcAddrType, Long scannerId, Integer workLine) {
+        OperationEventDTO event = baseEvent(OperationEventCode.PLC_ADDRESS_NOT_CONFIGURED, qrCode, scannerId, workLine);
+        event.setMessage("未配置“" + PlcAddrTypeEnum.labelOf(plcAddrType) + "”对应的PLC地址，缓冲垫计数不受影响");
+        operationEventService.publish(event);
+    }
+
+    private void publishPlcOffline(String qrCode, Long scannerId, PLCAddrEntity plcAddr, Integer workLine) {
+        OperationEventDTO event = baseEvent(OperationEventCode.PLC_OFFLINE, qrCode, scannerId, workLine);
+        DeviceInfoEntity plc = deviceInfoEntityMapper.selectByPrimaryKey(plcAddr.getPlcId());
+        event.setDeviceId(plcAddr.getPlcId());
+        event.setDeviceName(plc == null ? null : plc.getName());
+        event.setAddress(plcAddr.getAddr());
+        operationEventService.publish(event);
+    }
+
+    private OperationEventDTO baseEvent(OperationEventCode code, String qrCode, Long scannerId, Integer workLine) {
+        Integer eventWorkLine = resolveEventWorkLine(workLine, scannerId);
+        OperationEventDTO event = OperationEventDTO.of(code, eventWorkLine);
+        event.setQrCode(qrCode);
+        event.setScannerId(scannerId);
+        DeviceInfoEntity scanner = scannerId == null ? null : deviceInfoEntityMapper.selectByPrimaryKey(scannerId);
+        event.setScannerSeq(scanner == null ? null : scanner.getInstallSeq());
+        return event;
     }
 }

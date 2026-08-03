@@ -44,16 +44,29 @@ public class EventBusMsgPlcCmd extends AbsBaseDTO {
      */
     private Integer workLine;
 
+    /** Source scanner device ID. */
+    private Long scannerId;
+
+    /** Optional address read only after this write succeeds. */
+    private String readAddress;
+
     public EventBusMsgPlcCmd(String qrCode, Integer addrType, String address, Short cmd, Integer workLine) {
         this(qrCode, addrType, null, address, cmd, workLine);
     }
 
     public EventBusMsgPlcCmd(String qrCode, Integer addrType, Long plcId, String address, Short cmd, Integer workLine) {
+        this(qrCode, addrType, plcId, address, cmd, workLine, null, null);
+    }
+
+    public EventBusMsgPlcCmd(String qrCode, Integer addrType, Long plcId, String address, Short cmd,
+                             Integer workLine, Long scannerId, String readAddress) {
         this.qrCode = qrCode;
         this.addrType = addrType;
         this.plcId = plcId;
         this.address = address;
         this.cmd = cmd;
         this.workLine = workLine;
+        this.scannerId = scannerId;
+        this.readAddress = readAddress;
     }
 }

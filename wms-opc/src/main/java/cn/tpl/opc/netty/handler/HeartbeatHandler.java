@@ -73,7 +73,7 @@ public class HeartbeatHandler extends ChannelInboundHandlerAdapter {
      */
     private void onConnectionClosed() {
         log.info("onConnectionClosed");
-        mConnection.nowDead();
+        mConnection.nowDead("读码器连接已断开", null);
     }
 }
 

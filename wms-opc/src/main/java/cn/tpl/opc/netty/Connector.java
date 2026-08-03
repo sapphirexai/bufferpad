@@ -13,11 +13,8 @@ import cn.tpl.opc.infrastructure.event.DomainEventPublisher;
 import cn.tpl.opc.infrastructure.scanner.ScannerMessageParser;
 import cn.tpl.opc.netty.handler.HeartbeatHandler;
 import cn.tpl.opc.netty.handler.MsgHandler;
-import cn.tpl.opc.service.ICushionInfoService;
 import cn.tpl.opc.service.IPLCAddrService;
-import cn.tpl.opc.service.IScanLogService;
 import cn.tpl.opc.service.ISseService;
-import cn.tpl.opc.util.NetUtils;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelInitializer;
@@ -32,6 +29,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import javax.annotation.Resource;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
@@ -52,10 +50,6 @@ public class Connector {
     private ConnectionMgr connectionMgr;
     @Resource
     private ISseService sseService;
-    @Resource
-    private IScanLogService scanLogService;
-    @Resource
-    private ICushionInfoService cushionInfoService;
     @Resource
     private IPLCAddrService plcAddrService;
     @Resource
@@ -105,12 +99,14 @@ public class Connector {
      */
     public void connect(Connection conn) {
         Long id = conn.getId();
-        if (connectionExists(id)) return;
+        if (connectionExists(id)) {
+            doReconnect(connectionMgr.getConnection(id));
+            return;
+        }
         synchronized (this) {
             // 获取锁后进行二次判断
             if (connectionExists(id)) return;
             // 保存连接信息到列表
-            conn.bindServices(scanLogService, cushionInfoService);
             conn.setOnStatusChangeListener(new Connection.OnStatusChangeListener() {
                 @Override
                 public void onStatusChanged(Connection conn) {
@@ -141,7 +137,11 @@ public class Connector {
 
         Collection<Connection> connectionsList = connections.values();
         for (Connection conn : connectionsList) {
-            doReconnect(conn);
+            try {
+                doReconnect(conn);
+            } catch (Exception e) {
+                log.error("reconnect failed, deviceId => {}", conn == null ? null : conn.getId(), e);
+            }
         }
     }
 
@@ -151,12 +151,22 @@ public class Connector {
      * @param conn 连接信息
      */
     private void doConnect(Connection conn) {
+        if (conn == null || !conn.tryBeginConnect()) return;
         String ip = conn.getIp();
         Integer port = conn.getPort();
-        if (isScannerConn(conn))
-            connectScanner(conn, ip, port);
-        else
-            connectPLC(conn, ip, port);
+        conn.markConnecting();
+        try {
+            if (isScannerConn(conn)) {
+                connectScanner(conn, ip, port);
+            } else {
+                connectPLC(conn, ip, port);
+            }
+        } catch (Exception e) {
+            conn.nowDead("设备连接异常：" + e.getMessage(), null);
+            log.error("connect failed, deviceId => {}, address => {}:{}", conn.getId(), ip, port, e);
+        } finally {
+            conn.endConnect();
+        }
     }
 
     /**
@@ -182,19 +192,20 @@ public class Connector {
     private void connectScanner(Connection conn, String ip, Integer port) {
         try {
             log.info("connectScanner, connecting => {}", ip + ":" + port);
-            if (NetUtils.pingFailed(ip)) return;
-            log.info("connectScanner, neetyClientInit");
             fastBuildClient(conn).connect(ip, port)
-                    .addListener(ChannelFutureListener.CLOSE_ON_FAILURE)
                     .addListener((ChannelFutureListener) future -> {
                         if (future.isSuccess()) {
                             log.info("connectScanner, connecting => success");
                             conn.nowActive(future);
+                        } else {
+                            String reason = future.cause() == null ? "扫码器连接失败" : future.cause().getMessage();
+                            conn.nowDead(reason, null);
+                            log.error("connectScanner failed, deviceId => {}, address => {}:{}", conn.getId(), ip, port, future.cause());
                         }
-                    });// 发起连接
-            log.info("connectScanner, connecting => success status = > {}", conn.isActive());
+                    });
         } catch (Exception e) {
-            log.error("connect, error", e);
+            conn.nowDead("扫码器连接异常", null);
+            log.error("connectScanner error, deviceId => {}", conn.getId(), e);
         }
     }
 
@@ -209,7 +220,6 @@ public class Connector {
     private void connectPLC(Connection conn, String ip, Integer port) {
         if (!conn.isNoPLCNet()) return;
         log.info("connectPLC, connecting => {}", ip + ":" + port);
-        if (NetUtils.pingFailed(ip)) return;
 
         InovanceTcpNet inovanceTcpNet = null;
         MelsecMcNet melsecMcNet = null;
@@ -231,12 +241,16 @@ public class Connector {
         log.error("connectPLC, connecting => failed, ip =>{}:{}", ip, port);
         log.error("connectPLC, ErrorCode: {}", operateResult.ErrorCode);
         log.error("connectPLC, ErrorMsg: {}", operateResult.Message);
+        if (melsecMcNet != null) melsecMcNet.ConnectClose();
+        if (inovanceTcpNet != null) inovanceTcpNet.ConnectClose();
+        conn.nowDead("PLC连接失败：" + operateResult.Message, operateResult.ErrorCode);
     }
 
     private void startPLCHeartbeatService() {
         long timeExecuteSec = 2L;// 执行时间，单位：秒
-        scheduledExecutorService.scheduleAtFixedRate(
-                this::sendPLCHeartBeat, timeExecuteSec, timeExecuteSec, TimeUnit.SECONDS);
+        scheduledExecutorService.scheduleWithFixedDelay(
+                () -> runScheduledSafely("PLC heartbeat", this::sendPLCHeartBeat),
+                timeExecuteSec, timeExecuteSec, TimeUnit.SECONDS);
     }
 
     private void sendPLCHeartBeat() {
@@ -252,7 +266,7 @@ public class Connector {
     }
 
     private void doSendPLCHeartBeat(Connection conn) {
-        if (conn.isDead() && conn.isNoPLCNet()) return;
+        if (!conn.isActive() || conn.isNoPLCNet()) return;
 
         Collection<PLCAddrEntity> plcAddrs = plcAddrService.listByPlcIdAndType(conn.getId(), Constants.PLC_ADDR_TYPE_HEART_BEAT);
         if (CollectionUtils.isEmpty(plcAddrs)) return;
@@ -263,9 +277,23 @@ public class Connector {
     }
 
     public void startReconnectService() {
-        long timeExecuteSec = 120L;// 执行时间，单位：秒
-        scheduledExecutorService.scheduleAtFixedRate(
-                this::reconnect, timeExecuteSec, timeExecuteSec, TimeUnit.SECONDS);
+        long timeExecuteSec = 15L;
+        scheduledExecutorService.scheduleWithFixedDelay(
+                () -> runScheduledSafely("device reconnect", this::reconnect),
+                timeExecuteSec, timeExecuteSec, TimeUnit.SECONDS);
+    }
+
+    private void runScheduledSafely(String taskName, Runnable task) {
+        try {
+            task.run();
+        } catch (Throwable e) {
+            log.error("scheduled task failed, task => {}", taskName, e);
+        }
+    }
+
+    @PreDestroy
+    public void destroy() {
+        if (scheduledExecutorService != null) scheduledExecutorService.shutdownNow();
     }
 
     private boolean isScannerConn(Connection conn) {

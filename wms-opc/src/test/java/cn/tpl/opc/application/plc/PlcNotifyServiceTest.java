@@ -1,13 +1,16 @@
 package cn.tpl.opc.application.plc;
 
 import cn.tpl.opc.commons.constant.Constants;
+import cn.tpl.opc.commons.dto.enums.OperationEventCode;
 import cn.tpl.opc.commons.dto.event.EventBusMsgPlcCmd;
-import cn.tpl.opc.commons.dto.event.EventBusMsgReadOpenCountFromPLC;
+import cn.tpl.opc.commons.dto.result.OperationEventDTO;
 import cn.tpl.opc.entity.DeviceInfoEntity;
 import cn.tpl.opc.entity.PLCAddrEntity;
 import cn.tpl.opc.infrastructure.event.DomainEventPublisher;
 import cn.tpl.opc.mapper.DeviceInfoEntityMapper;
 import cn.tpl.opc.netty.ConnectionMgr;
+import cn.tpl.opc.netty.Connection;
+import cn.tpl.opc.service.IOperationEventService;
 import cn.tpl.opc.service.IPLCAddrService;
 import cn.tpl.opc.service.IScanLogService;
 import org.junit.Assert;
@@ -18,6 +21,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -28,6 +32,7 @@ public class PlcNotifyServiceTest {
     private final IPLCAddrService plcAddrService = mock(IPLCAddrService.class);
     private final ConnectionMgr connectionMgr = mock(ConnectionMgr.class);
     private final DomainEventPublisher eventPublisher = mock(DomainEventPublisher.class);
+    private final IOperationEventService operationEventService = mock(IOperationEventService.class);
 
     @Before
     public void setUp() {
@@ -36,6 +41,11 @@ public class PlcNotifyServiceTest {
         ReflectionTestUtils.setField(service, "plcAddrService", plcAddrService);
         ReflectionTestUtils.setField(service, "connectionMgr", connectionMgr);
         ReflectionTestUtils.setField(service, "eventPublisher", eventPublisher);
+        ReflectionTestUtils.setField(service, "operationEventService", operationEventService);
+        Connection connection = mock(Connection.class);
+        when(connection.isDead()).thenReturn(false);
+        when(connection.isNoPLCNet()).thenReturn(false);
+        when(connectionMgr.getConnection(99L)).thenReturn(connection);
     }
 
     @Test
@@ -48,14 +58,12 @@ public class PlcNotifyServiceTest {
         service.notifyInvalidScan("QR-001", 10L, 10L, 1);
 
         ArgumentCaptor<Object> captor = ArgumentCaptor.forClass(Object.class);
-        verify(eventPublisher, org.mockito.Mockito.times(2)).publish(captor.capture());
+        verify(eventPublisher).publish(captor.capture());
 
-        EventBusMsgPlcCmd cmd = (EventBusMsgPlcCmd) captor.getAllValues().get(0);
+        EventBusMsgPlcCmd cmd = (EventBusMsgPlcCmd) captor.getValue();
         Assert.assertEquals(Constants.PLC_ADDR_TYPE_SCAN_SUCCESS, cmd.getAddrType().intValue());
         Assert.assertEquals(Integer.valueOf(1), cmd.getWorkLine());
-
-        EventBusMsgReadOpenCountFromPLC read = (EventBusMsgReadOpenCountFromPLC) captor.getAllValues().get(1);
-        Assert.assertEquals(Integer.valueOf(1), read.getWorkLine());
+        Assert.assertEquals("D110", cmd.getReadAddress());
     }
 
     @Test
@@ -72,14 +80,32 @@ public class PlcNotifyServiceTest {
         service.notifyInvalidScan("QR-002", null, 10L, Constants.WORK_LINE_ALL);
 
         ArgumentCaptor<Object> captor = ArgumentCaptor.forClass(Object.class);
-        verify(eventPublisher, org.mockito.Mockito.times(2)).publish(captor.capture());
+        verify(eventPublisher).publish(captor.capture());
 
-        EventBusMsgPlcCmd cmd = (EventBusMsgPlcCmd) captor.getAllValues().get(0);
+        EventBusMsgPlcCmd cmd = (EventBusMsgPlcCmd) captor.getValue();
         Assert.assertEquals(Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS, cmd.getAddrType().intValue());
         Assert.assertEquals(Integer.valueOf(2), cmd.getWorkLine());
+        Assert.assertEquals("D210", cmd.getReadAddress());
+    }
 
-        EventBusMsgReadOpenCountFromPLC read = (EventBusMsgReadOpenCountFromPLC) captor.getAllValues().get(1);
-        Assert.assertEquals(Integer.valueOf(2), read.getWorkLine());
+    @Test
+    public void newManualScanDoesNotBroadcastToEveryScanner() {
+        DeviceInfoEntity first = new DeviceInfoEntity();
+        first.setId(10L);
+        first.setWorkLine(1);
+        DeviceInfoEntity second = new DeviceInfoEntity();
+        second.setId(11L);
+        second.setWorkLine(1);
+        when(deviceInfoEntityMapper.listDeviceInfoByType(0)).thenReturn(java.util.Arrays.asList(first, second));
+
+        service.notifyScanSuccess("QR-MANUAL-NEW", null, null, 1);
+
+        ArgumentCaptor<OperationEventDTO> captor = ArgumentCaptor.forClass(OperationEventDTO.class);
+        verify(operationEventService).publish(captor.capture());
+        Assert.assertEquals(OperationEventCode.PLC_TARGET_NOT_RESOLVED.name(), captor.getValue().getCode());
+        Assert.assertEquals(Integer.valueOf(1), captor.getValue().getWorkLine());
+        verify(deviceInfoEntityMapper).listDeviceInfoByType(0);
+        verify(eventPublisher, never()).publish(org.mockito.ArgumentMatchers.any());
     }
 
     private PLCAddrEntity plcAddr(Long plcId, String addr, Integer type, Long scannerId) {

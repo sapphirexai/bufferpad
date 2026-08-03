@@ -3,6 +3,7 @@ package cn.tpl.opc.service;
 import cn.tpl.opc.commons.dto.ResultDTO;
 import cn.tpl.opc.commons.dto.result.CushionInfoDTO;
 import cn.tpl.opc.commons.dto.result.DeviceInfoDTO;
+import cn.tpl.opc.commons.dto.result.OperationEventDTO;
 import cn.tpl.opc.commons.dto.result.SseMsgDTO;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -44,4 +45,6 @@ public interface ISseService {
      * @param cushionInfo 缓冲垫数据
      */
     void sendCushionMsg(CushionInfoDTO cushionInfo);
+
+    void sendOperationEvent(OperationEventDTO event);
 }

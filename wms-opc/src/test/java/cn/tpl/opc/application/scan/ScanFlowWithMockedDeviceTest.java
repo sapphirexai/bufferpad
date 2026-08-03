@@ -7,7 +7,6 @@ import cn.tpl.opc.commons.constant.Params;
 import cn.tpl.opc.commons.dto.ResultDTO;
 import cn.tpl.opc.commons.dto.event.EventBusMsgCushionQrCode;
 import cn.tpl.opc.commons.dto.event.EventBusMsgPlcCmd;
-import cn.tpl.opc.commons.dto.event.EventBusMsgReadOpenCountFromPLC;
 import cn.tpl.opc.commons.dto.result.CushionInfoDTO;
 import cn.tpl.opc.domain.scan.ScanPolicy;
 import cn.tpl.opc.entity.CushionDetailEntity;
@@ -25,6 +24,7 @@ import cn.tpl.opc.netty.Connection;
 import cn.tpl.opc.netty.ConnectionMgr;
 import cn.tpl.opc.netty.handler.MsgHandler;
 import cn.tpl.opc.service.IPLCAddrService;
+import cn.tpl.opc.service.IOperationEventService;
 import cn.tpl.opc.service.IScanLogService;
 import cn.tpl.opc.service.ISseService;
 import cn.tpl.opc.service.impl.CushionInfoServiceImpl;
@@ -74,6 +74,7 @@ public class ScanFlowWithMockedDeviceTest {
     private final DeviceInfoEntityMapper deviceInfoEntityMapper = mock(DeviceInfoEntityMapper.class);
     private final ConnectionMgr connectionMgr = mock(ConnectionMgr.class);
     private final DomainEventPublisher plcEventPublisher = mock(DomainEventPublisher.class);
+    private final IOperationEventService operationEventService = mock(IOperationEventService.class);
 
     private final Map<String, CushionInfoEntity> cushionStore = new LinkedHashMap<>();
     private final List<CushionDetailEntity> detailStore = new ArrayList<>();
@@ -88,7 +89,7 @@ public class ScanFlowWithMockedDeviceTest {
     @Before
     public void setUp() {
         reset(cushionInfoEntityMapper, cushionDetailEntityMapper, opcConfigEntityMapper, scanLogService,
-                sseService, plcAddrService, deviceInfoEntityMapper, connectionMgr, plcEventPublisher);
+                sseService, plcAddrService, deviceInfoEntityMapper, connectionMgr, plcEventPublisher, operationEventService);
         cushionStore.clear();
         detailStore.clear();
         cushionId.set(1);
@@ -101,6 +102,7 @@ public class ScanFlowWithMockedDeviceTest {
         ReflectionTestUtils.setField(scanApplicationService, "scanPolicy", new ScanPolicy());
         ReflectionTestUtils.setField(scanApplicationService, "scanLogService", scanLogService);
         ReflectionTestUtils.setField(scanApplicationService, "sseService", sseService);
+        ReflectionTestUtils.setField(scanApplicationService, "operationEventService", operationEventService);
         ReflectionTestUtils.setField(scanApplicationService, "plcNotifyService", buildPlcNotifyService());
         ReflectionTestUtils.setField(scanApplicationService, "opcConfigEntityMapper", opcConfigEntityMapper);
         ReflectionTestUtils.setField(scanApplicationService, "cushionInfoEntityMapper", cushionInfoEntityMapper);
@@ -131,9 +133,9 @@ public class ScanFlowWithMockedDeviceTest {
         Assert.assertEquals(1, detailStore.size());
 
         List<Object> events = publishedPlcEvents();
-        Assert.assertEquals(2, events.size());
+        Assert.assertEquals(1, events.size());
         assertPlcCmd(events.get(0), qrCode, Constants.PLC_ADDR_TYPE_SCAN_SUCCESS, "D102", Constants.DEFAULT_2_PLC_VAL);
-        assertReadOpenCount(events.get(1), qrCode, Constants.PLC_ADDR_TYPE_SCAN_SUCCESS_OPEN_COUNT, "D106");
+        Assert.assertEquals("D106", ((EventBusMsgPlcCmd) events.get(0)).getReadAddress());
         verify(sseService, atLeastOnce()).sendCushionMsg(any(CushionInfoDTO.class));
     }
 
@@ -146,9 +148,9 @@ public class ScanFlowWithMockedDeviceTest {
         Assert.assertTrue(cushionStore.containsKey(qrCode));
         Assert.assertEquals(1, detailStore.size());
         List<Object> events = publishedPlcEvents();
-        Assert.assertEquals(2, events.size());
+        Assert.assertEquals(1, events.size());
         assertPlcCmd(events.get(0), qrCode, Constants.PLC_ADDR_TYPE_SCAN_SUCCESS, "D102", Constants.DEFAULT_2_PLC_VAL);
-        assertReadOpenCount(events.get(1), qrCode, Constants.PLC_ADDR_TYPE_SCAN_SUCCESS_OPEN_COUNT, "D106");
+        Assert.assertEquals("D106", ((EventBusMsgPlcCmd) events.get(0)).getReadAddress());
     }
 
     @Test
@@ -188,9 +190,9 @@ public class ScanFlowWithMockedDeviceTest {
         Assert.assertEquals(Constants.SCANNER_POSITION_MANUAL, cushion.getScannerPosition());
 
         List<Object> events = publishedPlcEvents();
-        Assert.assertEquals(2, events.size());
+        Assert.assertEquals(1, events.size());
         assertPlcCmd(events.get(0), qrCode, Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS, "D104", Constants.DEFAULT_2_PLC_VAL);
-        assertReadOpenCount(events.get(1), qrCode, Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS_OPEN_COUNT, "D107");
+        Assert.assertEquals("D107", ((EventBusMsgPlcCmd) events.get(0)).getReadAddress());
     }
 
     @Test
@@ -208,9 +210,9 @@ public class ScanFlowWithMockedDeviceTest {
         Assert.assertEquals(SCANNER_POSITION, cushion.getScannerPosition());
 
         List<Object> events = publishedPlcEvents();
-        Assert.assertEquals(2, events.size());
+        Assert.assertEquals(1, events.size());
         assertPlcCmd(events.get(0), qrCode, Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS, "D104", Constants.DEFAULT_2_PLC_VAL);
-        assertReadOpenCount(events.get(1), qrCode, Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS_OPEN_COUNT, "D107");
+        Assert.assertEquals("D107", ((EventBusMsgPlcCmd) events.get(0)).getReadAddress());
     }
 
     @Test
@@ -225,9 +227,9 @@ public class ScanFlowWithMockedDeviceTest {
         Assert.assertTrue(detailStore.isEmpty());
 
         List<Object> events = publishedPlcEvents();
-        Assert.assertEquals(2, events.size());
+        Assert.assertEquals(1, events.size());
         assertPlcCmd(events.get(0), qrCode, Constants.PLC_ADDR_TYPE_SCAN_SUCCESS, "D102", Constants.DEFAULT_2_PLC_VAL);
-        assertReadOpenCount(events.get(1), qrCode, Constants.PLC_ADDR_TYPE_SCAN_SUCCESS_OPEN_COUNT, "D106");
+        Assert.assertEquals("D106", ((EventBusMsgPlcCmd) events.get(0)).getReadAddress());
         verify(sseService, atLeastOnce()).sendFailMsg(any(), eq(Constants.RESULT_MSG_CUSHION_INVALID_SCAN));
     }
 
@@ -265,6 +267,7 @@ public class ScanFlowWithMockedDeviceTest {
         ReflectionTestUtils.setField(service, "plcAddrService", plcAddrService);
         ReflectionTestUtils.setField(service, "connectionMgr", connectionMgr);
         ReflectionTestUtils.setField(service, "eventPublisher", plcEventPublisher);
+        ReflectionTestUtils.setField(service, "operationEventService", operationEventService);
         return service;
     }
 
@@ -370,16 +373,6 @@ public class ScanFlowWithMockedDeviceTest {
         Assert.assertEquals(address, cmdEvent.getAddress());
         Assert.assertEquals(cmd, cmdEvent.getCmd());
         Assert.assertEquals(WORK_LINE, cmdEvent.getWorkLine());
-    }
-
-    private void assertReadOpenCount(Object event, String qrCode, Integer addrType, String address) {
-        Assert.assertTrue(event instanceof EventBusMsgReadOpenCountFromPLC);
-        EventBusMsgReadOpenCountFromPLC readEvent = (EventBusMsgReadOpenCountFromPLC) event;
-        Assert.assertEquals(qrCode, readEvent.getQrCode());
-        Assert.assertEquals(PLC_ID, readEvent.getPlcId());
-        Assert.assertEquals(address, readEvent.getAddress());
-        Assert.assertEquals(WORK_LINE, readEvent.getWorkLine());
-        verify(plcAddrService, atLeastOnce()).findByTypeAndScannerId(addrType, SCANNER_ID);
     }
 
     private void preloadedCushion(String qrCode, int usedCount, int maxUseCount, Date lastScanDate,

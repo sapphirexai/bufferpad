@@ -6,6 +6,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.util.Date;
+
 /**
  * Author: Luo GuoWen
  * Email: luoguowen123@qq.com
@@ -51,6 +53,21 @@ public class DeviceInfoDTO extends AbsBaseDTO {
      */
     @Schema(description = "设备状态，0：未连接；1：活跃中")
     private Integer status;
+
+    @Schema(description = "连接状态编码：ONLINE、CONNECTING、DEGRADED、OFFLINE")
+    private String statusCode;
+
+    @Schema(description = "当前状态原因")
+    private String statusReason;
+
+    @Schema(description = "状态最后变化时间")
+    private Date statusChangedAt;
+
+    @Schema(description = "最后一次成功通信时间")
+    private Date lastCommunicationAt;
+
+    @Schema(description = "最近PLC错误码")
+    private Integer lastErrorCode;
 
     /**
      * 设备名字

@@ -29,7 +29,7 @@ public class ScanEventListener implements InitializingBean, DisposableBean {
     }
 
     @SuppressWarnings("unused")
-    @Subscribe(threadMode = ThreadMode.POSTING)
+    @Subscribe(threadMode = ThreadMode.ASYNC)
     public void onMessageEvent(EventBusMsgCushionQrCode event) {
         log.info("onMessageEvent, qrCode => {}", event);
         ScanCommand command = new ScanCommand(
