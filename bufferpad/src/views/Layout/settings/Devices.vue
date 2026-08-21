@@ -28,7 +28,7 @@
       :header-cell-style="rowStyle"
     >
       <el-table-column prop="id" label="ID" width="80"></el-table-column>
-      <el-table-column prop="typeName" label="设备类型" width="130"></el-table-column>
+      <el-table-column prop="typeName" label="设备类型" width="190"></el-table-column>
       <el-table-column prop="name" label="设备名称"></el-table-column>
       <el-table-column prop="ip" label="IP"></el-table-column>
       <el-table-column prop="port" label="端口" width="100"></el-table-column>
@@ -55,7 +55,7 @@
     <el-dialog title="设备信息" :visible.sync="dialogVisible" width="560px" @close="closeDialog">
       <el-form :model="form" :rules="rules" ref="formRef" label-width="110px">
         <el-form-item label="设备类型" prop="type">
-          <el-select v-model="form.type" placeholder="请选择设备类型" style="width: 100%">
+          <el-select v-model="form.type" placeholder="请选择设备类型" style="width: 100%" @change="handleDeviceTypeChange">
             <el-option v-for="item in deviceTypeOptions" :key="item.value" :label="item.label" :value="item.value"></el-option>
           </el-select>
         </el-form-item>
@@ -67,6 +67,9 @@
         </el-form-item>
         <el-form-item label="端口" prop="port">
           <el-input-number v-model="form.port" :min="1" :max="65535" :step="1" style="width: 100%"></el-input-number>
+          <div v-if="isSiemensDevice" class="field-tip">
+            西门子 S7comm 使用 ISO-on-TCP，默认端口 102；S7-1200/1500 使用机架 0、插槽 0。
+          </div>
         </el-form-item>
         <el-form-item label="产线" prop="workLine">
           <el-input-number v-model="form.workLine" :min="1" :step="1" style="width: 100%"></el-input-number>
@@ -95,6 +98,7 @@ import { getDeviceTypeOptions, getInstallPositionOptions } from '../../../module
 import { isSuccessResponse, responseMessage } from '../../../shared/request/request';
 import { createPageListMixin } from '../../../shared/mixins/page-list';
 import { centerCellStyle } from '../../../shared/utils/format';
+import { isSiemensS7DeviceType, SIEMENS_S7_DEFAULT_PORT } from '../../../modules/settings/models/device-type';
 
 export default {
   name: 'Devices',
@@ -105,6 +109,7 @@ export default {
       dialogVisible: false,
       deviceTypeOptions: [],
       installPositionOptions: [],
+      previousDeviceType: null,
       form: this.emptyForm(),
       rules: {
         type: [{ required: true, message: '请选择设备类型', trigger: 'change' }],
@@ -114,6 +119,11 @@ export default {
         installSeq: [{ required: true, message: '请选择安装位置', trigger: 'change' }]
       }
     };
+  },
+  computed: {
+    isSiemensDevice() {
+      return isSiemensS7DeviceType(this.form.type);
+    }
   },
   methods: {
     emptyForm() {
@@ -129,6 +139,12 @@ export default {
     },
     rowStyle() {
       return centerCellStyle();
+    },
+    handleDeviceTypeChange(type) {
+      if (isSiemensS7DeviceType(type) && !isSiemensS7DeviceType(this.previousDeviceType)) {
+        this.form.port = SIEMENS_S7_DEFAULT_PORT;
+      }
+      this.previousDeviceType = type;
     },
     loadOptions() {
       getDeviceTypeOptions().then(res => {
@@ -167,6 +183,7 @@ export default {
       this.initData();
     },
     openDialog(row) {
+      this.previousDeviceType = row ? row.type : null;
       this.form = row ? {
         id: row.id,
         type: row.type,
@@ -225,5 +242,12 @@ export default {
 
 .toolbar {
   margin-bottom: 12px;
+}
+
+.field-tip {
+  margin-top: 6px;
+  color: #909399;
+  font-size: 12px;
+  line-height: 18px;
 }
 </style>

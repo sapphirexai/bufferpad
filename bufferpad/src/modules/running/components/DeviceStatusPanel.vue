@@ -9,6 +9,7 @@
       <div class="device-copy">
         <div class="device-heading">
           <strong>{{ item.name || '未命名设备' }}</strong>
+          <el-tag v-if="item.typeName" size="mini" effect="plain">{{ item.typeName }}</el-tag>
           <el-tag size="mini" :type="tagType(item)">{{ stateText(item) }}</el-tag>
         </div>
         <div class="device-meta">

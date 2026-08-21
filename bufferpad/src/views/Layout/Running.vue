@@ -775,10 +775,10 @@ export default {
       return '#67c23a'
     },
     plcDevices() {
-      return this.devicesMessage.filter(item => item.type !== 0)
+      return this.devicesMessage.filter(item => Number(item.type) !== 0)
     },
     scannerDevices() {
-      return this.devicesMessage.filter(item => item.type === 0)
+      return this.devicesMessage.filter(item => Number(item.type) === 0)
     }
   },
   beforeDestroy() {

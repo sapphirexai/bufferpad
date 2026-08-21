@@ -36,7 +36,7 @@
       <el-table-column prop="scannerName" label="扫码器"></el-table-column>
       <el-table-column prop="installPositionName" label="安装位置" width="130"></el-table-column>
       <el-table-column prop="typeName" label="操作类型" width="220"></el-table-column>
-      <el-table-column prop="addr" label="PLC端口/地址"></el-table-column>
+      <el-table-column prop="addr" label="PLC寄存器地址"></el-table-column>
       <el-table-column label="操作" width="180">
         <template slot-scope="scope">
           <el-button type="text" size="mini" @click="openDialog(scope.row)">编辑</el-button>
@@ -72,8 +72,9 @@
             <el-option v-for="item in plcAddrTypeOptions" :key="item.value" :label="item.label" :value="item.value"></el-option>
           </el-select>
         </el-form-item>
-        <el-form-item label="PLC端口/地址" prop="addr">
-          <el-input v-model="form.addr" placeholder="请输入PLC端口或寄存器地址"></el-input>
+        <el-form-item label="PLC寄存器地址" prop="addr">
+          <el-input v-model="form.addr" :placeholder="addressPlaceholder"></el-input>
+          <div v-if="addressHint" class="field-tip">{{ addressHint }}</div>
         </el-form-item>
       </el-form>
       <span slot="footer">
@@ -94,6 +95,7 @@ import { getPLCAddrTypeOptions, getPLCDeviceOptions, getScannerDeviceOptions } f
 import { isSuccessResponse, responseMessage } from '../../../shared/request/request';
 import { createPageListMixin } from '../../../shared/mixins/page-list';
 import { centerCellStyle } from '../../../shared/utils/format';
+import { plcAddressHint, plcAddressPlaceholder } from '../../../modules/settings/models/device-type';
 
 export default {
   name: 'PLCAddresses',
@@ -113,6 +115,18 @@ export default {
         addr: [{ required: true, message: '请输入PLC端口或地址', trigger: 'blur' }]
       }
     };
+  },
+  computed: {
+    selectedPlcType() {
+      const selected = this.plcOptions.find(item => Number(item.value) === Number(this.form.plcId));
+      return selected ? selected.deviceType : null;
+    },
+    addressPlaceholder() {
+      return plcAddressPlaceholder(this.selectedPlcType);
+    },
+    addressHint() {
+      return plcAddressHint(this.selectedPlcType);
+    }
   },
   methods: {
     emptyForm() {
@@ -224,5 +238,12 @@ export default {
 
 .toolbar {
   margin-bottom: 12px;
+}
+
+.field-tip {
+  margin-top: 6px;
+  color: #909399;
+  font-size: 12px;
+  line-height: 18px;
 }
 </style>
