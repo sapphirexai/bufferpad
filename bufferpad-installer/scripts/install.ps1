@@ -222,6 +222,14 @@ try {
     if ($PSBoundParameters.ContainsKey('MysqlPort')) { $config['MysqlPort'] = $MysqlPort }
     $root = [string]$config['InstallRoot']
 
+    $existingMysqlData = Join-Path $root 'data\mysql'
+    $hasExistingMysqlData = (Test-Path -LiteralPath $existingMysqlData) -and
+        (@(Get-ChildItem -LiteralPath $existingMysqlData -Force -ErrorAction SilentlyContinue).Count -gt 0)
+    if ($Force -and -not $ResetData -and $hasExistingMysqlData -and -not $SkipDbImport) {
+        $SkipDbImport = $true
+        Write-Warn "Existing MySQL data detected. Database dump import is disabled for this update; bundled migrations will still run."
+    }
+
     $paths = @{
         Root = $root
         Java = Join-Path $root 'java'
@@ -273,6 +281,7 @@ try {
     $backendJarSource = Join-Path $installerHome ("app\backend\" + [string]$config['BackendJarName'])
     $frontendSource = Join-Path $installerHome 'app\frontend\dist'
     $dbDumpSource = Join-Path $installerHome ("app\db\" + [string]$config['DbDumpFileName'])
+    $dbMigrationDir = Join-Path $installerHome 'app\db\migrations'
 
     if (-not (Test-Path -LiteralPath $backendJarSource)) {
         Fail "Backend jar is missing: $backendJarSource. Run scripts\prepare-app.ps1 first."
@@ -282,6 +291,9 @@ try {
     }
     if (-not $SkipDbImport -and -not (Test-Path -LiteralPath $dbDumpSource)) {
         Fail "Database dump is missing: $dbDumpSource. Put your exported SQL there or run install.ps1 -SkipDbImport for a temporary test."
+    }
+    if (-not (Test-Path -LiteralPath $dbMigrationDir)) {
+        Fail "Database migration directory is missing: $dbMigrationDir"
     }
 
     $javaZip = $null
@@ -577,6 +589,14 @@ FLUSH PRIVILEGES;
         Write-Ok "Database imported."
     } else {
         Write-Warn "Skipping database import by request."
+    }
+
+    $migrationFiles = @(Get-ChildItem -LiteralPath $dbMigrationDir -Filter '*.sql' -File | Sort-Object Name)
+    foreach ($migrationFile in $migrationFiles) {
+        Write-Step "Applying database migration $($migrationFile.Name)"
+        $migrationCommand = '"' + $mysqlExe + '" --defaults-extra-file="' + $clientWithPassword + '" ' + $dbName + ' < "' + $migrationFile.FullName + '"'
+        Invoke-CmdChecked -Command $migrationCommand -ErrorMessage "Database migration failed: $($migrationFile.FullName)"
+        Write-Ok "Database migration applied: $($migrationFile.Name)"
     }
 
     Write-Step "Installing backend service"

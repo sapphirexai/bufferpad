@@ -315,6 +315,15 @@ FLUSH PRIVILEGES;
     Wait-HttpOk -Url "http://127.0.0.1:$frontendPort/" -TimeoutSeconds 30 | Out-Null
     Wait-HttpOk -Url "http://127.0.0.1:$frontendPort/api/opcConfig/page" -TimeoutSeconds 30 | Out-Null
 
+    $deviceTypesResponse = Invoke-WebRequest -UseBasicParsing -Uri "http://127.0.0.1:$frontendPort/api/options/deviceTypes" -TimeoutSec 10
+    $deviceTypesPayload = $deviceTypesResponse.Content | ConvertFrom-Json
+    $deviceTypeValues = @($deviceTypesPayload.data | ForEach-Object { [int]$_.value })
+    foreach ($requiredType in @(3, 4)) {
+        if ($deviceTypeValues -notcontains $requiredType) {
+            Fail "Device type endpoint is missing Siemens PLC type $requiredType. Returned: $($deviceTypeValues -join ', ')"
+        }
+    }
+
     Write-Ok "Runtime smoke test passed."
     Write-Host "Frontend: http://127.0.0.1:$frontendPort"
     Write-Host "Backend:  http://127.0.0.1:$backendPort"

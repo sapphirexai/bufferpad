@@ -61,7 +61,7 @@ CREATE TABLE `cushion_info`  (
 DROP TABLE IF EXISTS `device_info`;
 CREATE TABLE `device_info`  (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
-  `type` int NOT NULL DEFAULT 0 COMMENT '设备类型，0: 扫码器；1: PLC ',
+  `type` int NOT NULL DEFAULT 0 COMMENT '设备类型，0: 扫码器；1: 三菱PLC；2: 汇川PLC；3: 西门子S7-1200；4: 西门子S7-1500',
   `port` int NOT NULL DEFAULT 0 COMMENT '设备端口号',
   `status` int NOT NULL DEFAULT 0 COMMENT '设备状态，0：未连接；1：活跃中',
   `ip` varchar(15) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL DEFAULT '' COMMENT '设备IP',
@@ -104,6 +104,7 @@ DROP TABLE IF EXISTS `operation_event`;
 CREATE TABLE `operation_event`  (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `event_id` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `operation_id` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
   `code` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `severity` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `title` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
@@ -121,6 +122,7 @@ CREATE TABLE `operation_event`  (
   `created_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_operation_event_event_id`(`event_id` ASC) USING BTREE,
+  INDEX `idx_operation_event_operation_id`(`operation_id` ASC, `id` ASC) USING BTREE,
   INDEX `idx_operation_event_line_id`(`work_line` ASC, `id` ASC) USING BTREE,
   INDEX `idx_operation_event_qr_code`(`qr_code` ASC) USING BTREE,
   INDEX `idx_operation_event_created_date`(`created_date` ASC) USING BTREE
@@ -133,7 +135,7 @@ DROP TABLE IF EXISTS `plc_addr`;
 CREATE TABLE `plc_addr`  (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
   `plc_id` bigint NOT NULL DEFAULT 0 COMMENT 'PLC的ID',
-  `addr` varchar(10) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL DEFAULT '' COMMENT 'PLC寄存器地址',
+  `addr` varchar(64) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL DEFAULT '' COMMENT 'PLC寄存器地址；西门子S7示例：DB1.DBW0、MW0、IW0、QW0',
   `type` int NOT NULL DEFAULT 0 COMMENT '地址类型\r\n0：扫码失败\r\n1：超出最大使用次数\r\n2：扫码成功',
   `scanner_id` bigint NOT NULL COMMENT 'scanner device_info.id',
   PRIMARY KEY (`id`) USING BTREE,

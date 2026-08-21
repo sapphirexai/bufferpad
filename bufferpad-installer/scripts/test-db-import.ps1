@@ -23,6 +23,10 @@ $sql = Join-Path $installerHome 'app\db\wms_opc.sql'
 if (-not (Test-Path -LiteralPath $sql)) {
     Fail "Database dump not found: $sql"
 }
+$migrationDir = Join-Path $installerHome 'app\db\migrations'
+if (-not (Test-Path -LiteralPath $migrationDir)) {
+    Fail "Database migration directory not found: $migrationDir"
+}
 
 Write-Step "Extracting temporary MySQL runtime"
 Expand-Archive -LiteralPath $zip.FullName -DestinationPath (Join-Path $root 'mysql-raw') -Force
@@ -98,12 +102,61 @@ try {
     $importCommand = '"' + $mysql + '" --protocol=tcp -h127.0.0.1 -P' + $port + ' -uroot wms_opc < "' + $sql + '"'
     Invoke-CmdChecked -Command $importCommand -ErrorMessage "SQL import failed: $sql"
 
-    Write-Step "Validating imported schema"
-    & $mysql '--protocol=tcp' '-h127.0.0.1' "-P$port" '-uroot' '-N' '-e' "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='wms_opc'; SELECT COUNT(*) FROM wms_opc.opc_config;"
+    Write-Step "Simulating an older installed schema and preserving sample data"
+    $legacyFixtureSql = @"
+ALTER TABLE wms_opc.plc_addr MODIFY COLUMN addr VARCHAR(10) NOT NULL DEFAULT '';
+ALTER TABLE wms_opc.operation_event DROP INDEX idx_operation_event_operation_id;
+ALTER TABLE wms_opc.operation_event DROP COLUMN operation_id;
+INSERT INTO wms_opc.plc_addr (id, plc_id, addr, type, scanner_id)
+VALUES (990001, 990002, 'D6600', 2, 990003);
+INSERT INTO wms_opc.operation_event (event_id, code, severity, title, message, work_line)
+VALUES ('legacy-event-001', 'LEGACY_TEST', 'INFO', 'legacy', 'migration preservation test', 1);
+"@
+    Invoke-Checked -FilePath $mysql -Arguments @('--protocol=tcp', '-h127.0.0.1', "-P$port", '-uroot', '-e', $legacyFixtureSql) -ErrorMessage 'Create legacy migration fixture failed.'
+
+    $migrationFiles = @(Get-ChildItem -LiteralPath $migrationDir -Filter '*.sql' -File | Sort-Object Name)
+    if ($migrationFiles.Count -lt 2) {
+        Fail "Expected bundled database migrations were not found: $migrationDir"
+    }
+    foreach ($pass in 1..2) {
+        Write-Step "Applying bundled database migrations (idempotency pass $pass)"
+        foreach ($migrationFile in $migrationFiles) {
+            $migrationCommand = '"' + $mysql + '" --protocol=tcp -h127.0.0.1 -P' + $port + ' -uroot wms_opc < "' + $migrationFile.FullName + '"'
+            Invoke-CmdChecked -Command $migrationCommand -ErrorMessage "Database migration failed: $($migrationFile.FullName)"
+        }
+    }
+
+    Write-Step "Validating imported and migrated schema"
+    $schemaResult = @(& $mysql '--protocol=tcp' '-h127.0.0.1' "-P$port" '-uroot' '-N' '-B' '-e' @"
+SELECT CONCAT(
+  (SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='wms_opc'), '|',
+  COALESCE((SELECT character_maximum_length FROM information_schema.columns WHERE table_schema='wms_opc' AND table_name='plc_addr' AND column_name='addr'), 0), '|',
+  (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='wms_opc' AND table_name='operation_event' AND column_name='operation_id'), '|',
+  (SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema='wms_opc' AND table_name='operation_event' AND index_name='idx_operation_event_operation_id'), '|',
+  (SELECT COUNT(*) FROM wms_opc.plc_addr WHERE id=990001 AND addr='D6600'), '|',
+  (SELECT COUNT(*) FROM wms_opc.operation_event WHERE event_id='legacy-event-001' AND operation_id='legacy-event-001')
+);
+"@)
     if ($LASTEXITCODE -ne 0) {
         Fail "Imported schema validation query failed."
     }
-    Write-Ok "Database dump import smoke test passed."
+    if ($schemaResult.Count -ne 1) {
+        Fail "Imported schema validation returned an unexpected result: $($schemaResult -join ', ')"
+    }
+    $schemaValues = $schemaResult[0].Trim() -split '\|'
+    if ($schemaValues.Count -ne 6 -or [int]$schemaValues[0] -lt 8) {
+        Fail "Imported schema is missing required tables: $($schemaResult[0])"
+    }
+    if ([int]$schemaValues[1] -lt 64) {
+        Fail "plc_addr.addr must support at least 64 characters for Siemens S7 addresses. Result=$($schemaResult[0])"
+    }
+    if ([int]$schemaValues[2] -ne 1 -or [int]$schemaValues[3] -lt 1) {
+        Fail "operation_event.operation_id or its index is missing. Result=$($schemaResult[0])"
+    }
+    if ([int]$schemaValues[4] -ne 1 -or [int]$schemaValues[5] -ne 1) {
+        Fail "Bundled migrations did not preserve or backfill legacy records. Result=$($schemaResult[0])"
+    }
+    Write-Ok "Database dump import and idempotent migration smoke test passed."
 } finally {
     if ($null -ne $proc -and -not $proc.HasExited) {
         & $mysqlAdmin '--protocol=tcp' '-h127.0.0.1' "-P$port" '-uroot' 'shutdown' *> $null

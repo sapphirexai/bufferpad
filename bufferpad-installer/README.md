@@ -13,7 +13,9 @@
 
 当前随包应用提供缓冲垫扫码计数、两小时防重复计数、寿命预警、PLC 联动、设备状态、
 运行告警和最近操作。运行事件写入 `operation_event` 并通过 SSE 实时显示，后端默认每天
-清理30天前的事件数据。
+清理30天前的事件数据。PLC 通信支持三菱 MC/SLMP、汇川 Modbus TCP，以及西门子
+SIMATIC S7-1200/S7-1500 的 S7comm over ISO-on-TCP。西门子 S7-1200 的设备类型编码为
+`3`，S7-1500 为 `4`，标准通信端口为 `102`，连接参数为 `rack=0`、`slot=0`。
 
 ## 开机启动
 
@@ -54,7 +56,8 @@ bufferpad-installer/
   packages/              Java、MySQL、nginx、WinSW、VC++ 运行库安装包
   app/backend/opc.jar    后端 jar，由 scripts/prepare-app.ps1 复制生成
   app/frontend/dist/     前端 dist，由 scripts/prepare-app.ps1 复制生成
-  app/db/wms_opc.sql     数据库备份 SQL
+  app/db/wms_opc.sql     全新安装使用的数据库初始化 SQL
+  app/db/migrations/     全新安装和存量升级都会自动执行的增量迁移 SQL
   config/                安装配置和模板
   scripts/               安装、卸载、维护、测试脚本
 ```
@@ -127,6 +130,15 @@ bufferpad-installer\app\db\wms_opc.sql
 `operation_event.created_date` 的索引 `idx_operation_event_created_date`。否则安装后运行监控
 无法查询最近操作，或30天定时清理效率会明显下降。
 
+增量迁移脚本放在：
+
+```text
+bufferpad-installer\app\db\migrations\
+```
+
+安装程序会按文件名顺序自动执行目录内全部 `.sql`。西门子 S7 支持迁移会保留已有设备、
+PLC 地址、缓冲垫和日志数据，只扩展设备类型说明及 PLC 地址字段长度，不会覆盖现场配置。
+
 如果 `packages` 目录缺少安装包，也可以尝试从官方地址下载：
 
 ```powershell
@@ -184,7 +196,8 @@ http://<本机IP>:18088
 - 生成 `application-prod.yml`、`my.ini`、`nginx.conf`
 - 初始化 MySQL 数据目录
 - 设置 MySQL root 密码和应用数据库
-- 导入 `wms_opc.sql`
+- 全新安装时导入 `wms_opc.sql`
+- 自动执行 `app\db\migrations` 中的数据库迁移
 - 注册并启动 `BufferPadMySQL`
 - 注册并启动 `BufferPadBackend`
 - 注册并启动 `BufferPadNginx`
@@ -236,7 +249,12 @@ C:\bufferpad\conf\application-prod.yml
 powershell -ExecutionPolicy Bypass -File .\scripts\install.ps1 -Force
 ```
 
-保留 MySQL 数据，并跳过 SQL 导入：
+检测到已有 MySQL 数据时，`-Force` 会自动跳过包含建表语句的 `wms_opc.sql`，但仍会按文件名
+顺序执行 `app\db\migrations` 中的增量迁移。迁移不会删除或覆盖已有设备、PLC 地址、缓冲垫、
+使用明细和日志数据。西门子 S7 迁移会增加设备类型 `3/4` 的说明，并把 PLC 地址字段扩展为
+可保存 `DB1.DBW0` 等地址的长度。
+
+显式跳过数据库初始化 SQL 时也会继续自动执行迁移：
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\install.ps1 -Force -SkipDbImport
@@ -247,6 +265,9 @@ powershell -ExecutionPolicy Bypass -File .\scripts\install.ps1 -Force -SkipDbImp
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\install.ps1 -Force -ResetData
 ```
+
+`-ResetData` 会重建 MySQL 数据目录，会清除原数据库；只应在明确需要全新初始化且已有数据已
+备份时使用。
 
 ## 状态和维护
 
