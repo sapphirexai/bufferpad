@@ -7,6 +7,8 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
 /**
@@ -23,10 +25,10 @@ public class SaveDeviceInfoScheme extends AbsBaseScheme {
     private Long id;
 
     /**
-     * 设备类型，0: 扫码器；1: PLC；2：汇川PLC
+     * 设备类型，0: 扫码器；1: 三菱PLC；2: 汇川PLC；3: 西门子S7-1200；4: 西门子S7-1500
      */
     @NotNull(message = Constants.RESULT_MSG_DEVICE_NO_TYPE)
-    @Schema(description = "设备类型，0: 扫码器；1: PLC；2：汇川PLC")
+    @Schema(description = "设备类型，0: 扫码器；1: 三菱PLC；2: 汇川PLC；3: 西门子S7-1200；4: 西门子S7-1500")
     private Integer type;
 
     /**
@@ -40,6 +42,8 @@ public class SaveDeviceInfoScheme extends AbsBaseScheme {
      * 设备端口号
      */
     @NotNull(message = Constants.RESULT_MSG_DEVICE_NO_PORT)
+    @Min(value = 1, message = "设备端口必须在1到65535之间！")
+    @Max(value = 65535, message = "设备端口必须在1到65535之间！")
     @Schema(description = "设备端口号")
     private Integer port;
 

@@ -16,7 +16,7 @@ PCB 回流线缓冲垫计数及 PLC 联动服务。系统接收工业读码器�
 - Java 17、Spring Boot 2.7.10、Spring MVC
 - MyBatis-Plus、MySQL 8、Druid
 - Netty、GreenRobot EventBus
-- HSL Communication：三菱 MC/SLMP、汇川 Modbus TCP
+- HSL Communication：三菱 MC/SLMP、汇川 Modbus TCP、西门子 S7comm/ISO-on-TCP
 - SSE：设备状态、扫码结果和运行事件实时推送
 - JUnit 4、Mockito、H2
 
@@ -93,6 +93,42 @@ PLC 结果处理说明：
 - 成功类指令可携带开口数回读地址；写入成功后读取 16 位整数并更新 `cushion_info` 及最新一条 `cushion_detail`。
 - 心跳只证明通信链路可用，不会清除仍未恢复的 PLC 业务拒绝提示；真实业务写入成功后才恢复正常状态。
 
+## 西门子 S7-1200/S7-1500 通信
+
+设备类型 `3` 对应 S7-1200，类型 `4` 对应 S7-1500。后端使用经典 S7comm over ISO-on-TCP，默认 TCP 端口为 `102`，常规 CPU 网口使用 HSL 驱动默认的 Rack `0`、Slot `0`。这不是 PROFINET 实时 I/O、OPC UA 或符号变量访问。
+
+当前业务指令统一读写 16 位整数，西门子 PLC 地址只接受以下格式，保存时会统一转为大写并预校验：
+
+| 区域 | 格式 | 示例 | 用途 |
+| --- | --- | --- | --- |
+| 数据块字 | `DBn.DBWoffset` | `DB1.DBW0` | 写入或回读 |
+| M 存储区字 | `MWoffset` | `MW0` | 写入或回读 |
+| 输出区字 | `QWoffset` | `QW0` | 写入或回读 |
+| 输入区字 | `IWoffset` | `IW0` | 仅开口数回读 |
+
+`DBW`、`MW`、`IW`、`QW` 后的数字是**字节偏移**。每个地址占 2 个字节，推荐按 `0、2、4...` 分配；保存时会拒绝同一 PLC 上物理区间相同或部分重叠的地址，例如 `DBW0` 与 `DBW1`。后端限制 DB 编号为 `1..65535`、16 位字起始偏移为 `0..2097150`，避免 HSL 驱动把越界地址静默截断；实际可用范围仍以 CPU 和数据块为准。
+
+推荐为每个扫码器建立一个关闭优化访问的非优化数据块。以下是一个可直接交给 PLC 工程师的完整示例，S7-1200 与 S7-1500 均适用：
+
+| 操作类型编码 | 操作 | 地址 | 系统动作 |
+| ---: | --- | --- | --- |
+| `0` | 扫码失败 | `DB100.DBW0` | 写入 `1` |
+| `1` | 扫码超过最大次数 | `DB100.DBW2` | 写入 `1` |
+| `2` | 扫码成功 | `DB100.DBW4` | 写入 `1`，成功后回读类型 `6` |
+| `3` | 重新扫码超过最大次数 | `DB100.DBW6` | 写入 `1` |
+| `4` | 重新扫码成功 | `DB100.DBW8` | 写入 `1`，成功后回读类型 `7` |
+| `5` | 心跳 | `DB100.DBW10` | 每 2 秒写入 `0` |
+| `6` | 扫码成功开口数回读 | `DB100.DBW12` | 读取 16 位整数 |
+| `7` | 重新扫码成功开口数回读 | `DB100.DBW14` | 读取 16 位整数 |
+
+不接受 TIA 显示用的 `%` 前缀，也不接受 `DBX`、`MX` 等位地址。开口数在 TIA 中应声明为 `INT`，有效范围为 `0..32767`；系统会拒绝负值，避免把无符号 `WORD` 的 `40000` 误存成负数。S7-1200/1500 现场还需要：
+
+- 在 TIA Portal 的 CPU 保护设置中允许远程 PUT/GET 通信。
+- 使用绝对 DB 地址时关闭对应数据块的“优化块访问”。
+- 确认 PLC 保护等级允许外部读写，且 TCP `102` 可达。
+- PLC 程序消费通知值 `1` 后主动清零；类型 `2/4` 写成功后会立即回读类型 `6/7`，开口数应由 PLC 持续维护为最新值。
+- 当前实现不支持 S7-1500 安全通信认证、特殊 CP 的自定义 TSAP 或符号变量访问。
+
 ## 运行事件与前端提示
 
 扫码、计数和 PLC 处理会生成结构化 `operation_event`，并通过 SSE 的 `operationEvent` topic 推送前端。每次扫码都有一个最长64字符的 `operation_id`，同一次扫码产生的计数、地址检查、PLC写入和开口数回读事件共用该编号，供前端合并为一条操作反馈。手动扫码可通过 `X-Operation-Id` 请求头传入编号，未传入以及扫码器扫码时由后端自动生成。主要事件包括：
@@ -116,7 +152,7 @@ operation-event:
     cleanup-cron: "0 15 2 * * ?"
 ```
 
-已有数据库需要执行 `docs/sql/20260803_operation_event_retention.sql` 补充 `created_date` 索引，并执行 `docs/sql/20260804_operation_event_correlation.sql` 增加操作关联字段和索引；两个脚本均可重复执行。关联脚本会用原 `event_id` 回填历史记录，不删除业务数据。新建数据库使用 `docs/sql/20260803_operation_event.sql`，建表时已包含全部字段和索引。
+已有数据库需要执行 `docs/sql/20260803_operation_event_retention.sql` 补充 `created_date` 索引，并执行 `docs/sql/20260804_operation_event_correlation.sql` 增加操作关联字段和索引；两个脚本均可重复执行。升级西门子 S7 支持时还必须执行 `docs/sql/20260821_siemens_s7_support.sql`，将 PLC 地址字段扩展到 64 个字符并登记新设备类型。关联脚本会用原 `event_id` 回填历史记录，不删除业务数据。新建数据库使用 `docs/sql/20260803_operation_event.sql`，建表时已包含全部字段和索引。
 
 ## 主要数据表
 
@@ -128,7 +164,7 @@ operation-event:
 | `operation_event` | 面向运行监控的结构化事件，保留30天 |
 | `opc_config` | 全局缓冲垫寿命，固定且仅保留 `id=1`，默认500次 |
 | `device_install_position` | 现场设备安装位置及排序 |
-| `device_info` | 扫码器、三菱 PLC、汇川 PLC 及连接参数 |
+| `device_info` | 扫码器、三菱 PLC、汇川 PLC、西门子 S7-1200/S7-1500 及连接参数 |
 | `plc_addr` | 扫码器、PLC、操作类型和寄存器地址的映射 |
 
 ## 主要接口
@@ -191,6 +227,7 @@ GET /actuator/health
 | `docs/sql/20260803_operation_event.sql` | 创建运行事件表 |
 | `docs/sql/20260803_operation_event_retention.sql` | 为已有事件表补充清理索引，不删除数据 |
 | `docs/sql/20260804_operation_event_correlation.sql` | 为已有事件表补充 `operation_id` 和关联索引 |
+| `docs/sql/20260821_siemens_s7_support.sql` | 扩展西门子 S7 设备类型及 64 字符寄存器地址 |
 | `docs/sql/20260803_test_data.sql` | 测试环境前端验收数据，可重复执行 |
 
 `20260803_test_data.sql` 只创建业务测试数据，不创建模拟设备，避免后端把测试设备当成真实扫码器或 PLC 发起连接。

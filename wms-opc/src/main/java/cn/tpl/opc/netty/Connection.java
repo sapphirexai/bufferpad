@@ -2,8 +2,7 @@ package cn.tpl.opc.netty;
 
 import HslCommunication.Core.Types.OperateResult;
 import HslCommunication.Core.Types.OperateResultExOne;
-import HslCommunication.Profinet.Inovance.InovanceTcpNet;
-import HslCommunication.Profinet.Melsec.MelsecMcNet;
+import HslCommunication.Core.Net.NetworkBase.NetworkDeviceBase;
 import cn.tpl.opc.commons.constant.Constants;
 import cn.tpl.opc.commons.constant.Params;
 import cn.tpl.opc.commons.dto.enums.DeviceConnectionState;
@@ -38,8 +37,7 @@ public class Connection {
     private Integer workLine;
     private Integer installSeq;
     private volatile ChannelFuture channelFuture;
-    private volatile MelsecMcNet melsecMcNet;
-    private volatile InovanceTcpNet inovanceTcpNet;
+    private volatile NetworkDeviceBase plcClient;
     private OnStatusChangeListener onStatusChangeListener;
     private final AtomicLong connectionResetInterval = new AtomicLong(Constants.NETTY_CONNECTION_RESET_INTERVAL_SEC);
     private final AtomicBoolean connecting = new AtomicBoolean(false);
@@ -75,9 +73,8 @@ public class Connection {
         markOnline("连接正常");
     }
 
-    public synchronized void nowActive(MelsecMcNet melsecClient, InovanceTcpNet inovanceClient) {
-        this.melsecMcNet = melsecClient;
-        this.inovanceTcpNet = inovanceClient;
+    public synchronized void nowActive(NetworkDeviceBase client) {
+        this.plcClient = client;
         resetConnectionResetInterval();
         markOnline("PLC通信正常");
     }
@@ -107,9 +104,7 @@ public class Connection {
         if (command == null) return PlcIoResult.failure(-1, "PLC写入值为空");
         if (isNoPLCNet()) return PlcIoResult.failure(10000, "PLC连接不可用");
         try {
-            OperateResult result = melsecMcNet != null
-                    ? melsecMcNet.Write(address, command)
-                    : inovanceTcpNet.Write(address, command);
+            OperateResult result = plcClient.Write(address, command);
             return result.IsSuccess
                     ? PlcIoResult.success(null)
                     : PlcIoResult.failure(result.ErrorCode, result.Message);
@@ -121,9 +116,7 @@ public class Connection {
     public PlcIoResult<Short> readInt16(String address) {
         if (isNoPLCNet()) return PlcIoResult.failure(10000, "PLC连接不可用");
         try {
-            OperateResultExOne<Short> result = melsecMcNet != null
-                    ? melsecMcNet.ReadInt16(address)
-                    : inovanceTcpNet.ReadInt16(address);
+            OperateResultExOne<Short> result = plcClient.ReadInt16(address);
             return result.IsSuccess
                     ? PlcIoResult.success(result.Content)
                     : PlcIoResult.failure(result.ErrorCode, result.Message);
@@ -133,7 +126,7 @@ public class Connection {
     }
 
     public boolean isNoPLCNet() {
-        return melsecMcNet == null && inovanceTcpNet == null;
+        return plcClient == null;
     }
 
     public void status2Disconnected() {
@@ -166,13 +159,14 @@ public class Connection {
             channelFuture.channel().close();
             channelFuture = null;
         }
-        if (melsecMcNet != null) {
-            melsecMcNet.ConnectClose();
-            melsecMcNet = null;
-        }
-        if (inovanceTcpNet != null) {
-            inovanceTcpNet.ConnectClose();
-            inovanceTcpNet = null;
+        NetworkDeviceBase client = plcClient;
+        plcClient = null;
+        if (client != null) {
+            try {
+                client.ConnectClose();
+            } catch (Exception e) {
+                log.warn("close PLC client failed, deviceId => {}", id, e);
+            }
         }
     }
 

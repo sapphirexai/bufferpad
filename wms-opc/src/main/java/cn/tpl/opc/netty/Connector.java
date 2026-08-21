@@ -1,11 +1,15 @@
 package cn.tpl.opc.netty;
 
 import HslCommunication.Core.Types.OperateResult;
+import HslCommunication.Core.Net.NetworkBase.NetworkDeviceBase;
 import HslCommunication.Profinet.Inovance.InovanceTcpNet;
 import HslCommunication.Profinet.Melsec.MelsecMcNet;
+import HslCommunication.Profinet.Siemens.SiemensPLCS;
+import HslCommunication.Profinet.Siemens.SiemensS7Net;
 import cn.hutool.core.bean.BeanUtil;
 import cn.tpl.opc.commons.constant.Constants;
 import cn.tpl.opc.commons.constant.Params;
+import cn.tpl.opc.commons.dto.enums.DeviceTypeEnum;
 import cn.tpl.opc.commons.dto.event.EventBusMsgPlcCmd;
 import cn.tpl.opc.commons.dto.result.DeviceInfoDTO;
 import cn.tpl.opc.entity.PLCAddrEntity;
@@ -221,29 +225,61 @@ public class Connector {
         if (!conn.isNoPLCNet()) return;
         log.info("connectPLC, connecting => {}", ip + ":" + port);
 
-        InovanceTcpNet inovanceTcpNet = null;
-        MelsecMcNet melsecMcNet = null;
-        OperateResult operateResult;
-        if (Params.DEVICE_TYPE_KEY_HC_PLC == conn.getType()) {
-            inovanceTcpNet = new InovanceTcpNet(ip, port, Constants.DEFAULT_STATION_HC_PLC_);
-            operateResult = inovanceTcpNet.ConnectServer();
-        } else {
-            melsecMcNet = new MelsecMcNet(ip, port);
-            operateResult = melsecMcNet.ConnectServer();
-        }
-
-        if (operateResult.IsSuccess) {
-            log.info("connectPLC, connecting => success");
-            conn.nowActive(melsecMcNet, inovanceTcpNet);
+        NetworkDeviceBase plcClient = null;
+        DeviceTypeEnum deviceType = DeviceTypeEnum.of(conn.getType());
+        if (deviceType == null || !deviceType.isPlc()) {
+            conn.nowDead("不支持的PLC设备类型：" + conn.getType(), null);
             return;
         }
 
-        log.error("connectPLC, connecting => failed, ip =>{}:{}", ip, port);
-        log.error("connectPLC, ErrorCode: {}", operateResult.ErrorCode);
-        log.error("connectPLC, ErrorMsg: {}", operateResult.Message);
-        if (melsecMcNet != null) melsecMcNet.ConnectClose();
-        if (inovanceTcpNet != null) inovanceTcpNet.ConnectClose();
-        conn.nowDead("PLC连接失败：" + operateResult.Message, operateResult.ErrorCode);
+        try {
+            plcClient = createPlcClient(deviceType, ip, port);
+            OperateResult operateResult = plcClient.ConnectServer();
+
+            if (operateResult.IsSuccess) {
+                log.info("connectPLC, connecting => success");
+                conn.nowActive(plcClient);
+                plcClient = null;
+                return;
+            }
+
+            log.error("connectPLC, connecting => failed, ip =>{}:{}", ip, port);
+            log.error("connectPLC, ErrorCode: {}", operateResult.ErrorCode);
+            log.error("connectPLC, ErrorMsg: {}", operateResult.Message);
+            conn.nowDead("PLC连接失败：" + operateResult.Message, operateResult.ErrorCode);
+        } finally {
+            if (plcClient != null) {
+                try {
+                    plcClient.ConnectClose();
+                } catch (Exception closeError) {
+                    log.warn("close failed PLC client failed, deviceId => {}", conn.getId(), closeError);
+                }
+            }
+        }
+    }
+
+    static SiemensPLCS resolveSiemensPlcModel(DeviceTypeEnum deviceType) {
+        if (deviceType == DeviceTypeEnum.SIEMENS_S7_1200_PLC) return SiemensPLCS.S1200;
+        if (deviceType == DeviceTypeEnum.SIEMENS_S7_1500_PLC) return SiemensPLCS.S1500;
+        throw new IllegalArgumentException("设备类型不是受支持的西门子S7 PLC：" + deviceType);
+    }
+
+    static NetworkDeviceBase createPlcClient(DeviceTypeEnum deviceType, String ip, int port) {
+        switch (deviceType) {
+            case INOVANCE_PLC:
+                return new InovanceTcpNet(ip, port, Constants.DEFAULT_STATION_HC_PLC_);
+            case MITSUBISHI_PLC:
+                return new MelsecMcNet(ip, port);
+            case SIEMENS_S7_1200_PLC:
+            case SIEMENS_S7_1500_PLC:
+                SiemensS7Net client = new SiemensS7Net(resolveSiemensPlcModel(deviceType), ip);
+                client.setPort(port);
+                client.setRack((byte) 0);
+                client.setSlot((byte) 0);
+                return client;
+            default:
+                throw new IllegalArgumentException("不支持的PLC设备类型：" + deviceType);
+        }
     }
 
     private void startPLCHeartbeatService() {

@@ -3,6 +3,7 @@ package cn.tpl.opc.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import cn.tpl.opc.commons.constant.Constants;
 import cn.tpl.opc.commons.dto.ResultDTO;
+import cn.tpl.opc.commons.dto.enums.DeviceTypeEnum;
 import cn.tpl.opc.commons.dto.result.DeviceInfoDTO;
 import cn.tpl.opc.entity.DeviceInfoEntity;
 import cn.tpl.opc.netty.Connection;
@@ -63,6 +64,7 @@ public class NettyServiceImpl implements INettyService {
         Connection connection = new Connection();
         BeanUtil.copyProperties(deviceInfo, connection);
         BeanUtil.copyProperties(deviceInfo, deviceInfoDTO);
+        applyTypeName(deviceInfoDTO);
         connector.connect(connection);
         Connection managedConnection = connectionMgr.getConnection(connection.getId());
         if (managedConnection != null) BeanUtil.copyProperties(managedConnection, deviceInfoDTO);
@@ -72,6 +74,12 @@ public class NettyServiceImpl implements INettyService {
     private DeviceInfoDTO connection2DeviceDTO(Connection connection) {
         DeviceInfoDTO deviceInfoDTO = new DeviceInfoDTO();
         BeanUtil.copyProperties(connection, deviceInfoDTO);
+        applyTypeName(deviceInfoDTO);
         return deviceInfoDTO;
+    }
+
+    private void applyTypeName(DeviceInfoDTO deviceInfoDTO) {
+        DeviceTypeEnum type = DeviceTypeEnum.of(deviceInfoDTO.getType());
+        deviceInfoDTO.setTypeName(type == null ? "" : type.getLabel());
     }
 }

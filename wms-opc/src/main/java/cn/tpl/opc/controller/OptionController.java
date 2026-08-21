@@ -4,6 +4,7 @@ import cn.tpl.opc.commons.dto.ResultDTO;
 import cn.tpl.opc.commons.dto.enums.DeviceTypeEnum;
 import cn.tpl.opc.commons.dto.enums.PlcAddrTypeEnum;
 import cn.tpl.opc.commons.dto.result.DeviceInfoDTO;
+import cn.tpl.opc.commons.dto.result.DeviceOptionDTO;
 import cn.tpl.opc.commons.dto.result.OptionDTO;
 import cn.tpl.opc.entity.DeviceInfoEntity;
 import cn.tpl.opc.service.IDeviceInstallPositionService;
@@ -49,10 +50,14 @@ public class OptionController {
 
     @Operation(summary = "PLC设备选项")
     @GetMapping("/plcDevices")
-    public ResultDTO<List<OptionDTO<Long>>> plcDevices() {
+    public ResultDTO<List<DeviceOptionDTO>> plcDevices() {
         return ResultDTO.success(deviceInfoService.list().stream()
                 .filter(item -> DeviceTypeEnum.isPlc(item.getType()))
-                .map(item -> new OptionDTO<>(item.getId(), item.getName()))
+                .map(item -> {
+                    DeviceTypeEnum type = DeviceTypeEnum.of(item.getType());
+                    String typeLabel = type == null ? "PLC" : type.getLabel();
+                    return new DeviceOptionDTO(item.getId(), item.getName() + " - " + typeLabel, item.getType());
+                })
                 .collect(Collectors.toList()));
     }
 

@@ -101,6 +101,14 @@
         order by id asc
     </select>
 
+    <select id="listByPlcId" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from plc_addr
+        where plc_id = #{plcId}
+        order by id asc
+    </select>
+
     <delete id="deleteByPrimaryKey" parameterType="java.lang.Long">
         <!--
           WARNING - @mbg.generated

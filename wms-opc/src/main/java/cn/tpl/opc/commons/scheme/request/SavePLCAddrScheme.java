@@ -7,6 +7,7 @@ import lombok.EqualsAndHashCode;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 
 /**
  * 保存PLC地址配置。
@@ -23,6 +24,7 @@ public class SavePLCAddrScheme extends AbsBaseScheme {
     private Long plcId;
 
     @NotBlank(message = "PLC地址不能为空！")
+    @Size(max = 64, message = "PLC地址长度不能超过64个字符！")
     @Schema(description = "PLC寄存器地址")
     private String addr;
 

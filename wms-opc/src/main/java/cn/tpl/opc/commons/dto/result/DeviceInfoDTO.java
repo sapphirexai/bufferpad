@@ -25,9 +25,9 @@ public class DeviceInfoDTO extends AbsBaseDTO {
     private Long id;
 
     /**
-     * 设备类型，0: 扫码器；1: 三菱PLC；2：汇川PLC
+     * 设备类型，0: 扫码器；1: 三菱PLC；2: 汇川PLC；3: 西门子S7-1200；4: 西门子S7-1500
      */
-    @Schema(description = "设备类型，0: 扫码器；1: PLC；2：汇川PLC")
+    @Schema(description = "设备类型，0: 扫码器；1: 三菱PLC；2: 汇川PLC；3: 西门子S7-1200；4: 西门子S7-1500")
     private Integer type;
 
     @Schema(description = "设备类型名称")

@@ -152,8 +152,20 @@ public class PlcCommandDispatcher implements InitializingBean, DisposableBean {
             return;
         }
 
+        Short openCount = result.getContent();
+        if (openCount == null || openCount < 0) {
+            connection.markDegraded(null, "PLC开口数超出有效范围");
+            OperationEventDTO event = baseEvent(OperationEventCode.PLC_READ_FAILED, operationId,
+                    qrCode, scannerId, workLine, connection);
+            event.setAddress(address);
+            event.setMessage("PLC开口数必须是0到32767之间的INT值");
+            event.setTechnicalDetail("PLC returned invalid Int16 open count: " + openCount);
+            operationEventService.publish(event);
+            return;
+        }
+
         connection.markOnline("PLC通信正常");
-        if (result.getContent() == null || !cushionInfoService.modifyOpenCountByQrCode(qrCode, result.getContent())) {
+        if (!cushionInfoService.modifyOpenCountByQrCode(qrCode, openCount)) {
             OperationEventDTO event = baseEvent(OperationEventCode.PLC_READ_FAILED, operationId,
                     qrCode, scannerId, workLine, connection);
             event.setAddress(address);

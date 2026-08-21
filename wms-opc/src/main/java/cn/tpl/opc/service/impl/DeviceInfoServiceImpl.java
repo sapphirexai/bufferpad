@@ -117,6 +117,13 @@ public class DeviceInfoServiceImpl implements IDeviceInfoService {
         if (oldIsPlc && !newIsPlc && plcAddrEntityMapper.countByPlcId(oldEntity.getId()) > 0) {
             throw new IllegalArgumentException("该PLC已被PLC地址配置引用，不能修改为非PLC类型！");
         }
+        boolean sameSiemensProtocol = DeviceTypeEnum.isSiemensS7(oldEntity.getType())
+                && DeviceTypeEnum.isSiemensS7(newEntity.getType());
+        if (oldIsPlc && newIsPlc && !Objects.equals(oldEntity.getType(), newEntity.getType())
+                && !sameSiemensProtocol
+                && plcAddrEntityMapper.countByPlcId(oldEntity.getId()) > 0) {
+            throw new IllegalArgumentException("该PLC已被地址配置引用，不能直接修改通信协议类型；请先删除对应PLC地址配置！");
+        }
 
         boolean oldIsScanner = DeviceTypeEnum.isScanner(oldEntity.getType());
         boolean newIsScanner = DeviceTypeEnum.isScanner(newEntity.getType());

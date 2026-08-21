@@ -74,4 +74,6 @@ public interface PLCAddrEntityMapper extends BaseMapper<PLCAddrEntity> {
                                      @Param("data") QueryPLCAddrPageScheme scheme);
 
     List<PLCAddrEntity> listByPlcIdAndType(PLCAddrEntity record);
+
+    List<PLCAddrEntity> listByPlcId(Long plcId);
 }
