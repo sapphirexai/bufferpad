@@ -88,6 +88,47 @@ powershell -ExecutionPolicy Bypass -File ..\bufferpad-installer\scripts\prepare-
 | 后端代理 | `/api/` -> `http://127.0.0.1:19001/` |
 | SSE 代理 | `/api/sse/` -> `http://127.0.0.1:19001/sse/` |
 
+已验证发布记录（2026-08-25）：前端提交 `96711f5`、后端提交 `829158a` 已部署；发布号为
+`bufferpad-s7-20260825-003148`，前端备份位于
+`/docker/nginx/backups/bufferpad-bufferpad-s7-20260825-003148`。主页返回 `200`，并通过
+`/api/options/deviceTypes` 确认 S7-1200/S7-1500 类型已可用。
+
+### 可重复发布步骤
+
+本机重新构建并打包：
+
+```powershell
+npm run build
+$release = "bufferpad-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
+tar -cf "$env:TEMP\$release-frontend.tar" -C dist .
+ssh root@192.0.2.4 "install -d -m 700 /docker/.$release"
+scp "$env:TEMP\$release-frontend.tar" root@192.0.2.4:/docker/.$release/
+```
+
+服务器上备份当前文件；解压包时上例使用 `-C dist .`，因此无需再嵌套一层 `dist` 目录：
+
+```bash
+release=bufferpad-YYYYMMDD-HHMMSS
+install -d /docker/nginx/backups
+cp -a /docker/nginx/bufferpad "/docker/nginx/backups/bufferpad-$release"
+tar -xf "/docker/.$release/$release-frontend.tar" -C /docker/nginx/bufferpad
+```
+
+部署后先比较 bind mount 两端首页哈希；若不一致，不重启共享 Nginx，直接把同一份文件流式同步到
+`nginx-web` 当前可见目录：
+
+```bash
+sha256sum /docker/nginx/bufferpad/index.html
+docker exec nginx-web sha256sum /usr/share/nginx/bufferpad/index.html
+tar -cf - -C /docker/nginx/bufferpad . \
+  | docker exec -i nginx-web tar -xf - -C /usr/share/nginx/bufferpad
+curl -I http://127.0.0.1:18088/
+curl http://127.0.0.1:18088/api/options/deviceTypes
+```
+
+若前端验收失败，使用对应备份恢复宿主机目录，并再次执行上面的流式同步命令。SSH 密码和数据库
+密码只保存在受控服务器环境中，绝不能写入仓库或发布文档。
+
 部署时先将当前 `/docker/nginx/bufferpad` 复制为带时间戳的备份，再把完整的 `dist/`
 解压到临时目录，并将临时目录内容覆盖同步到 `/docker/nginx/bufferpad`。不要重命名或替换
 `bufferpad` 目录本身：该目录是 Docker bind mount，容器会继续绑定重命名前的目录节点，
