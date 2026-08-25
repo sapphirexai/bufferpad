@@ -246,6 +246,63 @@ GET /actuator/health
 
 服务器数据库参数由 Compose 环境变量注入，密码存放在服务器 `/docker/.env`，不得提交到仓库。
 
+已验证发布记录（2026-08-25）：后端提交 `829158a` 已部署，镜像发布号为
+`bufferpad-s7-20260825-003148`；旧镜像保留为
+`bufferpad/wms-opc:backup-bufferpad-s7-20260825-003148`，可用于快速回滚。服务通过
+`http://127.0.0.1:19001/actuator/health` 返回 `{"status":"UP"}`。本次还执行了幂等迁移
+`20260821_siemens_s7_support.sql`，确认 `plc_addr.addr` 已扩展为 `varchar(64)`。
+
+### 可重复发布步骤
+
+Compose 中的 `bufferpad-wms-opc` 服务只引用镜像，不含 `build` 配置，因此每次发布都应先在
+服务器构建镜像、保留旧镜像标签，再通过 Compose 仅重建此服务。
+
+本机构建并上传发布包：
+
+```powershell
+mvn -Pprod package
+$release = "bufferpad-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
+tar -cf "$env:TEMP\$release-backend.tar" Dockerfile target/opc-0.0.1.-SNAPSHOT.jar
+ssh root@192.0.2.4 "install -d -m 700 /docker/.$release"
+scp "$env:TEMP\$release-backend.tar" root@192.0.2.4:/docker/.$release/
+scp .\docs\sql\20260821_siemens_s7_support.sql root@192.0.2.4:/docker/.$release/
+```
+
+服务器上执行迁移、构建、切换和健康检查：
+
+```bash
+release=bufferpad-YYYYMMDD-HHMMSS
+install -d -m 700 /docker/.$release/backend
+tar -xf "/docker/.$release/$release-backend.tar" -C /docker/.$release/backend
+
+# 迁移可重复执行；密码由服务器 .env 注入，不在命令中明文保存。
+set -a; . /docker/.env; set +a
+docker exec -e MYSQL_PWD="$ADMIN_PASSWORD" -i mysql mysql -uroot wms_opc \
+  < "/docker/.$release/20260821_siemens_s7_support.sql"
+
+docker tag bufferpad/wms-opc:latest "bufferpad/wms-opc:backup-$release"
+docker build -t "bufferpad/wms-opc:$release" -t bufferpad/wms-opc:latest \
+  /docker/.$release/backend
+cd /docker
+docker compose -f docker-compose.yml up -d --no-deps bufferpad-wms-opc
+
+for attempt in $(seq 1 30); do
+  curl --fail --silent http://127.0.0.1:19001/actuator/health && break
+  sleep 2
+done
+curl --fail --silent http://127.0.0.1:19001/actuator/health
+```
+
+如健康检查失败，恢复旧镜像后重新创建该服务：
+
+```bash
+docker tag "bufferpad/wms-opc:backup-$release" bufferpad/wms-opc:latest
+cd /docker
+docker compose -f docker-compose.yml up -d --no-deps bufferpad-wms-opc
+```
+
+SSH 密码、`/docker/.env` 和数据库密码均为服务器敏感配置，绝不能提交到 Git 仓库。
+
 更新时只操作缓冲垫后端服务：
 
 ```bash
