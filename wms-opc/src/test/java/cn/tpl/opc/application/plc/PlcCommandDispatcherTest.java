@@ -50,8 +50,16 @@ public class PlcCommandDispatcherTest {
         when(connection.getId()).thenReturn(20L);
         when(connection.getName()).thenReturn("测试PLC");
         DeviceInfoEntity scanner = new DeviceInfoEntity();
+        scanner.setId(10L);
+        scanner.setName("1线-上扫码器");
+        scanner.setIp("192.0.2.9");
         scanner.setInstallSeq(6);
         when(deviceInfoEntityMapper.selectByPrimaryKey(10L)).thenReturn(scanner);
+        DeviceInfoEntity plc = new DeviceInfoEntity();
+        plc.setId(20L);
+        plc.setName("1线主PLC");
+        plc.setIp("192.0.2.12");
+        when(deviceInfoEntityMapper.selectByPrimaryKey(20L)).thenReturn(plc);
     }
 
     @Test
@@ -114,5 +122,10 @@ public class PlcCommandDispatcherTest {
         verify(operationEventService).publish(captor.capture());
         assertEquals(expected.name(), captor.getValue().getCode());
         assertEquals("op-dispatch", captor.getValue().getOperationId());
+        assertEquals("1线-上扫码器", captor.getValue().getScannerName());
+        assertEquals("192.0.2.9", captor.getValue().getScannerIp());
+        assertEquals("1线主PLC", captor.getValue().getPlcName());
+        assertEquals("192.0.2.12", captor.getValue().getPlcIp());
+        assertEquals("QR-1", captor.getValue().getQrCode());
     }
 }

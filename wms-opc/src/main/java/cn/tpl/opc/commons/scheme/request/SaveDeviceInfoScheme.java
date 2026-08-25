@@ -25,10 +25,10 @@ public class SaveDeviceInfoScheme extends AbsBaseScheme {
     private Long id;
 
     /**
-     * 设备类型，0: 扫码器；1: 三菱PLC；2: 汇川PLC；3: 西门子S7-1200；4: 西门子S7-1500
+     * 设备类型，0: 扫码器；1: 三菱PLC；2: 汇川PLC；3: 西门子S7 PLC
      */
     @NotNull(message = Constants.RESULT_MSG_DEVICE_NO_TYPE)
-    @Schema(description = "设备类型，0: 扫码器；1: 三菱PLC；2: 汇川PLC；3: 西门子S7-1200；4: 西门子S7-1500")
+    @Schema(description = "设备类型，0: 扫码器；1: 三菱PLC；2: 汇川PLC；3: 西门子S7 PLC")
     private Integer type;
 
     /**

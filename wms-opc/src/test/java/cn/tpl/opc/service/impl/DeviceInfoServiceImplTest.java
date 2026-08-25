@@ -35,11 +35,11 @@ public class DeviceInfoServiceImplTest {
     }
 
     @Test
-    public void allowsSwitchingBetweenS7ModelsWithoutDeletingCompatibleAddresses() {
+    public void allowsMigratingHistoricalS7RecordsWithoutDeletingCompatibleAddresses() {
         when(deviceMapper.selectByPrimaryKey(20L))
-                .thenReturn(device(DeviceTypeEnum.SIEMENS_S7_1200_PLC.getCode()));
+                .thenReturn(device(DeviceTypeEnum.LEGACY_SIEMENS_S7_1500_PLC.getCode()));
 
-        assertTrue(service.save(scheme(DeviceTypeEnum.SIEMENS_S7_1500_PLC.getCode())));
+        assertTrue(service.save(scheme(DeviceTypeEnum.SIEMENS_S7_PLC.getCode())));
 
         verify(deviceMapper).updateByPrimaryKeySelective(any(DeviceInfoEntity.class));
     }
@@ -49,7 +49,7 @@ public class DeviceInfoServiceImplTest {
         when(deviceMapper.selectByPrimaryKey(20L))
                 .thenReturn(device(DeviceTypeEnum.MITSUBISHI_PLC.getCode()));
 
-        service.save(scheme(DeviceTypeEnum.SIEMENS_S7_1200_PLC.getCode()));
+        service.save(scheme(DeviceTypeEnum.SIEMENS_S7_PLC.getCode()));
     }
 
     private SaveDeviceInfoScheme scheme(Integer type) {

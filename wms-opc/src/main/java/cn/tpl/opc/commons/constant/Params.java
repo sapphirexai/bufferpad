@@ -17,15 +17,13 @@ public final class Params {
      * DEVICE_TYPE_KEY_SCANNER 扫码器
      * DEVICE_TYPE_KEY_SL_PLC 三菱PLC
      * DEVICE_TYPE_KEY_HC_PLC 汇川PLC
-     * DEVICE_TYPE_KEY_SIEMENS_S7_1200_PLC 西门子S7-1200 PLC
-     * DEVICE_TYPE_KEY_SIEMENS_S7_1500_PLC 西门子S7-1500 PLC
+     * DEVICE_TYPE_KEY_SIEMENS_S7_PLC 西门子S7 PLC
      */
     public static final int
             DEVICE_TYPE_KEY_SCANNER = DeviceTypeEnum.SCANNER.getCode(),
             DEVICE_TYPE_KEY_SL_PLC = DeviceTypeEnum.MITSUBISHI_PLC.getCode(),
             DEVICE_TYPE_KEY_HC_PLC = DeviceTypeEnum.INOVANCE_PLC.getCode(),
-            DEVICE_TYPE_KEY_SIEMENS_S7_1200_PLC = DeviceTypeEnum.SIEMENS_S7_1200_PLC.getCode(),
-            DEVICE_TYPE_KEY_SIEMENS_S7_1500_PLC = DeviceTypeEnum.SIEMENS_S7_1500_PLC.getCode();
+            DEVICE_TYPE_KEY_SIEMENS_S7_PLC = DeviceTypeEnum.SIEMENS_S7_PLC.getCode();
 
     /**
      * NETTY连接状态名

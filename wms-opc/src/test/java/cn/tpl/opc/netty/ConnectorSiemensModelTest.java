@@ -11,11 +11,11 @@ import static org.junit.Assert.assertTrue;
 
 public class ConnectorSiemensModelTest {
     @Test
-    public void mapsDeviceTypesToTheMatchingS7HandshakeModel() {
+    public void mapsTheSharedS7ConfigurationAndHistoricalAliasToOneHandshakeModel() {
         assertSame(SiemensPLCS.S1200,
-                Connector.resolveSiemensPlcModel(DeviceTypeEnum.SIEMENS_S7_1200_PLC));
-        assertSame(SiemensPLCS.S1500,
-                Connector.resolveSiemensPlcModel(DeviceTypeEnum.SIEMENS_S7_1500_PLC));
+                Connector.resolveSiemensPlcModel(DeviceTypeEnum.SIEMENS_S7_PLC));
+        assertSame(SiemensPLCS.S1200,
+                Connector.resolveSiemensPlcModel(DeviceTypeEnum.LEGACY_SIEMENS_S7_1500_PLC));
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -26,7 +26,7 @@ public class ConnectorSiemensModelTest {
     @Test
     public void buildsS7TransportWithIsoTcpEndpointAndExpectedRackSlot() {
         SiemensS7Net client = (SiemensS7Net) Connector.createPlcClient(
-                DeviceTypeEnum.SIEMENS_S7_1500_PLC, "192.0.2.15", 102);
+                DeviceTypeEnum.SIEMENS_S7_PLC, "192.0.2.15", 102);
 
         assertEquals("192.0.2.15", client.getIpAddress());
         assertEquals(102, client.getPort());

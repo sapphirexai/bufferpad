@@ -29,7 +29,7 @@ public class PLCAddrServiceImplTest {
         ReflectionTestUtils.setField(service, "plcAddrEntityMapper", mapper);
         ReflectionTestUtils.setField(service, "deviceInfoService", deviceInfoService);
 
-        DeviceInfoDTO plc = device(20L, DeviceTypeEnum.SIEMENS_S7_1200_PLC.getCode());
+        DeviceInfoDTO plc = device(20L, DeviceTypeEnum.SIEMENS_S7_PLC.getCode());
         DeviceInfoDTO scanner = device(10L, DeviceTypeEnum.SCANNER.getCode());
         when(deviceInfoService.findById(20L)).thenReturn(plc);
         when(deviceInfoService.findById(10L)).thenReturn(scanner);

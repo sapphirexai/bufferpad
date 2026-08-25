@@ -65,7 +65,7 @@ public class SiemensPlcBusinessFlowMockTest {
     @Before
     public void setUp() {
         connection.setId(PLC_ID);
-        connection.setType(DeviceTypeEnum.SIEMENS_S7_1200_PLC.getCode());
+        connection.setType(DeviceTypeEnum.SIEMENS_S7_PLC.getCode());
         connection.setName("Mock S7 PLC");
         connection.nowActive(s7Client);
         when(connectionMgr.getConnection(PLC_ID)).thenReturn(connection);
@@ -117,7 +117,7 @@ public class SiemensPlcBusinessFlowMockTest {
 
     @Test
     public void s71500ManualRescanUsesRescanWriteAndReadAddresses() {
-        connection.setType(DeviceTypeEnum.SIEMENS_S7_1500_PLC.getCode());
+        connection.setType(DeviceTypeEnum.SIEMENS_S7_PLC.getCode());
         stubAddresses(Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS, "DB100.DBW8",
                 Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS_OPEN_COUNT, "DB100.DBW14");
         when(s7Client.Write("DB100.DBW8", (short) 1)).thenReturn(OperateResult.CreateSuccessResult());

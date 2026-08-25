@@ -31,14 +31,14 @@ import static org.junit.Assert.assertTrue;
  */
 public class SiemensS7LoopbackIntegrationTest {
     @Test
-    public void s71200ConnectsWritesAndReadsDbWordOverRealTcp() throws Exception {
-        exercise(DeviceTypeEnum.SIEMENS_S7_1200_PLC, "DB10.DBW24", (short) 0x1234,
+    public void sharedS7ConfigurationConnectsWritesAndReadsDbWordOverRealTcp() throws Exception {
+        exercise(DeviceTypeEnum.SIEMENS_S7_PLC, "DB10.DBW24", (short) 0x1234,
                 0x84, 10, 24 * 8);
     }
 
     @Test
-    public void s71500ConnectsWritesAndReadsMarkerWordOverRealTcp() throws Exception {
-        exercise(DeviceTypeEnum.SIEMENS_S7_1500_PLC, "MW10", (short) -1234,
+    public void sharedS7ConfigurationConnectsWritesAndReadsMarkerWordOverRealTcp() throws Exception {
+        exercise(DeviceTypeEnum.SIEMENS_S7_PLC, "MW10", (short) -1234,
                 0x83, 0, 10 * 8);
     }
 

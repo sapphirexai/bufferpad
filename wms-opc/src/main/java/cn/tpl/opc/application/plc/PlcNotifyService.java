@@ -134,7 +134,7 @@ public class PlcNotifyService {
         }
 
         Integer eventWorkLine = resolveEventWorkLine(workLine, scannerId);
-        String readAddress = resolveOpenCountAddress(operationId, plcAddrType, qrCode, scannerId, eventWorkLine);
+        String readAddress = resolveOpenCountAddress(operationId, plcAddrType, qrCode, scannerId, eventWorkLine, plcAddr);
         eventPublisher.publish(new EventBusMsgPlcCmd(operationId, qrCode, plcAddrType, plcAddr.getPlcId(), plcAddr.getAddr(),
                 Constants.DEFAULT_2_PLC_VAL, eventWorkLine, scannerId, readAddress));
     }
@@ -146,7 +146,7 @@ public class PlcNotifyService {
     }
 
     private String resolveOpenCountAddress(String operationId, Integer writeType, String qrCode,
-                                           Long scannerId, Integer workLine) {
+                                           Long scannerId, Integer workLine, PLCAddrEntity writePlcAddr) {
         boolean scanSuccess = Constants.PLC_ADDR_TYPE_SCAN_SUCCESS == writeType;
         boolean reScanSuccess = Constants.PLC_ADDR_TYPE_RE_SCAN_SUCCESS == writeType;
         if ((!scanSuccess && !reScanSuccess) || scannerId == null) return null;
@@ -157,6 +157,9 @@ public class PlcNotifyService {
             scanLogService.add(qrCode, Constants.SCAN_LOG_MSG_PLC_ADDR_NOT_CONFIGURED + PlcAddrTypeEnum.labelOf(plcAddrType), Constants.SCAN_LOG_TYPE_ERROR);
             OperationEventDTO event = baseEvent(OperationEventCode.PLC_READ_ADDRESS_NOT_CONFIGURED,
                     operationId, qrCode, scannerId, workLine);
+            DeviceInfoEntity plc = writePlcAddr == null ? null
+                    : deviceInfoEntityMapper.selectByPrimaryKey(writePlcAddr.getPlcId());
+            if (writePlcAddr != null) applyPlcIdentity(event, writePlcAddr.getPlcId(), plc);
             event.setMessage("缓冲垫已计数，但未配置“" + PlcAddrTypeEnum.labelOf(plcAddrType) + "”地址");
             operationEventService.publish(event);
             return null;
@@ -195,6 +198,7 @@ public class PlcNotifyService {
         DeviceInfoEntity plc = deviceInfoEntityMapper.selectByPrimaryKey(plcAddr.getPlcId());
         event.setDeviceId(plcAddr.getPlcId());
         event.setDeviceName(plc == null ? null : plc.getName());
+        applyPlcIdentity(event, plcAddr.getPlcId(), plc);
         event.setAddress(plcAddr.getAddr());
         operationEventService.publish(event);
     }
@@ -208,6 +212,20 @@ public class PlcNotifyService {
         event.setScannerId(scannerId);
         DeviceInfoEntity scanner = scannerId == null ? null : deviceInfoEntityMapper.selectByPrimaryKey(scannerId);
         event.setScannerSeq(scanner == null ? null : scanner.getInstallSeq());
+        applyScannerIdentity(event, scanner);
         return event;
+    }
+
+    private void applyScannerIdentity(OperationEventDTO event, DeviceInfoEntity scanner) {
+        if (scanner == null) return;
+        event.setScannerName(scanner.getName());
+        event.setScannerIp(scanner.getIp());
+    }
+
+    private void applyPlcIdentity(OperationEventDTO event, Long plcId, DeviceInfoEntity plc) {
+        event.setPlcId(plcId);
+        if (plc == null) return;
+        event.setPlcName(plc.getName());
+        event.setPlcIp(plc.getIp());
     }
 }

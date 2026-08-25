@@ -93,9 +93,9 @@ PLC 结果处理说明：
 - 成功类指令可携带开口数回读地址；写入成功后读取 16 位整数并更新 `cushion_info` 及最新一条 `cushion_detail`。
 - 心跳只证明通信链路可用，不会清除仍未恢复的 PLC 业务拒绝提示；真实业务写入成功后才恢复正常状态。
 
-## 西门子 S7-1200/S7-1500 通信
+## 西门子 S7 PLC 通信
 
-设备类型 `3` 对应 S7-1200，类型 `4` 对应 S7-1500。后端使用经典 S7comm over ISO-on-TCP，默认 TCP 端口为 `102`，常规 CPU 网口使用 HSL 驱动默认的 Rack `0`、Slot `0`。这不是 PROFINET 实时 I/O、OPC UA 或符号变量访问。
+设备类型 `3` 为“西门子 S7 PLC”，同时适用于 S7-1200 和 S7-1500。后端使用经典 S7comm over ISO-on-TCP，默认 TCP 端口为 `102`，常规 CPU 网口使用 HSL 驱动默认的 Rack `0`、Slot `0`。这不是 PROFINET 实时 I/O、OPC UA 或符号变量访问。历史类型 `4` 会在升级时自动迁移到类型 `3`。
 
 当前业务指令统一读写 16 位整数，西门子 PLC 地址只接受以下格式，保存时会统一转为大写并预校验：
 
@@ -133,6 +133,8 @@ PLC 结果处理说明：
 
 扫码、计数和 PLC 处理会生成结构化 `operation_event`，并通过 SSE 的 `operationEvent` topic 推送前端。每次扫码都有一个最长64字符的 `operation_id`，同一次扫码产生的计数、地址检查、PLC写入和开口数回读事件共用该编号，供前端合并为一条操作反馈。手动扫码可通过 `X-Operation-Id` 请求头传入编号，未传入以及扫码器扫码时由后端自动生成。主要事件包括：
 
+新产生的事件会同时快照涉及的扫码器名称/IP、PLC 名称/IP 和缓冲垫原始二维码；同一次操作的前端告警会汇总这些字段，即使主告警本身来自 PLC 写入或地址检查，也能明确显示关联的扫码器、PLC 和缓冲垫。
+
 - 扫码计数完成、未读码、两小时内重复扫码、达到寿命、计数失败
 - PLC 地址未配置、手动扫码目标无法确定、开口数地址未配置
 - PLC 离线、通知成功、拒绝写入、通信失败、开口数读取失败
@@ -152,7 +154,7 @@ operation-event:
     cleanup-cron: "0 15 2 * * ?"
 ```
 
-已有数据库需要执行 `docs/sql/20260803_operation_event_retention.sql` 补充 `created_date` 索引，并执行 `docs/sql/20260804_operation_event_correlation.sql` 增加操作关联字段和索引；两个脚本均可重复执行。升级西门子 S7 支持时还必须执行 `docs/sql/20260821_siemens_s7_support.sql`，将 PLC 地址字段扩展到 64 个字符并登记新设备类型。关联脚本会用原 `event_id` 回填历史记录，不删除业务数据。新建数据库使用 `docs/sql/20260803_operation_event.sql`，建表时已包含全部字段和索引。
+已有数据库需要执行 `docs/sql/20260803_operation_event_retention.sql` 补充 `created_date` 索引，并执行 `docs/sql/20260804_operation_event_correlation.sql` 增加操作关联字段和索引；两个脚本均可重复执行。升级西门子 S7 支持时还必须执行 `docs/sql/20260821_siemens_s7_support.sql`，将 PLC 地址字段扩展到 64 个字符；再执行 `docs/sql/20260825_unify_siemens_s7_device_type.sql`，将历史类型 `4` 归一为单一的西门子 S7 类型 `3`。`docs/sql/20260825_operation_event_context.sql` 会为历史运行事件补充扫码器、PLC 名称/IP 上下文。关联脚本不会删除业务数据。新建数据库使用 `docs/sql/20260803_operation_event.sql`，建表时已包含全部字段和索引。
 
 ## 主要数据表
 
@@ -164,7 +166,7 @@ operation-event:
 | `operation_event` | 面向运行监控的结构化事件，保留30天 |
 | `opc_config` | 全局缓冲垫寿命，固定且仅保留 `id=1`，默认500次 |
 | `device_install_position` | 现场设备安装位置及排序 |
-| `device_info` | 扫码器、三菱 PLC、汇川 PLC、西门子 S7-1200/S7-1500 及连接参数 |
+| `device_info` | 扫码器、三菱 PLC、汇川 PLC、西门子 S7 PLC 及连接参数 |
 | `plc_addr` | 扫码器、PLC、操作类型和寄存器地址的映射 |
 
 ## 主要接口
@@ -228,6 +230,8 @@ GET /actuator/health
 | `docs/sql/20260803_operation_event_retention.sql` | 为已有事件表补充清理索引，不删除数据 |
 | `docs/sql/20260804_operation_event_correlation.sql` | 为已有事件表补充 `operation_id` 和关联索引 |
 | `docs/sql/20260821_siemens_s7_support.sql` | 扩展西门子 S7 设备类型及 64 字符寄存器地址 |
+| `docs/sql/20260825_unify_siemens_s7_device_type.sql` | 将历史 S7-1500 类型归一为单一西门子 S7 类型 |
+| `docs/sql/20260825_operation_event_context.sql` | 为运行事件补充扫码器、PLC 名称/IP 上下文并回填历史记录 |
 | `docs/sql/20260803_test_data.sql` | 测试环境前端验收数据，可重复执行 |
 
 `20260803_test_data.sql` 只创建业务测试数据，不创建模拟设备，避免后端把测试设备当成真实扫码器或 PLC 发起连接。
@@ -246,11 +250,11 @@ GET /actuator/health
 
 服务器数据库参数由 Compose 环境变量注入，密码存放在服务器 `/docker/.env`，不得提交到仓库。
 
-已验证发布记录（2026-08-25）：后端提交 `829158a` 已部署，镜像发布号为
-`bufferpad-s7-20260825-003148`；旧镜像保留为
-`bufferpad/wms-opc:backup-bufferpad-s7-20260825-003148`，可用于快速回滚。服务通过
-`http://127.0.0.1:19001/actuator/health` 返回 `{"status":"UP"}`。本次还执行了幂等迁移
-`20260821_siemens_s7_support.sql`，确认 `plc_addr.addr` 已扩展为 `varchar(64)`。
+已验证发布记录（2026-08-25）：发布号为 `bufferpad-s7-unified-20260825-091500`；旧镜像保留为
+`bufferpad/wms-opc:backup-bufferpad-s7-unified-20260825-091500`，可用于快速回滚。服务通过
+`http://127.0.0.1:19001/actuator/health` 返回 `{"status":"UP"}`。已执行幂等迁移并确认：
+`device_info.type=4` 的记录为 `0`，`operation_event` 的扫码器/PLC 名称与 IP 五个上下文字段齐全，
+`/api/options/deviceTypes` 只返回一个“西门子 S7 PLC（3）”选项。
 
 ### 可重复发布步骤
 
@@ -260,12 +264,14 @@ Compose 中的 `bufferpad-wms-opc` 服务只引用镜像，不含 `build` 配置
 本机构建并上传发布包：
 
 ```powershell
-mvn -Pprod package
+mvn -DskipTests package
 $release = "bufferpad-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
 tar -cf "$env:TEMP\$release-backend.tar" Dockerfile target/opc-0.0.1.-SNAPSHOT.jar
 ssh root@192.0.2.4 "install -d -m 700 /docker/.$release"
 scp "$env:TEMP\$release-backend.tar" root@192.0.2.4:/docker/.$release/
 scp .\docs\sql\20260821_siemens_s7_support.sql root@192.0.2.4:/docker/.$release/
+scp .\docs\sql\20260825_unify_siemens_s7_device_type.sql root@192.0.2.4:/docker/.$release/
+scp .\docs\sql\20260825_operation_event_context.sql root@192.0.2.4:/docker/.$release/
 ```
 
 服务器上执行迁移、构建、切换和健康检查：
@@ -277,8 +283,12 @@ tar -xf "/docker/.$release/$release-backend.tar" -C /docker/.$release/backend
 
 # 迁移可重复执行；密码由服务器 .env 注入，不在命令中明文保存。
 set -a; . /docker/.env; set +a
-docker exec -e MYSQL_PWD="$ADMIN_PASSWORD" -i mysql mysql -uroot wms_opc \
-  < "/docker/.$release/20260821_siemens_s7_support.sql"
+for migration in 20260821_siemens_s7_support.sql \
+  20260825_operation_event_context.sql \
+  20260825_unify_siemens_s7_device_type.sql; do
+  docker exec -e MYSQL_PWD="$ADMIN_PASSWORD" -i mysql mysql -uroot wms_opc \
+    < "/docker/.$release/$migration"
+done
 
 docker tag bufferpad/wms-opc:latest "bufferpad/wms-opc:backup-$release"
 docker build -t "bufferpad/wms-opc:$release" -t bufferpad/wms-opc:latest \

@@ -21,6 +21,11 @@ public class OperationEventDTO extends AbsBaseDTO {
     private Integer workLine;
     private Long scannerId;
     private Integer scannerSeq;
+    private String scannerName;
+    private String scannerIp;
+    private Long plcId;
+    private String plcName;
+    private String plcIp;
     private Long deviceId;
     private String deviceName;
     private String qrCode;

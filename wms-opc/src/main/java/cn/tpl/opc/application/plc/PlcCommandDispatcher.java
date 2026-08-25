@@ -144,7 +144,7 @@ public class PlcCommandDispatcher implements InitializingBean, DisposableBean {
             }
             scanLogService.add(qrCode, Constants.SCAN_LOG_MSG_READ_OPEN_COUNT_FAILED + address, Constants.SCAN_LOG_TYPE_ERROR);
             OperationEventDTO event = baseEvent(OperationEventCode.PLC_READ_FAILED, operationId,
-                    qrCode, scannerId, workLine, connection);
+                    qrCode, scannerId, workLine, connection, null);
             event.setAddress(address);
             event.setErrorCode(result.getErrorCode());
             event.setTechnicalDetail(result.getMessage());
@@ -156,7 +156,7 @@ public class PlcCommandDispatcher implements InitializingBean, DisposableBean {
         if (openCount == null || openCount < 0) {
             connection.markDegraded(null, "PLC开口数超出有效范围");
             OperationEventDTO event = baseEvent(OperationEventCode.PLC_READ_FAILED, operationId,
-                    qrCode, scannerId, workLine, connection);
+                    qrCode, scannerId, workLine, connection, null);
             event.setAddress(address);
             event.setMessage("PLC开口数必须是0到32767之间的INT值");
             event.setTechnicalDetail("PLC returned invalid Int16 open count: " + openCount);
@@ -167,7 +167,7 @@ public class PlcCommandDispatcher implements InitializingBean, DisposableBean {
         connection.markOnline("PLC通信正常");
         if (!cushionInfoService.modifyOpenCountByQrCode(qrCode, openCount)) {
             OperationEventDTO event = baseEvent(OperationEventCode.PLC_READ_FAILED, operationId,
-                    qrCode, scannerId, workLine, connection);
+                    qrCode, scannerId, workLine, connection, null);
             event.setAddress(address);
             event.setMessage("PLC已返回开口数，但系统未能更新对应缓冲垫");
             operationEventService.publish(event);
@@ -176,7 +176,7 @@ public class PlcCommandDispatcher implements InitializingBean, DisposableBean {
 
     private void publishSuccess(EventBusMsgPlcCmd command, Connection connection) {
         OperationEventDTO event = baseEvent(OperationEventCode.PLC_NOTIFY_SUCCEEDED, command.getOperationId(), command.getQrCode(),
-                command.getScannerId(), command.getWorkLine(), connection);
+                command.getScannerId(), command.getWorkLine(), connection, command.getPlcId());
         event.setAddress(command.getAddress());
         event.setMessage("PLC已成功写入 " + command.getAddress() + "，写入值 " + command.getCmd());
         operationEventService.publish(event);
@@ -185,7 +185,7 @@ public class PlcCommandDispatcher implements InitializingBean, DisposableBean {
     private void publishFailure(OperationEventCode code, EventBusMsgPlcCmd command, Connection connection,
                                 Integer errorCode, String technicalDetail) {
         OperationEventDTO event = baseEvent(code, command.getOperationId(), command.getQrCode(), command.getScannerId(),
-                command.getWorkLine(), connection);
+                command.getWorkLine(), connection, command.getPlcId());
         event.setAddress(command.getAddress());
         event.setErrorCode(errorCode);
         event.setTechnicalDetail(technicalDetail);
@@ -193,15 +193,25 @@ public class PlcCommandDispatcher implements InitializingBean, DisposableBean {
     }
 
     private OperationEventDTO baseEvent(OperationEventCode code, String operationId, String qrCode, Long scannerId,
-                                        Integer workLine, Connection connection) {
+                                        Integer workLine, Connection connection, Long configuredPlcId) {
         OperationEventDTO event = OperationEventDTO.of(code, workLine);
         event.setOperationId(operationId);
         event.setQrCode(qrCode);
         event.setScannerId(scannerId);
-        event.setDeviceId(connection == null ? null : connection.getId());
-        event.setDeviceName(connection == null ? null : connection.getName());
         DeviceInfoEntity scanner = scannerId == null ? null : deviceInfoEntityMapper.selectByPrimaryKey(scannerId);
         event.setScannerSeq(scanner == null ? null : scanner.getInstallSeq());
+        if (scanner != null) {
+            event.setScannerName(scanner.getName());
+            event.setScannerIp(scanner.getIp());
+        }
+
+        Long plcId = connection != null && connection.getId() != null ? connection.getId() : configuredPlcId;
+        DeviceInfoEntity plc = plcId == null ? null : deviceInfoEntityMapper.selectByPrimaryKey(plcId);
+        event.setPlcId(plcId);
+        event.setPlcName(plc == null ? (connection == null ? null : connection.getName()) : plc.getName());
+        event.setPlcIp(plc == null ? null : plc.getIp());
+        event.setDeviceId(plcId);
+        event.setDeviceName(event.getPlcName());
         return event;
     }
 

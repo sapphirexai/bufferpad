@@ -13,6 +13,11 @@
         <result column="work_line" property="workLine"/>
         <result column="scanner_id" property="scannerId"/>
         <result column="scanner_seq" property="scannerSeq"/>
+        <result column="scanner_name" property="scannerName"/>
+        <result column="scanner_ip" property="scannerIp"/>
+        <result column="plc_id" property="plcId"/>
+        <result column="plc_name" property="plcName"/>
+        <result column="plc_ip" property="plcIp"/>
         <result column="device_id" property="deviceId"/>
         <result column="device_name" property="deviceName"/>
         <result column="qr_code" property="qrCode"/>
@@ -25,16 +30,18 @@
     <insert id="insertSelective" parameterType="cn.tpl.opc.entity.OperationEventEntity" useGeneratedKeys="true" keyProperty="id">
         insert into operation_event
         (event_id, operation_id, code, severity, title, message, suggestion, work_line, scanner_id, scanner_seq,
-         device_id, device_name, qr_code, address, error_code, technical_detail, created_date)
+         scanner_name, scanner_ip, plc_id, plc_name, plc_ip, device_id, device_name, qr_code, address, error_code,
+         technical_detail, created_date)
         values
         (#{eventId}, #{operationId}, #{code}, #{severity}, #{title}, #{message}, #{suggestion}, #{workLine}, #{scannerId},
-         #{scannerSeq}, #{deviceId}, #{deviceName}, #{qrCode}, #{address}, #{errorCode}, #{technicalDetail},
-         #{createdDate})
+         #{scannerSeq}, #{scannerName}, #{scannerIp}, #{plcId}, #{plcName}, #{plcIp}, #{deviceId}, #{deviceName},
+         #{qrCode}, #{address}, #{errorCode}, #{technicalDetail}, #{createdDate})
     </insert>
 
     <select id="listRecent" resultMap="BaseResultMap">
         select id, event_id, operation_id, code, severity, title, message, suggestion, work_line, scanner_id, scanner_seq,
-               device_id, device_name, qr_code, address, error_code, technical_detail, created_date
+               scanner_name, scanner_ip, plc_id, plc_name, plc_ip, device_id, device_name, qr_code, address, error_code,
+               technical_detail, created_date
         from operation_event
         <where>
             <if test="workLine != null and workLine != 0">

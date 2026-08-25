@@ -259,8 +259,7 @@ public class Connector {
     }
 
     static SiemensPLCS resolveSiemensPlcModel(DeviceTypeEnum deviceType) {
-        if (deviceType == DeviceTypeEnum.SIEMENS_S7_1200_PLC) return SiemensPLCS.S1200;
-        if (deviceType == DeviceTypeEnum.SIEMENS_S7_1500_PLC) return SiemensPLCS.S1500;
+        if (deviceType != null && deviceType.isSiemensS7()) return SiemensPLCS.S1200;
         throw new IllegalArgumentException("设备类型不是受支持的西门子S7 PLC：" + deviceType);
     }
 
@@ -270,8 +269,8 @@ public class Connector {
                 return new InovanceTcpNet(ip, port, Constants.DEFAULT_STATION_HC_PLC_);
             case MITSUBISHI_PLC:
                 return new MelsecMcNet(ip, port);
-            case SIEMENS_S7_1200_PLC:
-            case SIEMENS_S7_1500_PLC:
+            case SIEMENS_S7_PLC:
+            case LEGACY_SIEMENS_S7_1500_PLC:
                 SiemensS7Net client = new SiemensS7Net(resolveSiemensPlcModel(deviceType), ip);
                 client.setPort(port);
                 client.setRack((byte) 0);

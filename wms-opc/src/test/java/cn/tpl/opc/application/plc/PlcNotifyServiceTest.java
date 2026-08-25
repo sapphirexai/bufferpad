@@ -110,6 +110,38 @@ public class PlcNotifyServiceTest {
         verify(eventPublisher, never()).publish(org.mockito.ArgumentMatchers.any());
     }
 
+    @Test
+    public void offlinePlcEventIncludesTheScannerAndPlcIdentities() {
+        DeviceInfoEntity scanner = new DeviceInfoEntity();
+        scanner.setId(10L);
+        scanner.setInstallSeq(2);
+        scanner.setName("1线-上扫码器");
+        scanner.setIp("192.0.2.9");
+        DeviceInfoEntity plc = new DeviceInfoEntity();
+        plc.setId(99L);
+        plc.setName("1线主PLC");
+        plc.setIp("192.0.2.12");
+        when(deviceInfoEntityMapper.selectByPrimaryKey(10L)).thenReturn(scanner);
+        when(deviceInfoEntityMapper.selectByPrimaryKey(99L)).thenReturn(plc);
+        Connection offline = mock(Connection.class);
+        when(offline.isDead()).thenReturn(true);
+        when(connectionMgr.getConnection(99L)).thenReturn(offline);
+        when(plcAddrService.findByTypeAndScannerId(eq(Constants.PLC_ADDR_TYPE_SCAN_SUCCESS), eq(10L)))
+                .thenReturn(plcAddr(99L, "DB1.DBW0", Constants.PLC_ADDR_TYPE_SCAN_SUCCESS, 10L));
+
+        service.notifyScanSuccess("op-offline", "[TPL_STX]BUFFER-001[TPL_ETX]", 10L, 10L, 1);
+
+        ArgumentCaptor<OperationEventDTO> captor = ArgumentCaptor.forClass(OperationEventDTO.class);
+        verify(operationEventService).publish(captor.capture());
+        OperationEventDTO event = captor.getValue();
+        Assert.assertEquals(OperationEventCode.PLC_OFFLINE.name(), event.getCode());
+        Assert.assertEquals("1线-上扫码器", event.getScannerName());
+        Assert.assertEquals("192.0.2.9", event.getScannerIp());
+        Assert.assertEquals("1线主PLC", event.getPlcName());
+        Assert.assertEquals("192.0.2.12", event.getPlcIp());
+        Assert.assertEquals("[TPL_STX]BUFFER-001[TPL_ETX]", event.getQrCode());
+    }
+
     private PLCAddrEntity plcAddr(Long plcId, String addr, Integer type, Long scannerId) {
         PLCAddrEntity entity = new PLCAddrEntity();
         entity.setPlcId(plcId);

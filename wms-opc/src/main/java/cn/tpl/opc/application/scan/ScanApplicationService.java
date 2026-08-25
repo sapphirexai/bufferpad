@@ -240,6 +240,8 @@ public class ScanApplicationService {
         event.setOperationId(command.getOperationId());
         event.setScannerId(command.getScannerId());
         event.setScannerSeq(command.getScannerSeq());
+        event.setScannerName(command.getScannerName());
+        event.setScannerIp(command.getScannerHost());
         event.setDeviceId(command.getScannerId());
         event.setDeviceName(command.getScannerName());
         event.setQrCode(cushionInfo == null ? command.getQrCode() : cushionInfo.getQrCode());
