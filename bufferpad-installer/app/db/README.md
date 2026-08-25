@@ -20,8 +20,7 @@ app\db\wms_opc.sql
 | `0` | 扫码器 |
 | `1` | 三菱 PLC |
 | `2` | 汇川 PLC |
-| `3` | 西门子 SIMATIC S7-1200 PLC |
-| `4` | 西门子 SIMATIC S7-1500 PLC |
+| `3` | 西门子 SIMATIC S7 PLC（适用于 S7-1200/S7-1500） |
 
 西门子 S7 使用 S7comm over ISO-on-TCP，默认端口为 `102`，当前按标准机架参数
 `rack=0`、`slot=0` 连接。`plc_addr.addr` 必须至少支持 64 个字符，以保存
@@ -40,7 +39,8 @@ app\db\migrations\
 已有 MySQL 数据时，安装程序会跳过 `wms_opc.sql` 整库初始化，只执行增量迁移；迁移不会
 覆盖或删除已有设备、PLC 地址、缓冲垫、使用明细和日志数据。
 
-西门子支持迁移 `20260821_siemens_s7_support.sql` 只更新字段定义：登记设备类型 `3/4`，并将
-PLC 地址字段扩展到 `VARCHAR(64)`。它不插入、更新或删除任何业务记录，可重复执行。
+西门子支持迁移 `20260821_siemens_s7_support.sql` 将 PLC 地址字段扩展到 `VARCHAR(64)`。
+随后 `20260825_unify_siemens_s7_device_type.sql` 会将历史设备类型 `4` 归一为 `3`；
+`20260825_operation_event_context.sql` 会为运行事件增加并回填可获取的扫码器、PLC 名称/IP。两个迁移可重复执行，且不会删除业务记录。
 
 `operation_event` 保存运行监控中的扫码、计数和 PLC 处理事件。后端默认每天清理30天前的事件；该规则不会删除缓冲垫主数据、使用明细或扫码日志。

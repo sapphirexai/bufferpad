@@ -61,7 +61,7 @@ CREATE TABLE `cushion_info`  (
 DROP TABLE IF EXISTS `device_info`;
 CREATE TABLE `device_info`  (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
-  `type` int NOT NULL DEFAULT 0 COMMENT '设备类型，0: 扫码器；1: 三菱PLC；2: 汇川PLC；3: 西门子S7-1200；4: 西门子S7-1500',
+  `type` int NOT NULL DEFAULT 0 COMMENT '设备类型，0: 扫码器；1: 三菱PLC；2: 汇川PLC；3: 西门子S7 PLC',
   `port` int NOT NULL DEFAULT 0 COMMENT '设备端口号',
   `status` int NOT NULL DEFAULT 0 COMMENT '设备状态，0：未连接；1：活跃中',
   `ip` varchar(15) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL DEFAULT '' COMMENT '设备IP',
@@ -113,6 +113,11 @@ CREATE TABLE `operation_event`  (
   `work_line` int NOT NULL,
   `scanner_id` bigint NULL DEFAULT NULL,
   `scanner_seq` int NULL DEFAULT NULL,
+  `scanner_name` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `scanner_ip` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `plc_id` bigint NULL DEFAULT NULL,
+  `plc_name` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `plc_ip` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
   `device_id` bigint NULL DEFAULT NULL,
   `device_name` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
   `qr_code` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,

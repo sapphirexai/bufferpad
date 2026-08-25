@@ -109,8 +109,15 @@ ALTER TABLE wms_opc.operation_event DROP INDEX idx_operation_event_operation_id;
 ALTER TABLE wms_opc.operation_event DROP COLUMN operation_id;
 INSERT INTO wms_opc.plc_addr (id, plc_id, addr, type, scanner_id)
 VALUES (990001, 990002, 'D6600', 2, 990003);
-INSERT INTO wms_opc.operation_event (event_id, code, severity, title, message, work_line)
-VALUES ('legacy-event-001', 'LEGACY_TEST', 'INFO', 'legacy', 'migration preservation test', 1);
+INSERT INTO wms_opc.device_info (id, type, port, status, ip, name, work_line, install_seq)
+VALUES
+    (990002, 4, 102, 0, '192.0.2.12', 'legacy-s7-plc', 1, 1),
+    (990003, 0, 15000, 0, '192.0.2.9', 'legacy-scanner', 1, 2);
+INSERT INTO wms_opc.operation_event
+    (event_id, code, severity, title, message, work_line, scanner_id, device_id, device_name, qr_code)
+VALUES
+    ('legacy-event-001', 'PLC_OFFLINE', 'INFO', 'legacy', 'migration preservation test', 1,
+     990003, 990002, 'legacy-s7-plc', '[TPL_STX]LEGACY-001[TPL_ETX]');
 "@
     Invoke-Checked -FilePath $mysql -Arguments @('--protocol=tcp', '-h127.0.0.1', "-P$port", '-uroot', '-e', $legacyFixtureSql) -ErrorMessage 'Create legacy migration fixture failed.'
 
@@ -134,7 +141,14 @@ SELECT CONCAT(
   (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='wms_opc' AND table_name='operation_event' AND column_name='operation_id'), '|',
   (SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema='wms_opc' AND table_name='operation_event' AND index_name='idx_operation_event_operation_id'), '|',
   (SELECT COUNT(*) FROM wms_opc.plc_addr WHERE id=990001 AND addr='D6600'), '|',
-  (SELECT COUNT(*) FROM wms_opc.operation_event WHERE event_id='legacy-event-001' AND operation_id='legacy-event-001')
+  (SELECT COUNT(*) FROM wms_opc.operation_event WHERE event_id='legacy-event-001' AND operation_id='legacy-event-001'), '|',
+  (SELECT COUNT(*) FROM wms_opc.device_info WHERE id=990002 AND type=3), '|',
+  (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='wms_opc' AND table_name='operation_event'
+      AND column_name IN ('scanner_name', 'scanner_ip', 'plc_id', 'plc_name', 'plc_ip')), '|',
+  (SELECT COUNT(*) FROM wms_opc.operation_event WHERE event_id='legacy-event-001'
+      AND scanner_name='legacy-scanner' AND scanner_ip='192.0.2.9'
+      AND plc_id=990002 AND plc_name='legacy-s7-plc' AND plc_ip='192.0.2.12'
+      AND qr_code='[TPL_STX]LEGACY-001[TPL_ETX]')
 );
 "@)
     if ($LASTEXITCODE -ne 0) {
@@ -144,7 +158,7 @@ SELECT CONCAT(
         Fail "Imported schema validation returned an unexpected result: $($schemaResult -join ', ')"
     }
     $schemaValues = $schemaResult[0].Trim() -split '\|'
-    if ($schemaValues.Count -ne 6 -or [int]$schemaValues[0] -lt 8) {
+    if ($schemaValues.Count -ne 9 -or [int]$schemaValues[0] -lt 8) {
         Fail "Imported schema is missing required tables: $($schemaResult[0])"
     }
     if ([int]$schemaValues[1] -lt 64) {
@@ -155,6 +169,12 @@ SELECT CONCAT(
     }
     if ([int]$schemaValues[4] -ne 1 -or [int]$schemaValues[5] -ne 1) {
         Fail "Bundled migrations did not preserve or backfill legacy records. Result=$($schemaResult[0])"
+    }
+    if ([int]$schemaValues[6] -ne 1) {
+        Fail "Historical S7-1500 records were not merged into the shared S7 type. Result=$($schemaResult[0])"
+    }
+    if ([int]$schemaValues[7] -ne 5 -or [int]$schemaValues[8] -ne 1) {
+        Fail "Operation-event device context columns or historical backfill are missing. Result=$($schemaResult[0])"
     }
     Write-Ok "Database dump import and idempotent migration smoke test passed."
 } finally {
