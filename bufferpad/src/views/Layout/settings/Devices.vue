@@ -68,7 +68,7 @@
         <el-form-item label="端口" prop="port">
           <el-input-number v-model="form.port" :min="1" :max="65535" :step="1" style="width: 100%"></el-input-number>
           <div v-if="isSiemensDevice" class="field-tip">
-            西门子 S7comm 使用 ISO-on-TCP，默认端口 102；S7-1200/1500 使用机架 0、插槽 0。
+            西门子 S7 使用 S7comm over ISO-on-TCP，默认端口 102；使用机架 0、插槽 0。
           </div>
         </el-form-item>
         <el-form-item label="产线" prop="workLine">

@@ -6,7 +6,7 @@ import {
 } from '@/modules/settings/models/device-type'
 
 describe('Siemens S7 device configuration', () => {
-  it('recognizes S7-1200 and S7-1500 device type codes', () => {
+  it('recognizes the shared S7 type and the historical S7-1500 code', () => {
     expect(isSiemensS7DeviceType(3)).toBe(true)
     expect(isSiemensS7DeviceType('4')).toBe(true)
     expect(isSiemensS7DeviceType(1)).toBe(false)

@@ -45,6 +45,8 @@ describe('operation event helpers', () => {
         severity: 'ERROR',
         title: 'PLC未连接',
         message: '缓冲垫已计数，但PLC当前不可用',
+        plcName: '1线主PLC',
+        plcIp: '192.0.2.12',
         occurredAt: '2026-08-03T12:00:01Z'
       },
       {
@@ -54,6 +56,9 @@ describe('operation event helpers', () => {
         severity: 'INFO',
         title: '扫码计数完成',
         message: '当前使用26次',
+        scannerName: '1线-上扫码器',
+        scannerIp: '192.0.2.9',
+        qrCode: '[TPL_STX]BUFFER-001[TPL_ETX]',
         occurredAt: '2026-08-03T12:00:00Z'
       }
     ]
@@ -65,6 +70,11 @@ describe('operation event helpers', () => {
     expect(groups[0].eventCount).toBe(2)
     expect(groups[0].title).toBe('PLC未连接')
     expect(groups[0].secondaryMessage).toBe('当前使用26次')
+    expect(groups[0].scannerName).toBe('1线-上扫码器')
+    expect(groups[0].scannerIp).toBe('192.0.2.9')
+    expect(groups[0].plcName).toBe('1线主PLC')
+    expect(groups[0].plcIp).toBe('192.0.2.12')
+    expect(groups[0].qrCode).toBe('[TPL_STX]BUFFER-001[TPL_ETX]')
   })
 
   it('selects the repeated-scan result as the operator-facing conclusion', () => {

@@ -1,10 +1,12 @@
-export const SIEMENS_S7_1200_DEVICE_TYPE = 3
-export const SIEMENS_S7_1500_DEVICE_TYPE = 4
+export const SIEMENS_S7_DEVICE_TYPE = 3
+// Historical code retained only so records created before the type merge still
+// receive S7 address hints until the database migration normalizes them.
+export const LEGACY_SIEMENS_S7_1500_DEVICE_TYPE = 4
 export const SIEMENS_S7_DEFAULT_PORT = 102
 
 export function isSiemensS7DeviceType(type) {
   const value = Number(type)
-  return value === SIEMENS_S7_1200_DEVICE_TYPE || value === SIEMENS_S7_1500_DEVICE_TYPE
+  return value === SIEMENS_S7_DEVICE_TYPE || value === LEGACY_SIEMENS_S7_1500_DEVICE_TYPE
 }
 
 export function plcAddressPlaceholder(type) {

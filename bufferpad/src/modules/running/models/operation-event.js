@@ -64,6 +64,14 @@ function newestTime(events) {
   }, 0)
 }
 
+function firstEventValue(events, field) {
+  const matched = events.find(event => {
+    const value = event && event[field]
+    return value !== null && value !== undefined && value !== ''
+  })
+  return matched ? matched[field] : null
+}
+
 export function buildOperationFeedback(events) {
   const source = Array.isArray(events) ? events.filter(Boolean) : []
   if (source.length === 0) return null
@@ -84,6 +92,11 @@ export function buildOperationFeedback(events) {
     title: primary.title || '操作结果',
     message: primary.message || '操作已完成',
     secondaryMessage: secondary ? secondary.message : '',
+    scannerName: firstEventValue(source, 'scannerName'),
+    scannerIp: firstEventValue(source, 'scannerIp'),
+    plcName: firstEventValue(source, 'plcName'),
+    plcIp: firstEventValue(source, 'plcIp'),
+    qrCode: firstEventValue(source, 'qrCode'),
     occurredAt: occurredAt ? new Date(occurredAt).toISOString() : primary.occurredAt,
     eventCount: source.length,
     events: source.slice().sort((left, right) => {

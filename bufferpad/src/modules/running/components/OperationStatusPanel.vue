@@ -51,8 +51,10 @@
             <p v-if="group.secondaryMessage" class="event-secondary">{{ group.secondaryMessage }}</p>
             <p v-if="group.suggestion" class="event-advice">处理建议：{{ group.suggestion }}</p>
             <div class="event-technical">
+              <span v-if="deviceIdentity(group.scannerName, group.scannerIp)">扫码器：{{ deviceIdentity(group.scannerName, group.scannerIp) }}</span>
+              <span v-if="deviceIdentity(group.plcName, group.plcIp)">PLC：{{ deviceIdentity(group.plcName, group.plcIp) }}</span>
+              <span v-if="!hasNamedDeviceContext(group) && group.deviceName">关联设备：{{ group.deviceName }}</span>
               <span v-if="group.qrCode">缓冲垫：{{ group.qrCode }}</span>
-              <span v-if="group.deviceName">设备：{{ group.deviceName }}</span>
               <span v-if="group.address">地址：{{ group.address }}</span>
               <span v-if="group.errorCode !== null && group.errorCode !== undefined">错误码：{{ group.errorCode }}</span>
             </div>
@@ -63,6 +65,13 @@
                 <div>
                   <strong>{{ item.title }}</strong>
                   <p>{{ item.message }}</p>
+                  <div v-if="hasEventContext(item)" class="event-detail-context">
+                    <span v-if="deviceIdentity(item.scannerName, item.scannerIp)">扫码器：{{ deviceIdentity(item.scannerName, item.scannerIp) }}</span>
+                    <span v-if="deviceIdentity(item.plcName, item.plcIp)">PLC：{{ deviceIdentity(item.plcName, item.plcIp) }}</span>
+                    <span v-if="!hasNamedDeviceContext(item) && item.deviceName">关联设备：{{ item.deviceName }}</span>
+                    <span v-if="item.qrCode">缓冲垫：{{ item.qrCode }}</span>
+                    <span v-if="item.address">地址：{{ item.address }}</span>
+                  </div>
                   <small v-if="item.technicalDetail">技术信息：{{ item.technicalDetail }}</small>
                 </div>
               </div>
@@ -141,6 +150,16 @@ export default {
     },
     severityClass(severity) {
       return 'is-' + normalizeSeverity(severity).toLowerCase()
+    },
+    deviceIdentity(name, ip) {
+      if (name && ip) return name + '（' + ip + '）'
+      return name || ip || ''
+    },
+    hasEventContext(event) {
+      return Boolean(event && (event.scannerName || event.scannerIp || event.plcName || event.plcIp || event.qrCode || event.address))
+    },
+    hasNamedDeviceContext(event) {
+      return Boolean(event && (event.scannerName || event.scannerIp || event.plcName || event.plcIp))
     },
     severityLabel
   }
@@ -274,6 +293,7 @@ export default {
 .event-detail-row > span.is-warning { color: #e6a23c; }
 .event-detail-row > span.is-error { color: #f56c6c; }
 .event-detail-row p { margin-top: 2px; }
+.event-detail-context { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 4px; color: #909399; font-size: 12px; line-height: 1.45; }
 .event-detail-row small { display: block; margin-top: 3px; color: #909399; overflow-wrap: anywhere; }
 
 @media (max-width: 900px) {
