@@ -102,6 +102,24 @@ try {
     $importCommand = '"' + $mysql + '" --protocol=tcp -h127.0.0.1 -P' + $port + ' -uroot wms_opc < "' + $sql + '"'
     Invoke-CmdChecked -Command $importCommand -ErrorMessage "SQL import failed: $sql"
 
+    Write-Step "Validating the standalone current initializer before migrations"
+    $initialSchema = & $mysql '--protocol=tcp' '-h127.0.0.1' "-P$port" '-uroot' '-N' '-B' '-e' @"
+SELECT CONCAT(
+  (SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='wms_opc'), '|',
+  (SELECT data_type FROM information_schema.columns WHERE table_schema='wms_opc' AND table_name='scan_log' AND column_name='msg'), '|',
+  (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='wms_opc' AND table_name='scan_log' AND column_name IN ('operation_id','operation_type','status','detail_json','updated_date')), '|',
+  (SELECT COUNT(DISTINCT index_name) FROM information_schema.statistics WHERE table_schema='wms_opc' AND table_name='scan_log' AND index_name IN ('uk_scan_log_operation','idx_scan_log_created_id','idx_scan_log_status_time','idx_scan_log_scanner_time','idx_scan_log_plc_time')), '|',
+  (SELECT COUNT(*) FROM wms_opc.sys_user), '|',
+  (SELECT COUNT(*) FROM wms_opc.device_info), '|',
+  (SELECT COUNT(*) FROM wms_opc.device_install_position), '|',
+  (SELECT cushion_max_use_count FROM wms_opc.opc_config WHERE id=1)
+);
+"@
+    if ($LASTEXITCODE -ne 0 -or $initialSchema.Trim() -ne '12|text|5|5|0|0|4|500') {
+        Fail "Standalone initializer is incomplete or contains site data: $initialSchema"
+    }
+    Write-Ok 'Current schema, base settings and empty accounts/devices are ready without migrations.'
+
     Write-Step "Simulating an older installed schema and preserving sample data"
     $legacyFixtureSql = @"
 ALTER TABLE wms_opc.plc_addr MODIFY COLUMN addr VARCHAR(10) NOT NULL DEFAULT '';

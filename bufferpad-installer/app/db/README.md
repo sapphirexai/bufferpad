@@ -1,4 +1,4 @@
-# 数据库备份说明
+# 数据库初始化说明
 
 一键安装使用当前目录中的 `wms_opc.sql` 初始化全新的 MySQL 数据库：
 
@@ -6,12 +6,18 @@
 app\db\wms_opc.sql
 ```
 
-安装脚本会在 `BufferPadMySQL` 启动后创建 `wms_opc` 数据库并导入该文件。提交或发布安装包前，应确认备份来自当前版本数据库，并至少包含：
+安装脚本会在 `BufferPadMySQL` 启动后创建 `wms_opc` 数据库并导入该文件。2026-09-15已同步为当前版本的完整初始化结构，可直接在全新空库执行，不需要先靠增量迁移补齐表结构。包含12张表：
 
 - `opc_config`、`device_install_position`、`device_info`、`plc_addr`
 - `cushion_info`、`cushion_detail`、`scan_log`
 - `operation_event`
-- `operation_event.created_date` 索引 `idx_operation_event_created_date`
+- `sys_user`、`sys_user_session`、`sys_auth_audit`、`sys_builtin_session`
+
+`scan_log.msg`为TEXT，已包含operation_id、操作类型、状态、设备快照、detail_json等汇总字段，以及操作唯一索引、清理和分页查询相关索引。`operation_event`包含扫码器/PLC上下文和操作关联索引。
+
+初始化只写入默认寿命500次及“上、下、间层1、间层2”四个基础安装位置。设备、PLC地址、缓冲垫、历史日志、用户和会话均为空，不复制测试环境数据。后端首次启动时按安装配置创建普通管理员，默认`admin / example-admin-password`，首次登录不强制改密；`superadmin`为服务内置账号，不在初始化SQL中插入账户或密码。
+
+该文件用于空库初始化，不包含DROP TABLE或覆盖已有表的语句；存量数据库继续使用升级流程。SQL支持MySQL 8.0.20及以上8.0版本。
 
 设备类型编码固定为：
 
