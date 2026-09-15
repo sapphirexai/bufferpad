@@ -47,7 +47,7 @@ Write-Ok "Copied $($jar[0].Name) to $backendTarget"
 
 Write-Step "Copying frontend dist"
 if (Test-Path -LiteralPath $frontendTarget) {
-    Remove-Item -LiteralPath $frontendTarget -Recurse -Force
+    Remove-DirectorySafe -Root $installerHome -Path $frontendTarget
 }
 New-Directory -Path $frontendTarget
 Copy-Item -Path (Join-Path $dist '*') -Destination $frontendTarget -Recurse -Force
@@ -60,3 +60,16 @@ if (-not (Test-Path -LiteralPath $dbPath)) {
 }
 
 Write-Ok "Application artifacts are ready."
+
+Write-Step "Synchronizing authentication schema migration"
+$authSchema = Join-Path $backendRoot 'src\main\resources\db\auth-schema.sql'
+$authMigration = Join-Path $installerHome 'app\db\migrations\20260914_user_auth.sql'
+Copy-Item -LiteralPath $authSchema -Destination $authMigration -Force
+$firstLoginPolicy = Join-Path $backendRoot 'src\main\resources\db\auth-first-login-policy.sql'
+Copy-Item -LiteralPath $firstLoginPolicy -Destination (Join-Path $installerHome 'app\db\migrations\20260914_user_first_login_optional.sql') -Force
+
+Write-Step "Synchronizing scan log retention index migration"
+Copy-Item -LiteralPath (Join-Path $backendRoot 'docs\sql\20260914_scan_log_retention_index.sql') -Destination (Join-Path $installerHome 'app\db\migrations\20260914_scan_log_retention_index.sql') -Force
+
+Copy-Item -LiteralPath (Join-Path $backendRoot 'docs\sql\20260914_scan_log_operation_summary.sql') -Destination (Join-Path $installerHome 'app\db\migrations\20260914_scan_log_operation_summary.sql') -Force
+Copy-Item -LiteralPath (Join-Path $backendRoot 'docs\sql\20260915_builtin_admin_session.sql') -Destination (Join-Path $installerHome 'app\db\migrations\20260915_builtin_admin_session.sql') -Force

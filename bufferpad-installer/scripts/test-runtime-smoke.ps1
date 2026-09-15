@@ -1,7 +1,8 @@
 param(
     [int]$MysqlStartPort = 23306,
     [int]$BackendStartPort = 29001,
-    [int]$FrontendStartPort = 28088
+    [int]$FrontendStartPort = 28088,
+    [switch]$KeepRunning
 )
 
 . (Join-Path $PSScriptRoot 'common.ps1')
@@ -194,6 +195,8 @@ try {
 
     Write-Step "Rendering temporary backend and nginx config"
     $tokens = @{
+        ADMIN_USERNAME = ([string]$config['AdminUsername']).Replace("'", "''")
+        INITIAL_ADMIN_PASSWORD = ([string]$config['InitialAdminPassword']).Replace("'", "''")
         BACKEND_PORT = $backendPort
         MYSQL_PORT = $mysqlPort
         DB_NAME = [string]$config['DatabaseName']
@@ -289,6 +292,14 @@ FLUSH PRIVILEGES;
     $importCommand = '"' + $mysqlExe + '" --defaults-extra-file="' + $clientWithPassword + '" ' + $dbName + ' < "' + $dbDumpSource + '"'
     Invoke-CmdChecked -Command $importCommand -ErrorMessage "Database import failed from $dbDumpSource."
 
+    $dbMigrationDir = Join-Path $installerHome 'app\db\migrations'
+    foreach ($migration in (Get-ChildItem -LiteralPath $dbMigrationDir -Filter '*.sql' -File | Sort-Object Name)) {
+        $migrationCommand = '"' + $mysqlExe + '" --defaults-extra-file="' + $clientWithPassword + '" ' + $dbName + ' < "' + $migration.FullName + '"'
+        Invoke-CmdChecked -Command $migrationCommand -ErrorMessage "Runtime migration failed: $($migration.Name)"
+    }
+    # This database is temporary. Remove bundled device addresses so tests cannot contact field hardware.
+    Invoke-MySqlSql -MysqlExe $mysqlExe -ClientFile $clientWithPassword -Sql "USE $dbName; DELETE FROM plc_addr; DELETE FROM device_info;" -ErrorMessage 'Isolating runtime test devices failed.'
+
     Write-Step "Starting backend on port $backendPort"
     $backendJar = Join-Path $paths.Backend ([string]$config['BackendJarName'])
     $confLocation = 'file:///' + (Convert-ToConfigPath $paths.Conf) + '/'
@@ -312,19 +323,36 @@ FLUSH PRIVILEGES;
         Fail "Temporary nginx exited immediately. ExitCode=$($nginxProc.ExitCode)"
     }
 
-    Wait-HttpOk -Url "http://127.0.0.1:$frontendPort/" -TimeoutSeconds 30 | Out-Null
-    Wait-HttpOk -Url "http://127.0.0.1:$frontendPort/api/opcConfig/page" -TimeoutSeconds 30 | Out-Null
+    Wait-HttpOk -Url "http://127.0.0.1:$frontendPort/login" -TimeoutSeconds 30 | Out-Null
+    Wait-HttpOk -Url "http://127.0.0.1:$frontendPort/api/auth/csrf" -TimeoutSeconds 30 | Out-Null
 
-    $deviceTypesResponse = Invoke-WebRequest -UseBasicParsing -Uri "http://127.0.0.1:$frontendPort/api/options/deviceTypes" -TimeoutSec 10
+    $adminSession = & (Join-Path $PSScriptRoot 'test-auth-http.ps1') -BaseUrl "http://127.0.0.1:$frontendPort/api"
+
+    Write-Step "Verifying persistent login across backend restart"
+    Stop-Process -Id $backendProc.Id -Force
+    $backendProc.WaitForExit(10000) | Out-Null
+    $backendProc = Start-Process -FilePath $javaExe -ArgumentList $backendArgs -PassThru -WindowStyle Hidden -RedirectStandardOutput (Join-Path $paths.BackendLog 'backend-restart.out.log') -RedirectStandardError (Join-Path $paths.BackendLog 'backend-restart.err.log')
+    Wait-HttpOk -Url "http://127.0.0.1:$backendPort/actuator/health" -TimeoutSeconds 120 | Out-Null
+    $me = Invoke-RestMethod -Uri "http://127.0.0.1:$frontendPort/api/auth/me" -WebSession $adminSession -TimeoutSec 10
+    if (-not $me.codeSuccess -or $me.data.username -ne 'admin' -or $me.data.mustChangePassword) { Fail 'Login was not preserved across backend restart.' }
+    Write-Ok "Account and persistent login survived backend restart."
+
+    $deviceTypesResponse = Invoke-WebRequest -UseBasicParsing -Uri "http://127.0.0.1:$frontendPort/api/options/deviceTypes" -WebSession $adminSession -TimeoutSec 10
     $deviceTypesPayload = $deviceTypesResponse.Content | ConvertFrom-Json
     $deviceTypeValues = @($deviceTypesPayload.data | ForEach-Object { [int]$_.value })
-    foreach ($requiredType in @(3, 4)) {
+    foreach ($requiredType in @(0, 1, 2, 3)) {
         if ($deviceTypeValues -notcontains $requiredType) {
             Fail "Device type endpoint is missing Siemens PLC type $requiredType. Returned: $($deviceTypeValues -join ', ')"
         }
     }
 
+    Write-Step "Verifying rendered local administrator recovery script"
+    & (Join-Path $PSScriptRoot 'test-admin-recovery.ps1') -BaseUrl "http://127.0.0.1:$frontendPort/api" -RuntimeRoot $root
+
     Write-Ok "Runtime smoke test passed."
+    if ($KeepRunning) {
+        @{ root=$root; mysqlPort=$mysqlPort; backendPort=$backendPort; frontendPort=$frontendPort; mysqlPid=$mysqlProc.Id; backendPid=$backendProc.Id; nginxPid=$nginxProc.Id } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $root 'runtime-state.json') -Encoding UTF8
+    }
     Write-Host "Frontend: http://127.0.0.1:$frontendPort"
     Write-Host "Backend:  http://127.0.0.1:$backendPort"
 } catch {
@@ -332,6 +360,7 @@ FLUSH PRIVILEGES;
     Write-Host ""
     Write-Host $_.Exception.Message -ForegroundColor Red
 } finally {
+    if (-not $KeepRunning -or $script:SmokeFailed) {
     if (Test-Path -LiteralPath (Join-Path $paths.Nginx 'nginx.exe')) {
         Invoke-StopCommandWithTimeout -FilePath (Join-Path $paths.Nginx 'nginx.exe') -Arguments @('-p', $paths.Nginx, '-s', 'stop') -TimeoutSeconds 5
     }
@@ -348,6 +377,7 @@ FLUSH PRIVILEGES;
         }
     }
     Stop-ProcessTreeInRuntimeRoot -RuntimeRoot $root
+    }
 }
 
 if ($script:SmokeFailed) {

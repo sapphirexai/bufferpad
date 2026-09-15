@@ -197,6 +197,7 @@ function Write-BackendManagementScripts {
 
     New-Directory -Path $DestinationDir
     foreach ($scriptName in @(
+        'reset-admin-password.ps1',
         'backend-prod-monitor.ps1',
         'backend-prod-monitor-start.ps1',
         'backend-prod-monitor-stop.ps1',
@@ -358,7 +359,9 @@ try {
         New-Directory -Path $dryDir
         Write-Step "Rendering templates for dry-run validation"
         $tokens = @{
-            BACKEND_PORT = $backendPort
+            ADMIN_USERNAME = ([string]$config['AdminUsername']).Replace("'", "''")
+        INITIAL_ADMIN_PASSWORD = ([string]$config['InitialAdminPassword']).Replace("'", "''")
+        BACKEND_PORT = $backendPort
             MYSQL_PORT = $mysqlPort
             DB_NAME = [string]$config['DatabaseName']
             DB_USER = [string]$config['MysqlUser']
@@ -444,6 +447,8 @@ try {
     Copy-Item -LiteralPath $winswExe -Destination $nginxServiceExe -Force
 
     $tokens = @{
+        ADMIN_USERNAME = ([string]$config['AdminUsername']).Replace("'", "''")
+        INITIAL_ADMIN_PASSWORD = ([string]$config['InitialAdminPassword']).Replace("'", "''")
         BACKEND_PORT = $backendPort
         MYSQL_PORT = $mysqlPort
         DB_NAME = [string]$config['DatabaseName']
@@ -646,8 +651,8 @@ FLUSH PRIVILEGES;
         Fail "Backend prod monitor task is disabled: $backendMonitorTaskName"
     }
     Wait-HttpOk -Url "http://127.0.0.1:$backendPort/actuator/health" -TimeoutSeconds 90 | Out-Null
-    Wait-HttpOk -Url "http://127.0.0.1:$frontendPort/" -TimeoutSeconds 30 | Out-Null
-    Wait-HttpOk -Url "http://127.0.0.1:$frontendPort/api/opcConfig/page" -TimeoutSeconds 30 | Out-Null
+    Wait-HttpOk -Url "http://127.0.0.1:$frontendPort/login" -TimeoutSeconds 30 | Out-Null
+    Wait-HttpOk -Url "http://127.0.0.1:$frontendPort/api/auth/csrf" -TimeoutSeconds 30 | Out-Null
 
     Write-Ok "BufferPad installed successfully."
     Write-Host ""

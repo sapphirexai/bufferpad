@@ -82,6 +82,7 @@ foreach ($serviceXmlName in @('backend-service.xml', 'nginx-service.xml')) {
 Write-Step "Backend management script rendering check"
 $dryRunBackendDir = Join-Path $dryRunDir 'backend'
 foreach ($scriptName in @(
+    'reset-admin-password.ps1',
     'backend-prod-monitor.ps1',
     'backend-prod-monitor-start.ps1',
     'backend-prod-monitor-stop.ps1',

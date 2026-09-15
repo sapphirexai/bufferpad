@@ -2,6 +2,8 @@
 
 `bufferpad-installer` 用于在新的 Windows 10/11 机器上一键安装、启动、卸载缓冲垫项目运行环境。
 
+系统现已支持登录和普通用户/管理员权限。新装默认管理员为 `admin / example-admin-password`，首次登录可直接使用。安装、升级、登录保持及忘记密码处理见[用户登录说明](用户登录说明.md)。
+
 安装内容包括：
 
 - JDK 17
@@ -462,3 +464,5 @@ powershell -ExecutionPolicy Bypass -File .\scripts\test-runtime-smoke.ps1
 ```
 
 真实安装、卸载 Windows 服务必须使用管理员权限。
+
+登录入口验收已纳入 `test-runtime-smoke.ps1`：匿名及无效会话访问业务页跳转 `/login`，管理员和普通用户的有效会话均可获取页面。Nginx 模板对 HTML 和运行配置禁止缓存；安装时前端健康检查访问公开的 `/login`。`test-page-entry.ps1 -BaseUrl http://主机:端口` 也可独立运行只读匿名验收。新安装用户第一次登录无需强制改密。

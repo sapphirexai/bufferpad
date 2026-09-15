@@ -1,6 +1,11 @@
 server:
   port: {{BACKEND_PORT}}
 
+auth:
+  bootstrap:
+    username: '{{ADMIN_USERNAME}}'
+    password: '{{INITIAL_ADMIN_PASSWORD}}'
+
 logging:
   file:
     name: {{BACKEND_LOG_FILE}}

@@ -1,5 +1,7 @@
 @{
     InstallRoot = 'C:\bufferpad'
+    AdminUsername = 'admin'
+    InitialAdminPassword = 'example-admin-password'
 
     FrontendPort = 18088
     BackendPort  = 9001

@@ -131,7 +131,14 @@ VALUES
             $migrationCommand = '"' + $mysql + '" --protocol=tcp -h127.0.0.1 -P' + $port + ' -uroot wms_opc < "' + $migrationFile.FullName + '"'
             Invoke-CmdChecked -Command $migrationCommand -ErrorMessage "Database migration failed: $($migrationFile.FullName)"
         }
+        if ($pass -eq 1) {
+            Invoke-Checked -FilePath $mysql -Arguments @('--protocol=tcp', '-h127.0.0.1', "-P$port", '-uroot', '-e', "INSERT INTO wms_opc.sys_user(id,username,password_hash,role,enabled,must_change_password) VALUES(990010,'migrationuser','preserved-password-hash','USER',TRUE,FALSE); INSERT INTO wms_opc.sys_user_session(token_hash,user_id) VALUES(REPEAT('a',64),990010);") -ErrorMessage 'Authentication migration fixture failed.'
+        }
     }
+
+    $preservedAuth = & $mysql '--protocol=tcp' '-h127.0.0.1' "-P$port" '-uroot' '-N' '-B' '-e' "SELECT COUNT(*) FROM wms_opc.sys_user u JOIN wms_opc.sys_user_session s ON s.user_id=u.id WHERE u.username='migrationuser' AND u.password_hash='preserved-password-hash' AND u.role='USER' AND u.must_change_password=FALSE;"
+    if ($LASTEXITCODE -ne 0 -or [int]$preservedAuth -ne 1) { Fail 'Repeated migration did not preserve the user, password and session.' }
+    Write-Ok 'Repeated authentication migration preserves accounts, passwords and sessions.'
 
     Write-Step "Validating imported and migrated schema"
     $schemaResult = @(& $mysql '--protocol=tcp' '-h127.0.0.1' "-P$port" '-uroot' '-N' '-B' '-e' @"
