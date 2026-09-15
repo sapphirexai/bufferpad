@@ -1,4 +1,4 @@
-import { pageRows, pageTotal, requestErrorMessage } from '../request/request'
+import { pageRows, pageTotal, requestErrorMessage, shouldDisplayRequestError } from '../request/request'
 
 export function createPageListMixin(options = {}) {
   return {
@@ -19,7 +19,7 @@ export function createPageListMixin(options = {}) {
         this.total = pageTotal(res)
       },
       handlePageError(error) {
-        if (this.$message) this.$message.error(requestErrorMessage(error))
+        if (this.$message) if (shouldDisplayRequestError(error, this)) this.$message.error(requestErrorMessage(error))
       },
       handleSizeChange(val) {
         this.pageSize = val

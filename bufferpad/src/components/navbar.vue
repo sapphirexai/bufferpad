@@ -66,7 +66,7 @@ export default {
       const menus = []
 
       children
-        .filter(route => route.meta && route.meta.menu)
+        .filter(route => route.meta && route.meta.menu && (!route.meta.adminOnly || this.$isAdmin))
         .sort((a, b) => (a.meta.order || 0) - (b.meta.order || 0))
         .forEach(route => {
           const meta = route.meta

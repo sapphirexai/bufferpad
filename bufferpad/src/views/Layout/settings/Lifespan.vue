@@ -1,7 +1,7 @@
 <template>
   <div class="settings-page">
     <div class="toolbar">
-      <el-button type="primary" size="small" @click="openDialog">编辑寿命</el-button>
+      <el-button :disabled="!$isAdmin" title="仅管理员可操作" type="primary" size="small" @click="openDialog">编辑寿命</el-button>
     </div>
     <el-table
       :data="tableData"
@@ -16,8 +16,8 @@
       <el-table-column prop="cushionMaxUseCount" label="全局缓冲垫最大使用数量"></el-table-column>
       <el-table-column label="操作" width="220">
         <template slot-scope="scope">
-          <el-button type="text" size="mini" @click="openDialog(scope.row)">编辑</el-button>
-          <el-button type="text" size="mini" @click="resetDefault(scope.row)">重置默认</el-button>
+          <el-button :disabled="!$isAdmin" title="仅管理员可操作" type="text" size="mini" @click="openDialog(scope.row)">编辑</el-button>
+          <el-button :disabled="!$isAdmin" title="仅管理员可操作" type="text" size="mini" @click="resetDefault(scope.row)">重置默认</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -30,7 +30,7 @@
       </el-form>
       <span slot="footer">
         <el-button @click="closeDialog">取消</el-button>
-        <el-button type="primary" @click="save">确定</el-button>
+        <el-button :disabled="!$isAdmin" title="仅管理员可操作" type="primary" @click="save">确定</el-button>
       </span>
     </el-dialog>
   </div>
@@ -38,7 +38,7 @@
 
 <script>
 import { getOpcConfigPage, saveOpcConfig, resetOpcConfig } from '../../../modules/settings/api/opc-config.api';
-import { isSuccessResponse, pageRows, requestErrorMessage, responseMessage } from '../../../shared/request/request';
+import { isSuccessResponse, pageRows, requestErrorMessage, shouldDisplayRequestError, responseMessage } from '../../../shared/request/request';
 import { centerCellStyle } from '../../../shared/utils/format';
 
 export default {
@@ -70,7 +70,7 @@ export default {
           this.$message.error(responseMessage(res));
         }
       }).catch(error => {
-        this.$message.error(requestErrorMessage(error));
+        if (shouldDisplayRequestError(error, this)) this.$message.error(requestErrorMessage(error));
       }).finally(() => {
         this.loading = false;
       });
@@ -101,7 +101,7 @@ export default {
             this.$message.error(responseMessage(res));
           }
         }).catch(error => {
-          this.$message.error(requestErrorMessage(error));
+          if (shouldDisplayRequestError(error, this)) this.$message.error(requestErrorMessage(error));
         });
       });
     },
@@ -115,7 +115,7 @@ export default {
             this.$message.error(responseMessage(res));
           }
         }).catch(error => {
-          this.$message.error(requestErrorMessage(error));
+          if (shouldDisplayRequestError(error, this)) this.$message.error(requestErrorMessage(error));
         });
       }).catch(() => {});
     }

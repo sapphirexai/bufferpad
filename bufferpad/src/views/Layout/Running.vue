@@ -49,13 +49,13 @@
                 v-model="ruleForm.qrCode"
                 size="small"
                 :placeholder="handle ? '请输入缓冲垫编号' : '等待读码器扫码'"
-                :disabled="!handle"
+                :disabled="!handle || !$isAdmin"
                 name="qrCode"
                 @keydown.enter.native="handleEnterKey($event)"
               ></el-input>
             </el-form-item>
           </el-form>
-          <el-button type="primary" size="small" @click="addItem(handle)">
+          <el-button :disabled="!$isAdmin" title="仅管理员可手动扫码" type="primary" size="small" @click="addItem(handle)">
             {{ handle ? '确定' : '手动输入' }}
           </el-button>
         </div>
@@ -116,8 +116,9 @@
       </div>
       <div class="table-button">
         <el-button @click="goLogs" size="small" type="primary">日志查询</el-button>
-        <el-button @click="openDialog" size="small" type="primary">批量修改</el-button>
-        <el-button icon="el-icon-upload2" size="small" @click="exportExcel">导出</el-button>
+        <el-button :disabled="!$isAdmin" title="仅管理员可修改" @click="openDialog" size="small" type="primary">批量修改</el-button>
+        <el-button icon="el-icon-upload2" size="small" @click="exportExcel">勾选导出</el-button>
+        <TimeRangeExport />
       </div>
     </div>
     <el-table
@@ -156,7 +157,7 @@
         <template slot-scope="scope">
           <div class="update-maxUseCount" v-if="!scope.row.isCheck">
             <span>{{ scope.row.maxUseCount }}</span>
-            <i @click="updateMaxUseCount(scope.row)" class="el-icon-edit"></i>
+            <i v-if="$isAdmin" @click="updateMaxUseCount(scope.row)" class="el-icon-edit"></i>
           </div>
           <div class="isCheck-maxUseCount" v-else>
             <el-input-number v-model="scope.row.maxUseCount" size="small" label="请输入"></el-input-number>
@@ -204,7 +205,9 @@
   </div>
 </template>
 <script>
+import { unknownDeviceStatuses } from '@/modules/running/models/device-health'
 import DeviceHealthOverview from '../../modules/running/components/DeviceHealthOverview.vue';
+import TimeRangeExport from '../../modules/running/components/TimeRangeExport.vue';
 import OperationStatusPanel from '../../modules/running/components/OperationStatusPanel.vue';
 import {
   exportRunningCushions,
@@ -228,6 +231,7 @@ import {
   pageTotal,
   responseData,
   requestErrorMessage,
+  shouldDisplayRequestError,
   responseMessage
 } from '../../shared/request/request';
 import { getFilenameFromDisposition, downloadBlob } from '../../shared/utils/download';
@@ -240,7 +244,7 @@ import {
 } from '../../shared/utils/format';
 export default {
   name: 'Running',
-  components: { DeviceHealthOverview, OperationStatusPanel },
+  components: { DeviceHealthOverview, OperationStatusPanel, TimeRangeExport },
   data() {
     return {
       handle: false,
@@ -302,6 +306,8 @@ export default {
       operationEvents: [],
       currentOperationEvent: null,
       deviceStatusLoading: true,
+      deviceStatusRequest: 0,
+      deviceStatusTimer: null,
       sseConnected: false,
       sseOpenedOnce: false,
       lastSseErrorAt: 0,
@@ -312,6 +318,7 @@ export default {
   created() {
     // 从本地存储加载数据
     this.loadFromLocalStorage();
+    this.deviceStatusTimer = setInterval(() => this.refreshDeviceStatus(), 15000);
   },
   methods: {
     ensureFeedbackCenter() {
@@ -339,6 +346,7 @@ export default {
       this.ensureFeedbackCenter()
     },
     showPageMessage(type, message) {
+      if (this._isDestroyed || this._isBeingDestroyed) return
       if (this.pageMessage && typeof this.pageMessage.close === 'function') this.pageMessage.close()
       this.pageMessage = this.$message({
         type: type || 'info',
@@ -348,6 +356,7 @@ export default {
       })
     },
     handleRequestError(error) {
+      if (!shouldDisplayRequestError(error, this)) return
       this.showPageMessage('error', requestErrorMessage(error))
     },
     buildPageParams() {
@@ -421,6 +430,7 @@ export default {
       return tableDateFormatter(row, column, cellValue, index);
     },
     addItem(flag) {
+      if (!this.$isAdmin) { this.showPageMessage('warning', '权限不足，仅管理员可执行此操作'); return }
       if (flag) {
         // 调用添加数据到数据库的api
         this.$refs['ruleForm'].validate(valid => {
@@ -468,20 +478,25 @@ export default {
       }
     },
     refreshDeviceStatus() {
+      const request = ++this.deviceStatusRequest
       this.deviceStatusLoading = true
-      loadDeviceStatus(this.ProdLine)
+      return loadDeviceStatus(this.ProdLine)
         .then(res => {
+          if (request !== this.deviceStatusRequest) return
           if (isSuccessResponse(res)) {
             this.devicesMessage = res.data.data || []
           } else {
+            this.devicesMessage = unknownDeviceStatuses(this.devicesMessage)
             this.showPageMessage('error', responseMessage(res))
           }
         })
         .catch(error => {
+          if (request !== this.deviceStatusRequest) return
+          this.devicesMessage = unknownDeviceStatuses(this.devicesMessage)
           this.handleRequestError(error)
         })
         .finally(() => {
-          this.deviceStatusLoading = false
+          if (request === this.deviceStatusRequest) this.deviceStatusLoading = false
         });
     },
     refreshOperationEvents() {
@@ -503,6 +518,8 @@ export default {
       this.ensureFeedbackCenter().ingest(event, showNotice)
     },
     handleSseDisconnected() {
+      ++this.deviceStatusRequest
+      this.devicesMessage = unknownDeviceStatuses(this.devicesMessage)
       this.sseConnected = false
       const now = Date.now()
       if (now - this.lastSseErrorAt < 10000) return
@@ -519,6 +536,7 @@ export default {
       }, false)
     },
     handleSseOpened() {
+      this.refreshDeviceStatus()
       const wasDisconnected = this.sseOpenedOnce && !this.sseConnected
       this.sseConnected = true
       this.sseOpenedOnce = true
@@ -566,10 +584,11 @@ export default {
         this.events.close()
         this.events = null
       }
+      const workLine = this.ProdLine
       this.events = createRunningSse(
         this.ProdLine,
         res => {
-          if (!res || !res.data) return
+          if (workLine !== this.ProdLine || !res || !res.data) return
           if (res.data.topic === 'cushionInfo') {
             if (res.data.data !== null) {
               // this.ruleForm.qrCode = res.data.data.qrCode
@@ -589,11 +608,7 @@ export default {
             }
           }
           if (res.data.topic === 'deviceStatus') {
-            const devicesMessage = [...this.devicesMessage]
-            const deviceIndex = devicesMessage.findIndex(item => item.id === res.data.data.id)
-            if (deviceIndex >= 0) devicesMessage.splice(deviceIndex, 1, res.data.data)
-            else devicesMessage.push(res.data.data)
-            this.devicesMessage = devicesMessage
+            this.refreshDeviceStatus()
           }
           if (res.data.topic === 'operationEvent') {
             this.handleOperationEvent(res.data.data, true)
@@ -612,6 +627,7 @@ export default {
       event.preventDefault();
     },
     async changeMaxUsedCount(data, row) {
+      if (!this.$isAdmin) { this.showPageMessage('warning', '权限不足，仅管理员可执行此操作'); return }
       try {
         const params = {...data}
         const res = await saveCushionLife(params)
@@ -728,6 +744,7 @@ export default {
   watch: {
     ProdLine: {
       handler(newval, oldval) {
+        this.devicesMessage = []
         this.resetFeedbackCenter()
         this.refreshDeviceStatus();
         this.refreshCushionList();
@@ -782,6 +799,8 @@ export default {
     }
   },
   beforeDestroy() {
+    ++this.deviceStatusRequest
+    clearInterval(this.deviceStatusTimer)
     if (this.events) {
       this.events.close();
     }

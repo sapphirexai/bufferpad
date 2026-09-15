@@ -14,7 +14,7 @@ export default class SseClient {
     }
 
     this.close()
-    this.eventSource = new EventSource(this.url)
+    this.eventSource = new EventSource(this.url, { withCredentials: true })
 
     this.eventSource.onopen = event => {
       if (typeof this.onOpen === 'function') this.onOpen(event)
@@ -32,6 +32,7 @@ export default class SseClient {
 
     this.eventSource.onerror = error => {
       if (typeof this.onError === 'function') this.onError(error)
+      window.dispatchEvent(new CustomEvent('bufferpad:verify-session'))
     }
   }
 

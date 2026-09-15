@@ -6,7 +6,7 @@
       </el-form-item>
       <el-form-item>
         <el-button type="primary" size="small" @click="search">查询</el-button>
-        <el-button size="small" @click="openDialog()">新增</el-button>
+        <el-button :disabled="!$isAdmin" title="仅管理员可操作" size="small" @click="openDialog()">新增</el-button>
       </el-form-item>
     </el-form>
 
@@ -24,8 +24,8 @@
       <el-table-column prop="sortNo" label="排序号" width="160"></el-table-column>
       <el-table-column label="操作" width="180">
         <template slot-scope="scope">
-          <el-button type="text" size="mini" @click="openDialog(scope.row)">编辑</el-button>
-          <el-button type="text" size="mini" @click="remove(scope.row)">删除</el-button>
+          <el-button :disabled="!$isAdmin" title="仅管理员可操作" type="text" size="mini" @click="openDialog(scope.row)">编辑</el-button>
+          <el-button :disabled="!$isAdmin" title="仅管理员可操作" type="text" size="mini" @click="remove(scope.row)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -51,7 +51,7 @@
       </el-form>
       <span slot="footer">
         <el-button @click="closeDialog">取消</el-button>
-        <el-button type="primary" @click="save">确定</el-button>
+        <el-button :disabled="!$isAdmin" title="仅管理员可操作" type="primary" @click="save">确定</el-button>
       </span>
     </el-dialog>
   </div>

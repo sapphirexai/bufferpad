@@ -16,7 +16,7 @@
           <strong>{{ groupSummaryText(plcSummary) }}</strong>
         </span>
         <span v-if="!loading && plcSummary.attention" class="group-attention">
-          异常 {{ plcSummary.attention }}
+          故障 {{ plcSummary.attention }}
         </span>
         <i class="el-icon-arrow-right"></i>
       </button>
@@ -28,7 +28,7 @@
           <strong>{{ groupSummaryText(scannerSummary) }}</strong>
         </span>
         <span v-if="!loading && scannerSummary.attention" class="group-attention">
-          异常 {{ scannerSummary.attention }}
+          故障 {{ scannerSummary.attention }}
         </span>
         <i class="el-icon-arrow-right"></i>
       </button>
@@ -106,14 +106,17 @@ export default {
     systemSummaryText() {
       if (this.loading) return '状态加载中'
       if (this.systemSummary.state === 'UNCONFIGURED') return '未配置设备'
-      if (this.systemSummary.attention === 0) return '全部在线'
-      return '设备异常 ' + this.systemSummary.attention + ' 台'
+      if (this.systemSummary.attention) return '设备故障 ' + this.systemSummary.attention + ' 台'
+      if (this.systemSummary.unknown) return '部分设备状态未知'
+      if (this.systemSummary.connecting || this.systemSummary.retrying) return '设备连接或验证中'
+      if (this.systemSummary.unverified) return 'TCP已连接，部分通信未验证'
+      return '全部连接已验证'
     },
     drawerSummaryText() {
       if (this.loading) return '正在读取连接状态'
       if (this.systemSummary.total === 0) return '请先配置设备信息'
-      if (this.systemSummary.attention === 0) return '共 ' + this.systemSummary.total + ' 台，连接正常'
-      return '共 ' + this.systemSummary.total + ' 台，异常 ' + this.systemSummary.attention + ' 台'
+      const s = this.systemSummary
+      return '共 ' + s.total + ' 台，故障 ' + s.attention + ' 台，未验证 ' + s.unverified + ' 台，状态未知 ' + s.unknown + ' 台'
     }
   },
   methods: {
@@ -124,7 +127,7 @@ export default {
     groupSummaryText(summary) {
       if (this.loading) return '加载中'
       if (summary.total === 0) return '未配置'
-      return summary.online + '/' + summary.total + ' 在线'
+      return summary.connected + '/' + summary.total + ' TCP已连接'
     },
     summaryClass(summary) {
       return 'is-' + String(summary.state || 'UNCONFIGURED').toLowerCase()
@@ -284,4 +287,10 @@ export default {
 /deep/ .device-status-drawer {
   max-width: 92vw;
 }
+</style>
+
+<style scoped>
+.status-dot.is-unverified { background: #909399; }
+.is-unverified .health-icon { background: #f4f4f5; color: #909399; }
+.drawer-overview.is-unverified { background: #f4f4f5; border-left-color: #909399; }
 </style>

@@ -8,7 +8,7 @@ import {
 describe('device health helpers', () => {
   it('supports the detailed state code and the legacy numeric status', () => {
     expect(deviceStateCode({ statusCode: 'degraded', status: 1 })).toBe('DEGRADED')
-    expect(deviceStateCode({ status: 1 })).toBe('ONLINE')
+    expect(deviceStateCode({ status: 1 })).toBe('VERIFYING')
     expect(deviceStateCode({ status: 0 })).toBe('OFFLINE')
   })
 
@@ -21,7 +21,7 @@ describe('device health helpers', () => {
 
     expect(summary.total).toBe(3)
     expect(summary.online).toBe(1)
-    expect(summary.attention).toBe(2)
+    expect(summary.attention).toBe(1)
     expect(summary.state).toBe('ERROR')
     expect(summarizeDevices([]).state).toBe('UNCONFIGURED')
   })
@@ -40,7 +40,7 @@ describe('device health helpers', () => {
     expect(summarizeSystem(
       [{ statusCode: 'ONLINE' }],
       [{ statusCode: 'ONLINE' }]
-    )).toEqual({ total: 2, attention: 0, state: 'HEALTHY' })
+    )).toMatchObject({ total: 2, attention: 0, state: 'HEALTHY' })
 
     expect(summarizeSystem(
       [{ statusCode: 'ONLINE' }],

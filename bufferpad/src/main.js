@@ -13,8 +13,10 @@ import App from './App'
 import ElementUI from 'element-ui'
 import 'element-ui/lib/theme-chalk/index.css'
 import router from './router'
+import { authState, isAdmin } from './modules/auth/state'
 
 Vue.use(ElementUI)
+Vue.mixin({ computed: { $isAdmin() { return isAdmin(authState.user) } } })
 
 Vue.config.productionTip = false
 

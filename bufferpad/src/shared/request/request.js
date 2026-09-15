@@ -7,17 +7,53 @@ export const http = axios.create({
   withCredentials: true
 })
 
-http.interceptors.request.use(config => {
+let csrfToken = null
+let csrfRequest = null
+function loadCsrf() {
+  if (!csrfRequest) {
+    csrfRequest = http.get('/auth/csrf', { silentAuth: true }).then(res => {
+      csrfToken = res.data.data.token
+      return csrfToken
+    }).finally(() => { csrfRequest = null })
+  }
+  return csrfRequest
+}
+http.interceptors.request.use(async config => {
   config.headers = {
     ...(config.headers || {}),
     DeviceType: 'H5'
   }
+  if (!/^(get|head|options)$/i.test(config.method || 'get')) config.headers['X-XSRF-TOKEN'] = csrfToken || await loadCsrf()
   return config
 })
 
 http.interceptors.response.use(
   response => response,
-  error => Promise.reject(error)
+  async error => {
+    const response = error.response
+    const config = error.config || {}
+    // Download endpoints also return JSON authentication errors, wrapped by axios as a Blob.
+    if (response && (response.status === 401 || response.status === 403) && response.data instanceof Blob) {
+      try {
+        const text = await new Promise((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve(reader.result)
+          reader.onerror = reject
+          reader.readAsText(response.data)
+        })
+        response.data = JSON.parse(text)
+      } catch (ignored) { /* Keep the original body when the server did not send JSON. */ }
+    }
+    if (response && response.status === 403 && response.data.reason === 'CSRF_INVALID' && !config.csrfRetried) {
+      csrfToken = null; await loadCsrf()
+      return http({ ...config, csrfRetried: true })
+    }
+    if (response && !config.silentAuth && (response.status === 401 || (response.status === 403 && response.data.reason === 'PASSWORD_CHANGE_REQUIRED'))) {
+      error.authHandled = true
+      window.dispatchEvent(new CustomEvent('bufferpad:auth-error', { detail: { status: response.status, reason: response.data.reason } }))
+    }
+    return Promise.reject(error)
+  }
 )
 
 export function buildBackendUrl(path) {
@@ -80,4 +116,8 @@ export function requestErrorMessage(error) {
     return error.response.data.msg
   }
   return '发生错误：' + (error.message || '未知错误')
+}
+
+export function shouldDisplayRequestError(error, component) {
+  return !(error && error.authHandled) && !component._isDestroyed && !component._isBeingDestroyed
 }

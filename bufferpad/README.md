@@ -88,6 +88,12 @@ powershell -ExecutionPolicy Bypass -File ..\bufferpad-installer\scripts\prepare-
 | 后端代理 | `/api/` -> `http://127.0.0.1:19001/` |
 | SSE 代理 | `/api/sse/` -> `http://127.0.0.1:19001/sse/` |
 
+最新发布（2026-09-14 12:00）：`bufferpad-login-entry-20260914-120100`，增加业务页面入口的服务器会话校验、HTML/运行配置禁止缓存，以及顶栏未登录时的“登录”入口。未登录访问业务页面返回 `302 /login`，接口仍返回 `401`。前端路径仍为 `/docker/nginx/bufferpad`；首次登录无需强制改密，已有账号继续使用其现有密码。下方为此前版本的历史记录。
+
+部署配置应包含 `default.conf` 中的页面入口规则，Nginx 需支持 `http_auth_request_module`。仅业务文档校验会话，`/login` 和 `/static/` 匿名可访问；HTML 和 `/static/config.js` 使用 `Cache-Control: no-store, no-cache, must-revalidate`。共享 Nginx 只更新缓冲垫站点，配置校验通过后平滑重载，并等待旧 worker 退出监听后再验收。
+
+2026-09-14 已发布登录权限版本 `bufferpad-auth-20260914-104318-r2`，前端更新于既有 `/docker/nginx/bufferpad`。默认管理员 `admin/example-admin-password` 首次登录需改密。服务器 Nginx 的该站点使用 `proxy_set_header Host $http_host` 保留端口；前端文件及外部静态资源哈希验证通过。备份位于 `/docker/.bufferpad-auth-20260914-104318-r2/backup/frontend`。
+
 已验证发布记录（2026-08-25）：发布号为 `bufferpad-s7-unified-20260825-091500`，前端备份位于
 `/docker/nginx/backups/bufferpad-s7-unified-20260825-091500`。主页返回 `200`；通过
 `/api/options/deviceTypes` 确认只存在一个“西门子 S7 PLC”选项；通过
@@ -180,7 +186,7 @@ curl http://127.0.0.1:19001/actuator/health
 curl http://127.0.0.1:18088/api/options/deviceTypes
 ```
 
-页面应返回 `200`，后端健康状态应为 `UP`。还需在浏览器确认运行监控能够加载设备状态、
+未登录访问 `/`、`/index`、`/summary` 应返回 `302` 且 `Location` 指向同源 `/login`；`/login` 应返回 `200` 和 `no-store`，受保护 API 应返回 `401`。登录后业务页面返回 `200`，后端健康状态应为 `UP`。还需在浏览器确认运行监控能够加载设备状态、
 最近操作事件，并能在手动扫码后显示计数结果或明确的 PLC 异常原因。运行页验收至少覆盖
 `1920x1080`、`1366x768` 和 `1024x768`：页面应存在纵向滚动，设备摘要不能出现内部
 滚动条，告警正文不能越界，空闲计数应显示 `--`，缓冲垫列表和底部分页必须可以正常查看。

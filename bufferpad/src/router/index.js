@@ -8,18 +8,27 @@
  */
 import Vue from 'vue'
 import Router from 'vue-router'
-import Layout from '@/views/layout'
+import Layout from '@/views/Layout'
+import { checkSession } from '../modules/auth/api'
+import { routeDestination } from '../modules/auth/state'
+import { Message } from 'element-ui'
 Vue.use(Router)
 
 const router = new Router({
   mode: 'history',
   routes: [
+    { path: '/login', component: () => import('../views/auth/Login.vue') },
+    { path: '/change-password', component: () => import('../views/auth/ChangePassword.vue') },
     {
       path: '/',
       name: 'Home',
       component: Layout,
       redirect: '/index',
       children: [
+        {
+          path: '/settings/users', component: () => import('../views/auth/Users.vue'),
+          meta: { title: '用户管理', icon: 'el-icon-user', menu: true, adminOnly: true, parent: 'settings', parentTitle: '设置', parentIcon: 'el-icon-setting', parentOrder: 9, order: 5 }
+        },
         {
           path: '/summary',
           component: () => import('../views/Layout/summary.vue'),
@@ -149,4 +158,15 @@ const router = new Router({
 //     sessionStorage.setItem(to.name, JSON.stringify(to.params))
 //   }
 // })
+router.beforeEach(async (to, from, next) => {
+  try {
+    const user = await checkSession()
+    const destination = routeDestination(user, to)
+    if (user && !user.mustChangePassword && to.matched.some(item => item.meta.adminOnly) && user.role !== 'ADMIN') Message.warning('权限不足，仅管理员可执行此操作')
+    next(destination || undefined)
+  } catch (error) {
+    Message.error('无法连接服务，请检查网络后重试')
+    next(to.path === '/login' ? undefined : '/login')
+  }
+})
 export default router
