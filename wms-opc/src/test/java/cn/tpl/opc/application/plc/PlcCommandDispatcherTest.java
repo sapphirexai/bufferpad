@@ -112,6 +112,37 @@ public class PlcCommandDispatcherTest {
         verify(operationEventService, never()).publish(any());
     }
 
+    @Test public void readPersistenceExceptionMustFinalizeOperation() {
+        when(connection.write("D6602", (short)1)).thenReturn(PlcIoResult.success(null));
+        when(connection.readInt16("D6610")).thenReturn(PlcIoResult.success((short)4));
+        when(cushionInfoService.modifyOpenCountByQrCode("QR-1", (short)4)).thenThrow(new IllegalStateException("database unavailable"));
+        dispatcher.onPlcCommand(command("D6610"));
+        assertPublishedCode(OperationEventCode.PLC_READ_FAILED);
+        verify(connection, never()).nowDead(any(), any());
+    }
+
+    @Test public void zeroAndMaximumAreValidButNegativeAndNullNeverSave() {
+        when(connection.write("D6602", (short)1)).thenReturn(PlcIoResult.success(null));
+        when(cushionInfoService.modifyOpenCountByQrCode(any(), any())).thenReturn(true);
+        for (Short value : new Short[]{0, 32767, -1, null}) {
+            when(connection.readInt16("D6610")).thenReturn(PlcIoResult.success(value));
+            dispatcher.onPlcCommand(command("D6610"));
+        }
+        verify(cushionInfoService).modifyOpenCountByQrCode("QR-1", (short)0);
+        verify(cushionInfoService).modifyOpenCountByQrCode("QR-1", (short)32767);
+        verify(cushionInfoService, never()).modifyOpenCountByQrCode("QR-1", (short)-1);
+        verify(cushionInfoService, never()).modifyOpenCountByQrCode("QR-1", null);
+    }
+
+    @Test public void writeTimeoutNeverReadsOrReplaysBusinessCommand() {
+        when(connection.write("D6602", (short)1)).thenReturn(PlcIoResult.failure(10000, "Receive timeout"));
+        dispatcher.onPlcCommand(command("D6610"));
+        verify(connection).recordRequestTimeout(3, 10000);
+        verify(connection).write("D6602", (short)1);
+        verify(connection, never()).readInt16(any());
+        assertPublishedCode(OperationEventCode.PLC_WRITE_FAILED);
+    }
+
     private EventBusMsgPlcCmd command(String readAddress) {
         return new EventBusMsgPlcCmd("op-dispatch", "QR-1", Constants.PLC_ADDR_TYPE_SCAN_SUCCESS, 20L,
                 "D6602", (short) 1, 1, 10L, readAddress);
@@ -119,8 +150,8 @@ public class PlcCommandDispatcherTest {
 
     private void assertPublishedCode(OperationEventCode expected) {
         ArgumentCaptor<OperationEventDTO> captor = ArgumentCaptor.forClass(OperationEventDTO.class);
-        verify(operationEventService).publish(captor.capture());
-        assertEquals(expected.name(), captor.getValue().getCode());
+        verify(operationEventService,org.mockito.Mockito.atLeastOnce()).publish(captor.capture());
+        assertEquals(1,captor.getAllValues().stream().filter(e->expected.name().equals(e.getCode())).count());
         assertEquals("op-dispatch", captor.getValue().getOperationId());
         assertEquals("1线-上扫码器", captor.getValue().getScannerName());
         assertEquals("192.0.2.9", captor.getValue().getScannerIp());

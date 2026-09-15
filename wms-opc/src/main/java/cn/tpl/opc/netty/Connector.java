@@ -60,6 +60,8 @@ public class Connector {
     private DomainEventPublisher eventPublisher;
     @Resource
     private ScannerMessageParser scannerMessageParser;
+    @Resource
+    private DeviceHealthProperties healthProperties;
 
     /**
      * 定时执行器
@@ -84,11 +86,16 @@ public class Connector {
                         // 添加一个编码处理器，对数据编码为UTF-8格式
                         sc.pipeline().addLast(new StringEncoder(CharsetUtil.UTF_8));
                         // 配置如果对应时间内未触发写事件，就会触发写闲置事件
-                        sc.pipeline().addLast(new IdleStateHandler(0, 30, 0, TimeUnit.SECONDS));
+                        DeviceHealthProperties.ScannerHeartbeat heartbeat = healthProperties.getScannerHeartbeats().get(conn.getId());
+                        if (heartbeat != null && heartbeat.isEnabled()) {
+                            conn.setMonitoringMode("SCANNER_HEARTBEAT");
+                            sc.pipeline().addLast(new IdleStateHandler(0, heartbeat.getIntervalSeconds(), 0, TimeUnit.SECONDS));
+                        }
                         // 添加一个入站处理器，对收到的数据进行处理
+                        sc.pipeline().addLast(new cn.tpl.opc.netty.handler.ScannerFrameDecoder());
                         sc.pipeline().addLast(new MsgHandler(conn, eventPublisher, scannerMessageParser));
                         // 添加心跳处理器
-                        sc.pipeline().addLast(new HeartbeatHandler(conn));
+                        sc.pipeline().addLast(new HeartbeatHandler(conn, heartbeat, healthProperties.getFailureThreshold()));
                     }
                 });
 
@@ -121,6 +128,7 @@ public class Connector {
                 private void sendSseMsg(Connection conn) {
                     DeviceInfoDTO deviceInfo = new DeviceInfoDTO();
                     BeanUtil.copyProperties(conn, deviceInfo);
+                    deviceInfo.setTransportState(conn.getTransportState());
                     sseService.sendDeviceMsg(deviceInfo);
                 }
             });
@@ -159,9 +167,11 @@ public class Connector {
         String ip = conn.getIp();
         Integer port = conn.getPort();
         conn.markConnecting();
+        boolean asynchronous = false;
         try {
             if (isScannerConn(conn)) {
                 connectScanner(conn, ip, port);
+                asynchronous = true;
             } else {
                 connectPLC(conn, ip, port);
             }
@@ -169,7 +179,7 @@ public class Connector {
             conn.nowDead("设备连接异常：" + e.getMessage(), null);
             log.error("connect failed, deviceId => {}, address => {}:{}", conn.getId(), ip, port, e);
         } finally {
-            conn.endConnect();
+            if (!asynchronous) conn.endConnect();
         }
     }
 
@@ -198,6 +208,7 @@ public class Connector {
             log.info("connectScanner, connecting => {}", ip + ":" + port);
             fastBuildClient(conn).connect(ip, port)
                     .addListener((ChannelFutureListener) future -> {
+                        try {
                         if (future.isSuccess()) {
                             log.info("connectScanner, connecting => success");
                             conn.nowActive(future);
@@ -206,8 +217,10 @@ public class Connector {
                             conn.nowDead(reason, null);
                             log.error("connectScanner failed, deviceId => {}, address => {}:{}", conn.getId(), ip, port, future.cause());
                         }
+                        } finally { conn.endConnect(); }
                     });
         } catch (Exception e) {
+            conn.endConnect();
             conn.nowDead("扫码器连接异常", null);
             log.error("connectScanner error, deviceId => {}", conn.getId(), e);
         }
@@ -222,6 +235,10 @@ public class Connector {
      * @param port 端口号
      */
     private void connectPLC(Connection conn, String ip, Integer port) {
+        synchronized (conn.getPlcIoLock()) { connectPlcLocked(conn, ip, port); }
+    }
+
+    private void connectPlcLocked(Connection conn, String ip, Integer port) {
         if (!conn.isNoPLCNet()) return;
         log.info("connectPLC, connecting => {}", ip + ":" + port);
 
@@ -305,6 +322,7 @@ public class Connector {
 
         Collection<PLCAddrEntity> plcAddrs = plcAddrService.listByPlcIdAndType(conn.getId(), Constants.PLC_ADDR_TYPE_HEART_BEAT);
         if (CollectionUtils.isEmpty(plcAddrs)) return;
+        if (!"READ_PROBE".equals(conn.getMonitoringMode())) conn.setMonitoringMode("PLC_HEARTBEAT");
 
         for (PLCAddrEntity plcAddr : plcAddrs) {
             eventPublisher.publish(new EventBusMsgPlcCmd(null, Constants.PLC_ADDR_TYPE_HEART_BEAT, plcAddr.getPlcId(), plcAddr.getAddr(), Constants.HEARTBEAT_2_PLC_VAL, conn.getWorkLine()));

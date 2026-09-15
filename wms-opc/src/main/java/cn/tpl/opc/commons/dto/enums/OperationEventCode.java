@@ -4,6 +4,8 @@ package cn.tpl.opc.commons.dto.enums;
  * Stable operation event codes shared by backend and frontend.
  */
 public enum OperationEventCode {
+    PLC_NOTIFY_PENDING("INFO", "PLC待通知", "等待PLC指令执行", ""),
+    PLC_READ_SUCCEEDED("INFO", "开口数回读完成", "开口数已读取并保存", ""),
     SCAN_COUNTED("INFO", "扫码计数完成", "缓冲垫已完成计数", ""),
     SCAN_NO_READ("WARNING", "扫码失败", "读码器未识别到二维码", "请重新扫码，仍失败时可使用手动输入"),
     SCAN_REPEATED("WARNING", "扫码未计数", "两小时内重复扫码，本次未增加使用次数", "无需重复扫码，如需补录请确认现场流程"),

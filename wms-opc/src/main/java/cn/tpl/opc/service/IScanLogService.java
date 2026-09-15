@@ -1,9 +1,9 @@
 package cn.tpl.opc.service;
 
 import cn.tpl.opc.commons.dto.result.ScanLogDTO;
+import cn.tpl.opc.commons.dto.result.PageData;
 import cn.tpl.opc.commons.scheme.request.QueryScanLogScheme;
 
-import java.util.List;
 
 /**
  * Author: Luo GuoWen
@@ -40,10 +40,10 @@ public interface IScanLogService {
     void addScanLog(String scannerHost, String scannerName, String qrCode, String msg, short msgType, boolean isManualScan);
 
     /**
-     * 根据ID列表查找对应缓冲垫明细
+     * 按条件分页查询扫描日志
      *
      * @param scheme 分页查询参数协议
      * @return 分页数据
      */
-    List<ScanLogDTO> listAllByScheme(QueryScanLogScheme scheme);
+    PageData<ScanLogDTO> listByPage(QueryScanLogScheme scheme);
 }

@@ -265,6 +265,30 @@ public class ScanFlowWithMockedDeviceTest {
         verifyNoInteractions(sseService);
     }
 
+    @Test
+    public void repeatedOverLimitScannerMustNotSendSuccessOrRead() {
+        String qrCode = "BP-MAX-REPEAT";
+        preloadedCushion(qrCode, 2, 2, new Date(), SCANNER_ID, SCANNER_SEQ, SCANNER_POSITION);
+        sendScannerRawMessage(Constants.SCANNER_MSG_STX + qrCode + Constants.SCANNER_MSG_ETX);
+        Assert.assertEquals(Integer.valueOf(2), cushionStore.get(qrCode).getUsedCount());
+        Assert.assertTrue(detailStore.isEmpty());
+        EventBusMsgPlcCmd command = (EventBusMsgPlcCmd) publishedPlcEvents().get(0);
+        Assert.assertEquals(Integer.valueOf(Constants.PLC_ADDR_TYPE_SCAN_OVER_MAXIMUM), command.getAddrType());
+        Assert.assertNull(command.getReadAddress());
+    }
+
+    @Test
+    public void repeatedOverLimitManualMustSendRescanOverLimit() {
+        String qrCode = "BP-MANUAL-MAX-REPEAT";
+        preloadedCushion(qrCode, 3, 2, new Date(), SCANNER_ID, SCANNER_SEQ, SCANNER_POSITION);
+        cushionInfoService.onQrCodeReceived(null, WORK_LINE, null, null, Constants.SCANNER_POSITION_MANUAL, null, qrCode);
+        Assert.assertEquals(Integer.valueOf(3), cushionStore.get(qrCode).getUsedCount());
+        Assert.assertTrue(detailStore.isEmpty());
+        EventBusMsgPlcCmd command = (EventBusMsgPlcCmd) publishedPlcEvents().get(0);
+        Assert.assertEquals(Integer.valueOf(Constants.PLC_ADDR_TYPE_RE_SCAN_OVER_MAXIMUM), command.getAddrType());
+        Assert.assertNull(command.getReadAddress());
+    }
+
     private PlcNotifyService buildPlcNotifyService() {
         PlcNotifyService service = new PlcNotifyService();
         ReflectionTestUtils.setField(service, "scanLogService", scanLogService);
@@ -360,7 +384,7 @@ public class ScanFlowWithMockedDeviceTest {
             scanEventListener.onMessageEvent((EventBusMsgCushionQrCode) event);
         };
         MsgHandler msgHandler = new MsgHandler(scannerConnection, scannerEventPublisher, new ScannerMessageParser());
-        msgHandler.channelRead(null, Unpooled.copiedBuffer(rawMessage, CharsetUtil.UTF_8));
+        msgHandler.channelRead(org.mockito.Mockito.mock(io.netty.channel.ChannelHandlerContext.class), Unpooled.copiedBuffer(rawMessage, CharsetUtil.UTF_8));
     }
 
     private List<Object> publishedPlcEvents() {

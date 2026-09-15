@@ -36,4 +36,18 @@ public class ScannerMessageParserTest {
 
         Assert.assertEquals(ScannerMessageType.HEARTBEAT, message.getType());
     }
+
+    @Test public void keywordsInsideBarcodeDoNotChangeOperation() {
+        for (String code : new String[]{"PART-NoRead-01", "PART-HeartBeat-02"}) {
+            ScannerMessage message = parser.parse("\u0002" + code + "\u0003");
+            Assert.assertEquals(ScannerMessageType.BARCODE, message.getType());
+            Assert.assertEquals(code, message.getQrCode());
+        }
+    }
+
+    @Test public void incompleteEmptyAndMultipleFramesAreNotBarcodes() {
+        for (String raw : new String[]{"\u0002PART", "[TPL_STX]PART", "\u0002\u0003", "\u0002A\u0003\u0002B\u0003"}) {
+            Assert.assertEquals(raw, ScannerMessageType.UNKNOWN, parser.parse(raw).getType());
+        }
+    }
 }

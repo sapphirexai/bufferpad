@@ -15,6 +15,8 @@ import cn.tpl.opc.commons.scheme.request.ManualCushionInfoScheme;
 import cn.tpl.opc.commons.scheme.request.ModifyCushionInfoScheme;
 import cn.tpl.opc.commons.scheme.request.QueryCushionDetailPageScheme;
 import cn.tpl.opc.commons.scheme.request.QueryCushionInfoPageScheme;
+import cn.tpl.opc.commons.scheme.request.ExportCushionsByTimeScheme;
+import cn.tpl.opc.service.impl.CushionTimeExportService;
 import cn.tpl.opc.entity.CushionDetailEntity;
 import cn.tpl.opc.mapper.CushionDetailEntityMapper;
 import cn.tpl.opc.service.ICushionInfoService;
@@ -61,6 +63,27 @@ public class CushionController {
     private CushionDetailEntityMapper cushionDetailEntityMapper;
     @Resource
     private IDeviceInstallPositionService installPositionService;
+    @Resource
+    private CushionTimeExportService timeExportService;
+
+    @Operation(summary = "按第一次或最后一次使用时间导出缓冲垫信息")
+    @PostMapping("/cushions/excel/time-range")
+    public ResultDTO<?> exportCushionsByTime(@RequestBody ExportCushionsByTimeScheme scheme, HttpServletResponse response) {
+        try (CushionTimeExportService.ExportFile file=timeExportService.generate(scheme)) {
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setHeader("Content-Disposition","attachment; filename=\"Cushion_Time_"+DateUtil.format(new Date(),"yyyyMMddHHmmss")+".xlsx\"");
+            response.setHeader("Cache-Control","no-store");
+            response.setContentLengthLong(java.nio.file.Files.size(file.path()));
+            java.nio.file.Files.copy(file.path(),response.getOutputStream());
+            return null;
+        } catch (Exception e) {
+            if(response.isCommitted()) { log.warn("Cushion export download interrupted",e);return null; }
+            if (!(e instanceof IllegalArgumentException)) log.error("Cushion time export failed",e);
+            response.reset();
+            response.setStatus(e instanceof IllegalArgumentException?400:500);
+            return ResultDTO.failure(e instanceof IllegalArgumentException?e.getMessage():"导出失败，请稍后重试");
+        }
+    }
 
     @Operation(summary = "分页查询缓冲垫列表")
     @GetMapping("/cushionsPage")

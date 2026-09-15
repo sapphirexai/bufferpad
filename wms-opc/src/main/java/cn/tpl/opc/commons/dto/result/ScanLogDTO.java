@@ -46,4 +46,14 @@ public class ScanLogDTO extends AbsBaseDTO {
      */
     @Schema(description = "创建该条记录的时间")
     private Date createdDate;
+    private String operationId;
+    private String operationType;
+    private String status;
+    private String resultCode;
+    private Integer workLine;
+    private String operatorName;
+    private Long scannerId;
+    private Long plcId;
+    private String scannerSnapshot;
+    private String plcSnapshot;
 }

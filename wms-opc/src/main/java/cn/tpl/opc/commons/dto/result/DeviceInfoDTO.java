@@ -54,7 +54,7 @@ public class DeviceInfoDTO extends AbsBaseDTO {
     @Schema(description = "设备状态，0：未连接；1：活跃中")
     private Integer status;
 
-    @Schema(description = "连接状态编码：ONLINE、CONNECTING、DEGRADED、OFFLINE")
+    @Schema(description = "综合编码：ONLINE、VERIFYING、CONNECTING、RETRYING、TIMEOUT、DEGRADED、OFFLINE")
     private String statusCode;
 
     @Schema(description = "当前状态原因")
@@ -68,6 +68,13 @@ public class DeviceInfoDTO extends AbsBaseDTO {
 
     @Schema(description = "最近PLC错误码")
     private Integer lastErrorCode;
+
+    private String transportState;
+    private String communicationState;
+    private String monitoringMode;
+    private Date lastRequestAt;
+    private String lastRequestKind;
+    private Integer consecutiveTimeouts;
 
     /**
      * 设备名字

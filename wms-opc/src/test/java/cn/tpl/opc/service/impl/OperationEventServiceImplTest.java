@@ -26,6 +26,7 @@ public class OperationEventServiceImplTest {
     public void setUp() {
         ReflectionTestUtils.setField(service, "operationEventEntityMapper", mapper);
         ReflectionTestUtils.setField(service, "sseService", sseService);
+        ReflectionTestUtils.setField(service, "scanOperationLogs", mock(cn.tpl.opc.application.scan.ScanOperationLogService.class));
     }
 
     @Test

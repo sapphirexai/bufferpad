@@ -63,17 +63,25 @@ public class NettyServiceImpl implements INettyService {
         DeviceInfoDTO deviceInfoDTO = new DeviceInfoDTO();
         Connection connection = new Connection();
         BeanUtil.copyProperties(deviceInfo, connection);
+        // Persisted configuration cannot prove a live transport.
+        connection.setStatus(0);
         BeanUtil.copyProperties(deviceInfo, deviceInfoDTO);
         applyTypeName(deviceInfoDTO);
         connector.connect(connection);
         Connection managedConnection = connectionMgr.getConnection(connection.getId());
-        if (managedConnection != null) BeanUtil.copyProperties(managedConnection, deviceInfoDTO);
+        if (managedConnection != null) synchronized (managedConnection) {
+            BeanUtil.copyProperties(managedConnection, deviceInfoDTO);
+            deviceInfoDTO.setTransportState(managedConnection.getTransportState());
+        }
         return deviceInfoDTO;
     }
 
     private DeviceInfoDTO connection2DeviceDTO(Connection connection) {
         DeviceInfoDTO deviceInfoDTO = new DeviceInfoDTO();
-        BeanUtil.copyProperties(connection, deviceInfoDTO);
+        synchronized (connection) {
+            BeanUtil.copyProperties(connection, deviceInfoDTO);
+            deviceInfoDTO.setTransportState(connection.getTransportState());
+        }
         applyTypeName(deviceInfoDTO);
         return deviceInfoDTO;
     }

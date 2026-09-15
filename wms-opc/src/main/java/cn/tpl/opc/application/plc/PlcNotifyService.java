@@ -107,7 +107,6 @@ public class PlcNotifyService {
     private void notifyPLC(String operationId, String qrCode, Integer plcAddrType, Long scannerId,
                            Integer workLine) {
         if (scannerId == null) {
-            scanLogService.add(qrCode, "手动扫码未关联具体扫码器，未发送PLC指令", Constants.SCAN_LOG_TYPE_ERROR);
             OperationEventDTO event = OperationEventDTO.of(OperationEventCode.PLC_TARGET_NOT_RESOLVED, workLine);
             event.setOperationId(operationId);
             event.setQrCode(qrCode);
@@ -115,26 +114,29 @@ public class PlcNotifyService {
             return;
         }
         if (plcAddrType == null) {
-            scanLogService.add(qrCode, Constants.SCAN_LOG_MSG_PLC_ADDR_NOT_CONFIGURED + PlcAddrTypeEnum.labelOf(plcAddrType), Constants.SCAN_LOG_TYPE_ERROR);
             publishAddressNotConfigured(operationId, qrCode, plcAddrType, scannerId, workLine);
             return;
         }
 
         PLCAddrEntity plcAddr = plcAddrService.findByTypeAndScannerId(plcAddrType, scannerId);
         if (plcAddr == null) {
-            scanLogService.add(qrCode, Constants.SCAN_LOG_MSG_PLC_ADDR_NOT_CONFIGURED + PlcAddrTypeEnum.labelOf(plcAddrType), Constants.SCAN_LOG_TYPE_ERROR);
             publishAddressNotConfigured(operationId, qrCode, plcAddrType, scannerId, workLine);
             return;
         }
 
         if (isPlcConnectionUnavailable(plcAddr.getPlcId())) {
-            scanLogService.add(qrCode, Constants.SCAN_LOG_MSG_NOTIFY_PLC_SKIPPED + plcAddr.getAddr() + Constants.SCAN_LOG_MSG_SUFFIX_NOTIFY_PLC_CMD + Constants.DEFAULT_2_PLC_VAL, Constants.SCAN_LOG_TYPE_ERROR);
             publishPlcOffline(operationId, qrCode, scannerId, plcAddr, workLine);
             return;
         }
 
         Integer eventWorkLine = resolveEventWorkLine(workLine, scannerId);
         String readAddress = resolveOpenCountAddress(operationId, plcAddrType, qrCode, scannerId, eventWorkLine, plcAddr);
+        OperationEventDTO pending = baseEvent(OperationEventCode.PLC_NOTIFY_PENDING, operationId, qrCode, scannerId, eventWorkLine);
+        applyPlcIdentity(pending, plcAddr.getPlcId(), deviceInfoEntityMapper.selectByPrimaryKey(plcAddr.getPlcId()));
+        pending.setAddress(plcAddr.getAddr());
+        pending.setWriteValue(Constants.DEFAULT_2_PLC_VAL);
+        pending.setReadExpected(readAddress != null);
+        operationEventService.publish(pending);
         eventPublisher.publish(new EventBusMsgPlcCmd(operationId, qrCode, plcAddrType, plcAddr.getPlcId(), plcAddr.getAddr(),
                 Constants.DEFAULT_2_PLC_VAL, eventWorkLine, scannerId, readAddress));
     }
@@ -154,13 +156,21 @@ public class PlcNotifyService {
         Integer plcAddrType = getOpenCountPlcAddrType(reScanSuccess);
         PLCAddrEntity plcAddr = plcAddrService.findByTypeAndScannerId(plcAddrType, scannerId);
         if (plcAddr == null) {
-            scanLogService.add(qrCode, Constants.SCAN_LOG_MSG_PLC_ADDR_NOT_CONFIGURED + PlcAddrTypeEnum.labelOf(plcAddrType), Constants.SCAN_LOG_TYPE_ERROR);
             OperationEventDTO event = baseEvent(OperationEventCode.PLC_READ_ADDRESS_NOT_CONFIGURED,
                     operationId, qrCode, scannerId, workLine);
             DeviceInfoEntity plc = writePlcAddr == null ? null
                     : deviceInfoEntityMapper.selectByPrimaryKey(writePlcAddr.getPlcId());
             if (writePlcAddr != null) applyPlcIdentity(event, writePlcAddr.getPlcId(), plc);
             event.setMessage("缓冲垫已计数，但未配置“" + PlcAddrTypeEnum.labelOf(plcAddrType) + "”地址");
+            operationEventService.publish(event);
+            return null;
+        }
+        if (!java.util.Objects.equals(plcAddr.getPlcId(), writePlcAddr.getPlcId())
+                || plcAddr.getAddr() == null || plcAddr.getAddr().isBlank()) {
+            OperationEventDTO event = baseEvent(OperationEventCode.PLC_READ_ADDRESS_NOT_CONFIGURED,
+                    operationId, qrCode, scannerId, workLine);
+            applyPlcIdentity(event, writePlcAddr.getPlcId(), deviceInfoEntityMapper.selectByPrimaryKey(writePlcAddr.getPlcId()));
+            event.setMessage("开口数回读配置无效：回读与通知必须关联同一PLC且地址不能为空；本次未执行回读");
             operationEventService.publish(event);
             return null;
         }

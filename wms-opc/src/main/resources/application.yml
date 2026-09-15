@@ -44,12 +44,38 @@ mybatis-plus:
     log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
 
 management:
+  endpoint:
+    health:
+      show-details: never
   endpoints:
     web:
       exposure:
-        include: '*'
+        include: health,info
+
+scan-log:
+  retention:
+    enabled: ${SCAN_LOG_RETENTION_ENABLED:true}
+    months: ${SCAN_LOG_RETENTION_MONTHS:3}
+    zone: ${SCAN_LOG_RETENTION_ZONE:Asia/Shanghai}
+    cleanup-cron: "${SCAN_LOG_CLEANUP_CRON:0 0 3 * * ?}"
+    batch-size: ${SCAN_LOG_CLEANUP_BATCH_SIZE:1000}
+    max-seconds: ${SCAN_LOG_CLEANUP_MAX_SECONDS:300}
+    pause-millis: ${SCAN_LOG_CLEANUP_PAUSE_MILLIS:100}
 
 operation-event:
   retention:
     days: 30
     cleanup-cron: "0 15 2 * * ?"
+
+auth:
+  bootstrap:
+    username: ${BUFFERPAD_ADMIN_USERNAME:admin}
+    password: ${BUFFERPAD_ADMIN_PASSWORD:example-admin-password}
+  cookie-secure: ${BUFFERPAD_COOKIE_SECURE:false}
+  allowed-origins: ${BUFFERPAD_ALLOWED_ORIGINS:http://localhost:8081,http://127.0.0.1:8081}
+
+# Explicit per-device protocol detection only. Empty maps send no extra requests.
+device-health:
+  failure-threshold: 3
+  scanner-heartbeats: {}
+  plc-probes: {}

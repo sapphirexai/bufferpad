@@ -44,4 +44,14 @@ public class ScanLogEntity implements Serializable {
      * 日志类型，0：普通；1：异常
      */
     private Short msgType;
+    private String operationId;
+    private String operationType;
+    private String status;
+    private String resultCode;
+    private Integer workLine;
+    private String operatorName;
+    private Long scannerId;
+    private Long plcId;
+    private String scannerSnapshot;
+    private String plcSnapshot;
 }

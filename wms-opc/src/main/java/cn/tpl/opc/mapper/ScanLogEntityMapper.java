@@ -2,10 +2,11 @@ package cn.tpl.opc.mapper;
 
 import cn.tpl.opc.commons.scheme.request.QueryScanLogScheme;
 import cn.tpl.opc.entity.ScanLogEntity;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
-import java.util.List;
 
 @Mapper
 public interface ScanLogEntityMapper {
@@ -57,5 +58,5 @@ public interface ScanLogEntityMapper {
      */
     int updateByPrimaryKey(ScanLogEntity record);
 
-    List<ScanLogEntity> listAllByScheme(@Param("data") QueryScanLogScheme scheme);
+    IPage<ScanLogEntity> listByPage(Page<ScanLogEntity> page, @Param("data") QueryScanLogScheme scheme);
 }

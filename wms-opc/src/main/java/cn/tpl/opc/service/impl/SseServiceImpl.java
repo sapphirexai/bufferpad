@@ -29,6 +29,8 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @Service("sseService")
 public class SseServiceImpl implements ISseService {
+    @org.springframework.beans.factory.annotation.Autowired
+    private cn.tpl.opc.auth.AuthService authService;
     private final ExecutorService msgService = new ThreadPoolExecutor(
             Runtime.getRuntime().availableProcessors() * 2,
             Runtime.getRuntime().availableProcessors() * 4,
@@ -55,7 +57,19 @@ public class SseServiceImpl implements ISseService {
             sseClients.remove(sessionId);
         });
 
-        sseClients.put(sessionId, new SseSession(clientId, sseEmitter));
+        org.springframework.security.core.Authentication authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !(authentication.getPrincipal() instanceof cn.tpl.opc.auth.AuthPrincipal)) {
+            throw new cn.tpl.opc.auth.AuthException(401, "请先登录或重新登录");
+        }
+        String authHash = ((cn.tpl.opc.auth.AuthPrincipal) authentication.getPrincipal()).getSessionHash();
+        sseClients.put(sessionId, new SseSession(clientId, sseEmitter, authHash));
+        if (!authService.isSessionValid(authHash)) {
+            removeSseClient(sessionId, sseEmitter);
+        } else {
+            // Flush headers immediately even when the production line is idle.
+            try { sseEmitter.send(SseEmitter.event().comment("connected")); }
+            catch (java.io.IOException error) { removeSseClient(sessionId, sseEmitter); }
+        }
         return sseEmitter;
     }
 
@@ -116,6 +130,11 @@ public class SseServiceImpl implements ISseService {
 
     private void doSendMsg(String sessionId, SseEmitter sseEmitter, String fMsg) {
         try {
+            SseSession session = sseClients.get(sessionId);
+            if (session == null || !authService.isSessionValid(session.authHash)) {
+                removeSseClient(sessionId, sseEmitter);
+                return;
+            }
             log.info("sendMsg, msgJson => {}", fMsg);
             sseEmitter.send(fMsg);
         } catch (Exception e) {
@@ -145,13 +164,29 @@ public class SseServiceImpl implements ISseService {
         msgService.shutdownNow();
     }
 
+    @org.springframework.context.event.EventListener
+    public void onSessionsRevoked(cn.tpl.opc.auth.AuthSessionsRevoked event) {
+        sseClients.forEach((id, session) -> {
+            if (event.getSessionHashes().contains(session.authHash)) removeSseClient(id, session.emitter);
+        });
+    }
+
+    @org.springframework.scheduling.annotation.Scheduled(fixedDelay = 5000)
+    public void checkSessions() {
+        sseClients.forEach((id, session) -> {
+            if (!authService.isSessionValid(session.authHash)) removeSseClient(id, session.emitter);
+        });
+    }
+
     private static final class SseSession {
         private final String workLine;
         private final SseEmitter emitter;
+        private final String authHash;
 
-        private SseSession(String workLine, SseEmitter emitter) {
+        private SseSession(String workLine, SseEmitter emitter, String authHash) {
             this.workLine = workLine;
             this.emitter = emitter;
+            this.authHash = authHash;
         }
     }
 }

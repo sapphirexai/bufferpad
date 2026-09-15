@@ -2,78 +2,59 @@ package cn.tpl.opc.netty.handler;
 
 import cn.tpl.opc.commons.constant.Constants;
 import cn.tpl.opc.netty.Connection;
+import cn.tpl.opc.netty.DeviceHealthProperties;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.CharsetUtil;
-import lombok.extern.slf4j.Slf4j;
+import java.util.concurrent.TimeUnit;
 
-/**
- * Author: Luo GuoWen
- * Email: luoguowen123@qq.com
- * Time: 2023/4/7
- * 心跳处理器
- */
-@Slf4j
+/** Application heartbeat is opt-in, after the scanner protocol has been confirmed. */
 public class HeartbeatHandler extends ChannelInboundHandlerAdapter {
-    /**
-     * 连接信息
-     */
-    private final Connection mConnection;
+    private final Connection connection;
+    private final DeviceHealthProperties.ScannerHeartbeat config;
+    private final int threshold;
+    private boolean awaitingResponse;
 
-    public HeartbeatHandler(Connection connection) {
-        mConnection = connection;
+    public HeartbeatHandler(Connection connection) { this(connection, null, 3); }
+    public HeartbeatHandler(Connection connection, DeviceHealthProperties.ScannerHeartbeat config, int threshold) {
+        this.connection = connection; this.config = config; this.threshold = threshold;
     }
-
-    @Override
-    public void userEventTriggered(ChannelHandlerContext ctx, Object event) throws Exception {
-        // 如果当前触发的事件是闲置事件
-        if (mConnection.isDead()) {
-            log.info("userEventTriggered, connection is dead");
-            return;
+    @Override public void userEventTriggered(ChannelHandlerContext ctx, Object event) throws Exception {
+        if (!(event instanceof IdleStateEvent) || ((IdleStateEvent) event).state() != IdleState.WRITER_IDLE) {
+            super.userEventTriggered(ctx, event); return;
         }
-        if (event instanceof IdleStateEvent idleEvent) {
-            // 如果当前通道触发了写闲置事件
-            if (idleEvent.state() == IdleState.WRITER_IDLE) {
-                // 表示当前客户端有一段时间未向服务端发送数据了，
-                // 为了防止服务端关闭当前连接，手动发送一个心跳包
-                String hb = Constants.SCANNER_MSG_STX + Constants.SCANNER_MSG_HEART_BEAT + Constants.SCANNER_MSG_ETX;
-                ctx.channel().writeAndFlush(Unpooled.unreleasableBuffer(Unpooled.copiedBuffer(hb.getBytes(CharsetUtil.UTF_8))).duplicate());
-//                log.info("userEventTriggered, send heartbeat success {}, ip => {}:{}", hb, mConnection.getIp(), mConnection.getPort());
-            } else {
-                super.userEventTriggered(ctx, event);
+        if (config == null || !config.isEnabled() || awaitingResponse || !connection.ownsChannel(ctx.channel())
+                || !ctx.channel().isActive()) return;
+        awaitingResponse = true;
+        long responseSequence = connection.getResponseSequence().get();
+        String heartbeat = Constants.SCANNER_MSG_STX + Constants.SCANNER_MSG_HEART_BEAT + Constants.SCANNER_MSG_ETX;
+        connection.recordRequest("SCANNER_HEARTBEAT");
+        ctx.writeAndFlush(Unpooled.copiedBuffer(heartbeat, CharsetUtil.UTF_8)).addListener(sent -> {
+            if (!sent.isSuccess()) {
+                awaitingResponse = false;
+                connection.scannerClosed(ctx.channel(), "扫码器心跳发送失败");
+                return;
             }
-        }
+            ctx.executor().schedule(() -> {
+                awaitingResponse = false;
+                synchronized (connection) {
+                    if (connection.ownsChannel(ctx.channel()) && ctx.channel().isActive()
+                            && connection.getResponseSequence().get() == responseSequence) {
+                        connection.recordRequestTimeout(threshold, null);
+                    }
+                }
+            }, config.getResponseTimeoutSeconds(), TimeUnit.SECONDS);
+        });
     }
-
-    @Override
-    public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        log.info("channelActive, ip => {}:{}", mConnection.getIp(), mConnection.getPort());
-        super.channelActive(ctx);
-    }
-
-    @Override
-    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+    @Override public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        connection.scannerClosed(ctx.channel(), "扫码器TCP连接已断开");
         super.channelInactive(ctx);
-        log.info("channelInactive, ip => {}:{}", mConnection.getIp(), mConnection.getPort());
-        onConnectionClosed();
     }
-
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        super.exceptionCaught(ctx, cause);
-        log.error("exceptionCaught, exception => ", cause);
-        onConnectionClosed();
-    }
-
-    /**
-     * 连接被迫关闭时调用
-     */
-    private void onConnectionClosed() {
-        log.info("onConnectionClosed");
-        mConnection.nowDead("读码器连接已断开", null);
+    @Override public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        connection.scannerClosed(ctx.channel(), "扫码器TCP连接异常：" + cause.getMessage());
+        ctx.close();
     }
 }
-

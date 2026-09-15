@@ -223,7 +223,7 @@
       select id
       from cushion_detail
       where qr_code = #{qrCode,jdbcType=VARCHAR}
-      order by created_date desc
+      order by created_date desc, id desc
       limit 1
       ) as target
       )

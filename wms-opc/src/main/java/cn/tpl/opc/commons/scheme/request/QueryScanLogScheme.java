@@ -1,6 +1,6 @@
 package cn.tpl.opc.commons.scheme.request;
 
-import cn.tpl.opc.commons.scheme.base.AbsBaseScheme;
+import cn.tpl.opc.commons.scheme.base.BasePageScheme;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -17,7 +17,11 @@ import java.util.Date;
 @EqualsAndHashCode(callSuper = true)
 @Schema(description = "查询扫码日志协议类")
 @Data
-public class QueryScanLogScheme extends AbsBaseScheme {
+public class QueryScanLogScheme extends BasePageScheme {
+    public QueryScanLogScheme() {
+        this.pageSize = 20;
+    }
+
     @Schema(description = "二维码")
     private String qrCode;
 
@@ -34,4 +38,13 @@ public class QueryScanLogScheme extends AbsBaseScheme {
     @Schema(description = "截止创建时间，格式同上")
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date endTime;
+    private String status;
+    private String scanner;
+    private String plc;
+    public Long getScannerIdFilter() { return deviceId(scanner); }
+    public Long getPlcIdFilter() { return deviceId(plc); }
+    private Long deviceId(String value) {
+        if(value==null || !value.trim().matches("[0-9]+")) return null;
+        try { return Long.valueOf(value.trim()); } catch(NumberFormatException ignored) { return null; }
+    }
 }

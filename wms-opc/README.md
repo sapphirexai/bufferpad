@@ -2,6 +2,8 @@
 
 PCB 回流线缓冲垫计数及 PLC 联动服务。系统接收工业读码器或前端手动输入的二维码，完成缓冲垫建档、有效次数累计、寿命判断、操作留痕，并按扫码器配置把处理结果通知对应 PLC。
 
+六表旧库升级当前版本使用[修订3旧库升级 SQL 与执行说明](docs/sql/20260915_旧库升级说明.md)，包含日志汇总字段、清理索引及内置账户会话表，已核对27/149结构并在隔离副本完成数据、重复执行及后端运行验收。
+
 ## 核心业务规则
 
 - 新二维码第一次有效扫码时创建 `cushion_info`，`used_count` 从 `1` 开始，同时写入一条 `cushion_detail`。
@@ -250,6 +252,10 @@ GET /actuator/health
 
 服务器数据库参数由 Compose 环境变量注入，密码存放在服务器 `/docker/.env`，不得提交到仓库。
 
+最新发布（2026-09-14 11:37）：`bufferpad-first-login-20260914-113416` 取消新账户首次登录强制改密，保留已有密码和会话。仍使用 `/docker/docker-compose.yml`，备份位于 `/docker/.bufferpad-first-login-20260914-113416/backup`。下方为此前版本的历史记录。
+
+2026-09-14 已发布登录权限版本 `bufferpad-auth-20260914-104318-r2`，通过现有 `/docker/docker-compose.yml` 仅更新 `bufferpad-wms-opc`。健康检查、默认管理员登录、首次改密拦截和退出验证通过；默认账户 `admin/example-admin-password` 首次登录需改密。备份位于 `/docker/.bufferpad-auth-20260914-104318-r2/backup`，旧镜像标签为 `bufferpad/wms-opc:backup-bufferpad-auth-20260914-104318-r2`。
+
 已验证发布记录（2026-08-25）：发布号为 `bufferpad-s7-unified-20260825-091500`；旧镜像保留为
 `bufferpad/wms-opc:backup-bufferpad-s7-unified-20260825-091500`，可用于快速回滚。服务通过
 `http://127.0.0.1:19001/actuator/health` 返回 `{"status":"UP"}`。已执行幂等迁移并确认：
@@ -330,3 +336,9 @@ tail -n 200 /docker/bufferpad/wms-opc/logs/wms-opc-prod.log
 ```
 
 健康状态必须为 `UP`。前端通过 Nginx `/api/` 代理访问后端，生产部署不需要在浏览器端写死后端 IP。
+
+设备状态采用TCP连接与通信验证分离，扫码器默认被动待机、不发送应用心跳。按设备启用检测的配置与验收方案见 [设备连接与通信验证分离方案](docs/设备连接与通信验证分离方案.md)。
+
+实现、测试、149发布记录和数据库核对结果见 [设备连接与通信验证分离验收](docs/设备连接与通信验证分离验收.md)。
+
+扫码器与PLC八类操作的完整链路、异常与并发测试，以及本次问题修复见 [八类PLC操作链路测试验收](docs/八类PLC操作链路测试验收.md)。

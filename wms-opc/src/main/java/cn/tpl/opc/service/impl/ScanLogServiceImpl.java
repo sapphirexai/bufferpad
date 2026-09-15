@@ -4,15 +4,16 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.text.CharSequenceUtil;
 import cn.tpl.opc.commons.constant.Constants;
 import cn.tpl.opc.commons.dto.result.ScanLogDTO;
+import cn.tpl.opc.commons.dto.result.PageData;
 import cn.tpl.opc.commons.scheme.request.QueryScanLogScheme;
 import cn.tpl.opc.entity.ScanLogEntity;
 import cn.tpl.opc.mapper.ScanLogEntityMapper;
 import cn.tpl.opc.service.IScanLogService;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.List;
 
 /**
  * Author: Luo GuoWen
@@ -50,8 +51,11 @@ public class ScanLogServiceImpl implements IScanLogService {
     }
 
     @Override
-    public List<ScanLogDTO> listAllByScheme(QueryScanLogScheme scheme) {
-        return scanLogEntityMapper.listAllByScheme(scheme).stream().map(this::scanLog2DTO).toList();
+    public PageData<ScanLogDTO> listByPage(QueryScanLogScheme scheme) {
+        // A negative MyBatis-Plus page size disables pagination; never allow an unbounded log read.
+        int pageSize = scheme.getPageSize() <= 0 ? 20 : Math.min(scheme.getPageSize(), 200);
+        Page<ScanLogEntity> page = new Page<>(Math.max(1, scheme.getCurrentPage()), pageSize);
+        return PageData.of(scanLogEntityMapper.listByPage(page, scheme), this::scanLog2DTO);
     }
 
     private ScanLogDTO scanLog2DTO(ScanLogEntity scanLog) {

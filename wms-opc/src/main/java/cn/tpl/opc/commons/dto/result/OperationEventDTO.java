@@ -33,6 +33,10 @@ public class OperationEventDTO extends AbsBaseDTO {
     private Integer errorCode;
     private String technicalDetail;
     private Date occurredAt;
+    private Integer usedCount;
+    private Integer maxUseCount;
+    private Boolean readExpected;
+    private Short writeValue;
 
     public static OperationEventDTO of(OperationEventCode eventCode, Integer workLine) {
         OperationEventDTO event = new OperationEventDTO();

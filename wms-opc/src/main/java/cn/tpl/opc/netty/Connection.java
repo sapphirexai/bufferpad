@@ -32,6 +32,15 @@ public class Connection {
     private volatile Date statusChangedAt = new Date();
     private volatile Date lastCommunicationAt;
     private volatile Integer lastErrorCode;
+    private volatile String communicationState = "UNVERIFIED";
+    private volatile String monitoringMode = "PASSIVE";
+    private volatile Date lastRequestAt;
+    private volatile String lastRequestKind;
+    private volatile int consecutiveTimeouts;
+    private volatile boolean businessRejected;
+    private final AtomicLong responseSequence = new AtomicLong();
+    private final Object plcIoLock = new Object();
+    private final AtomicBoolean heartbeatInFlight = new AtomicBoolean();
     private String name;
     private String position;
     private Integer workLine;
@@ -68,24 +77,91 @@ public class Connection {
     }
 
     public synchronized void nowActive(ChannelFuture future) {
+        if (!future.channel().isActive()) { nowDead("TCP连接已断开", null); return; }
         this.channelFuture = future;
         resetConnectionResetInterval();
-        markOnline("连接正常");
+        markTransportConnected("TCP已连接，通信未验证；扫码器可以正常待机");
     }
 
     public synchronized void nowActive(NetworkDeviceBase client) {
         this.plcClient = client;
         resetConnectionResetInterval();
-        markOnline("PLC通信正常");
+        markTransportConnected("TCP已连接，通信未验证；等待已配置的读写或检测结果");
+    }
+
+    private void markTransportConnected(String reason) {
+        status = Params.NETTY_CONNECTION_KEY_STATUS_ACTIVE;
+        if (consecutiveTimeouts > 0) {
+            transition("TIMEOUT".equals(communicationState) ? DeviceConnectionState.TIMEOUT : DeviceConnectionState.RETRYING,
+                    "TCP已重连，等待请求验证恢复", lastErrorCode, false);
+        } else {
+            communicationState = "UNVERIFIED";
+            businessRejected = false;
+            transition(DeviceConnectionState.VERIFYING, reason, null, true);
+        }
+    }
+
+    public synchronized boolean ownsChannel(io.netty.channel.Channel channel) {
+        return channelFuture != null && channelFuture.channel() == channel;
+    }
+
+    public synchronized void scannerResponse(io.netty.channel.Channel channel) {
+        if (ownsChannel(channel) && channel.isActive()) markOnline("最近已收到扫码器有效报文；无扫码数据时允许待机");
+    }
+
+    public synchronized void scannerClosed(io.netty.channel.Channel channel, String reason) {
+        if (ownsChannel(channel)) nowDead(reason, null);
+    }
+
+    public String getTransportState() {
+        return "CONNECTING".equals(statusCode) ? "CONNECTING" : isActive() ? "CONNECTED" : "DISCONNECTED";
+    }
+
+    public synchronized void recordRequest(String kind) {
+        lastRequestAt = new Date();
+        lastRequestKind = kind;
+    }
+
+    public synchronized void recordRequestTimeout(int threshold, Integer errorCode) {
+        consecutiveTimeouts++;
+        boolean failed = consecutiveTimeouts >= threshold;
+        communicationState = failed ? "TIMEOUT" : "RETRYING";
+        if (failed) { closeResources(); status = Params.NETTY_CONNECTION_KEY_STATUS_DISCONNECTED; }
+        transition(failed ? DeviceConnectionState.TIMEOUT : DeviceConnectionState.RETRYING,
+                "已发送请求连续" + consecutiveTimeouts + "次应答超时（阈值" + threshold + "次）", errorCode, false);
+    }
+
+    public synchronized void markMonitoringSuccess() {
+        if (businessRejected) {
+            lastCommunicationAt = new Date();
+            consecutiveTimeouts = 0;
+            responseSequence.incrementAndGet();
+            communicationState = "REJECTED";
+            transition(DeviceConnectionState.DEGRADED, "最近检测成功，仍有业务读写异常待处理", lastErrorCode, false);
+        } else markOnline("最近PLC协议通信成功");
+    }
+
+    public synchronized void markProbeRejected(Integer errorCode) {
+        if (businessRejected) return;
+        consecutiveTimeouts = 0;
+        communicationState = "REJECTED";
+        transition(DeviceConnectionState.DEGRADED, "设备已应答但拒绝检测，请检查检测地址和访问权限", errorCode, false);
     }
 
     public synchronized void markOnline(String reason) {
         status = Params.NETTY_CONNECTION_KEY_STATUS_ACTIVE;
         lastCommunicationAt = new Date();
+        communicationState = "SUCCESS";
+        consecutiveTimeouts = 0;
+        businessRejected = false;
+        responseSequence.incrementAndGet();
         transition(DeviceConnectionState.ONLINE, reason, null, true);
     }
 
     public synchronized void markDegraded(Integer errorCode, String reason) {
+        businessRejected = true;
+        communicationState = "REJECTED";
+        consecutiveTimeouts = 0;
         status = Params.NETTY_CONNECTION_KEY_STATUS_ACTIVE;
         transition(DeviceConnectionState.DEGRADED, reason, errorCode, false);
     }

@@ -185,9 +185,9 @@ public class SiemensPlcBusinessFlowMockTest {
         verify(s7Client, never()).ConnectClose();
 
         ArgumentCaptor<OperationEventDTO> events = ArgumentCaptor.forClass(OperationEventDTO.class);
-        verify(operationEventService, times(2)).publish(events.capture());
-        assertEquals(OperationEventCode.PLC_NOTIFY_SUCCEEDED.name(), events.getAllValues().get(0).getCode());
-        assertEquals(OperationEventCode.PLC_READ_FAILED.name(), events.getAllValues().get(1).getCode());
+        verify(operationEventService, times(3)).publish(events.capture());
+        assertEquals(OperationEventCode.PLC_NOTIFY_SUCCEEDED.name(), events.getAllValues().get(1).getCode());
+        assertEquals(OperationEventCode.PLC_READ_FAILED.name(), events.getAllValues().get(2).getCode());
         assertEquals(DeviceConnectionState.DEGRADED.name(), connection.getStatusCode());
     }
 
@@ -203,8 +203,8 @@ public class SiemensPlcBusinessFlowMockTest {
 
         verify(cushionInfoService, never()).modifyOpenCountByQrCode(any(), any());
         ArgumentCaptor<OperationEventDTO> events = ArgumentCaptor.forClass(OperationEventDTO.class);
-        verify(operationEventService, times(2)).publish(events.capture());
-        List<OperationEventDTO> values = events.getAllValues();
+        verify(operationEventService, times(3)).publish(events.capture());
+        List<OperationEventDTO> values = events.getAllValues().stream().filter(e -> !OperationEventCode.PLC_NOTIFY_PENDING.name().equals(e.getCode())).collect(java.util.stream.Collectors.toList());
         assertEquals(OperationEventCode.PLC_NOTIFY_SUCCEEDED.name(), values.get(0).getCode());
         assertEquals(OperationEventCode.PLC_READ_FAILED.name(), values.get(1).getCode());
         assertEquals("PLC开口数必须是0到32767之间的INT值", values.get(1).getMessage());
@@ -229,8 +229,8 @@ public class SiemensPlcBusinessFlowMockTest {
 
     private void assertSingleEvent(OperationEventCode expectedCode, String operationId) {
         ArgumentCaptor<OperationEventDTO> event = ArgumentCaptor.forClass(OperationEventDTO.class);
-        verify(operationEventService).publish(event.capture());
-        assertEquals(expectedCode.name(), event.getValue().getCode());
+        verify(operationEventService, org.mockito.Mockito.atLeast(2)).publish(event.capture());
+        assertEquals(1, event.getAllValues().stream().filter(e -> expectedCode.name().equals(e.getCode())).count());
         assertEquals(operationId, event.getValue().getOperationId());
     }
 }

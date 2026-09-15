@@ -35,11 +35,13 @@ public class MsgHandler extends ChannelInboundHandlerAdapter {
         ByteBuf in = (ByteBuf) msg;
         try {
             if (!in.isReadable()) return;
+            if (ctx.channel() != null && !connection.ownsChannel(ctx.channel())) return;
 
             String rawMessage = in.toString(CharsetUtil.UTF_8);
             log.info("channelRead, read success, data => {}", rawMessage);
 
             ScannerMessage scannerMessage = scannerMessageParser.parse(rawMessage);
+            if (scannerMessage.getType() != ScannerMessageType.UNKNOWN) connection.scannerResponse(ctx.channel());
             if (scannerMessage.getType() == ScannerMessageType.HEARTBEAT) {
                 onHearBeat();
                 return;

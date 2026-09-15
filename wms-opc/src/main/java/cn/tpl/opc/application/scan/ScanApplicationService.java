@@ -34,6 +34,8 @@ public class ScanApplicationService {
     @Resource
     private ScanPolicy scanPolicy;
     @Resource
+    private ScanOperationLogService scanOperationLogs;
+    @Resource
     private IScanLogService scanLogService;
     @Resource
     private IOperationEventService operationEventService;
@@ -48,8 +50,11 @@ public class ScanApplicationService {
     @Resource
     private CushionDetailEntityMapper cushionDetailEntityMapper;
 
-    @Transactional
+    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
     public ResultDTO<CushionInfoDTO> handleScan(ScanCommand command) {
+        if (org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive()
+                && org.springframework.transaction.support.TransactionSynchronizationManager.isSynchronizationActive())
+            scanOperationLogs.trackTransaction(command.getOperationId());
         CushionInfoEntity cushionInfoEntity = findByQrCode(command.getQrCode());
         if (ObjectUtil.isNull(cushionInfoEntity)) return onScanNew(command);
 
@@ -68,7 +73,6 @@ public class ScanApplicationService {
         log.info("handleScannerData, modify usedCount, result => [{}]", modifyResult);
         if (modifyResult) {
             CushionInfoEntity updatedCushionInfo = findByQrCode(command.getQrCode());
-            addScanSuccessLog(command.getScannerHost(), command.getScannerName(), command.getQrCode(), command.getScannerId(), false);
             return onScanSuccess(command, effectiveScannerPosition, effectiveScannerSeq, updatedCushionInfo);
         }
 
@@ -84,7 +88,6 @@ public class ScanApplicationService {
 
     public void handleScanCodeFailed(ScanCommand command) {
         log.info("onScanCodeFailed");
-        scanLogService.addScanLog(command.getScannerHost(), command.getScannerName(), null, null, Constants.SCAN_LOG_TYPE_ERROR, false);
         publishScanEvent(OperationEventCode.SCAN_NO_READ, command, null, null);
         plcNotifyService.notifyScanCodeFailed(command.getOperationId(), command.getScannerId(), command.getWorkLine());
 
@@ -96,12 +99,19 @@ public class ScanApplicationService {
     }
 
     private ResultDTO<CushionInfoDTO> onScanNew(ScanCommand command) {
-        boolean addResult = add(command.getWorkLine(), command.getScannerPosition(), command.getScannerId(), command.getScannerSeq(), command.getQrCode());
+        boolean addResult;
+        try {
+            addResult = add(command.getWorkLine(), command.getScannerPosition(), command.getScannerId(), command.getScannerSeq(), command.getQrCode());
+        } catch (org.springframework.dao.DuplicateKeyException concurrentScan) {
+            // Another scan may commit the same new code after our initial lookup.
+            CushionInfoEntity existing = findByQrCode(command.getQrCode());
+            if (existing == null) throw concurrentScan;
+            return onScanIneffective(command, existing);
+        }
         log.info("onQrCodeReceived, new cushion result => [{}]", addResult);
         if (addResult) {
             CushionInfoEntity newCushionInfo = findByQrCode(command.getQrCode());
             addDetail(newCushionInfo);
-            addScanSuccessLog(command.getScannerHost(), command.getScannerName(), command.getQrCode(), command.getScannerId(), true);
             return completeScan(command, command.getScannerPosition(), command.getScannerSeq(), newCushionInfo);
         }
         sseService.sendFailMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, null, command.getWorkLine(), command.getScannerSeq()), Constants.RESULT_MSG_CUSHION_ADD_FAILED);
@@ -110,13 +120,16 @@ public class ScanApplicationService {
     }
 
     private ResultDTO<CushionInfoDTO> onScanIneffective(ScanCommand command, CushionInfoEntity cushionInfoEntity) {
+        if (scanPolicy.isMaxReached(cushionInfoEntity)) {
+            return completeScan(command, getEffectiveScannerPosition(command.getScannerId(), command.getScannerPosition(), cushionInfoEntity),
+                    getEffectiveScannerSeq(command.getScannerId(), command.getScannerSeq(), cushionInfoEntity), cushionInfoEntity);
+        }
         Long cushionScannerId = cushionInfoEntity.getScannerId();
         Integer effectiveScannerSeq = getEffectiveScannerSeq(command.getScannerId(), command.getScannerSeq(), cushionInfoEntity);
         String qrCode = cushionInfoEntity.getQrCode();
         sseService.sendFailMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, cushionInfoEntity, command.getWorkLine(), effectiveScannerSeq), Constants.RESULT_MSG_CUSHION_INVALID_SCAN);
         publishScanEvent(OperationEventCode.SCAN_REPEATED, command, cushionInfoEntity,
                 "缓冲垫 " + qrCode + " 两小时内已扫描，本次未增加使用次数，当前为 " + cushionInfoEntity.getUsedCount() + " 次");
-        scanLogService.addScanLog(command.getScannerHost(), command.getScannerName(), qrCode, Constants.SCAN_LOG_MSG_INVALID, Constants.SCAN_LOG_TYPE_ERROR, scanPolicy.isManualScan(command.getScannerId()));
         plcNotifyService.notifyInvalidScan(command.getOperationId(), qrCode, command.getScannerId(),
                 cushionScannerId, command.getWorkLine());
         return ResultDTO.failure(Constants.RESULT_MSG_CUSHION_INVALID_SCAN);
@@ -137,7 +150,7 @@ public class ScanApplicationService {
             logMaxReached(command, cushionInfoEntity);
             publishScanEvent(OperationEventCode.CUSHION_MAX_REACHED, command, cushionInfoEntity,
                     "缓冲垫 " + cushionInfoEntity.getQrCode() + " 当前 " + cushionInfoEntity.getUsedCount()
-                            + " 次，已达到寿命上限 " + cushionInfoEntity.getMaxUseCount() + " 次");
+                            + " 次，" + (cushionInfoEntity.getUsedCount() > cushionInfoEntity.getMaxUseCount() ? "已超过寿命上限 " : "已达到寿命上限 ") + cushionInfoEntity.getMaxUseCount() + " 次");
             plcNotifyService.notifyScanMax(command.getOperationId(), cushionInfoEntity.getQrCode(),
                     command.getScannerId(), cushionInfoEntity.getScannerId(), command.getWorkLine());
             sseService.sendFailMsg(new SseMsgDTO<>(Constants.SSE_MSG_TOPIC_CUSHION_INFO, cushionInfoEntity, command.getWorkLine(), scannerSeq), Constants.RESULT_MSG_CUSHION_USED_COUNT_REACHED_MAX);
@@ -157,14 +170,6 @@ public class ScanApplicationService {
         int usedCount = cushionInfoEntity.getUsedCount();
         String qrCode = cushionInfoEntity.getQrCode();
         log.warn("handleScannerData, onScanMax, maxUseCount => {}, usedCount => {}", maxUseCount, usedCount);
-        scanLogService.addScanLog(command.getScannerHost(), command.getScannerName(), qrCode, Constants.SCAN_LOG_MSG_OVER_MAXIMUM, Constants.SCAN_LOG_TYPE_ERROR, scanPolicy.isManualScan(command.getScannerId()));
-        scanLogService.add(qrCode, Constants.SCAN_LOG_MSG_PREFIX_CURRENT_COUNT + usedCount + Constants.SCAN_LOG_MSG_SUFFIX_MAX_COUNT + maxUseCount, Constants.SCAN_LOG_TYPE_ERROR);
-    }
-
-    private void addScanSuccessLog(String scannerHost, String scannerName, String qrCode, Long scannerId, boolean isNew) {
-        boolean manualScan = scanPolicy.isManualScan(scannerId);
-        String msg = manualScan && isNew ? Constants.SCAN_LOG_MSG_SUCCESS_DATA_FORM_MANUAL_NEW : null;
-        scanLogService.addScanLog(scannerHost, scannerName, qrCode, msg, Constants.SCAN_LOG_TYPE_INFO, manualScan);
     }
 
     private Long getEffectiveScannerId(Long scannerId, CushionInfoEntity cushionInfoEntity) {
@@ -242,6 +247,7 @@ public class ScanApplicationService {
         event.setScannerSeq(command.getScannerSeq());
         event.setScannerName(command.getScannerName());
         event.setScannerIp(command.getScannerHost());
+        if (cushionInfo != null) { event.setUsedCount(cushionInfo.getUsedCount()); event.setMaxUseCount(cushionInfo.getMaxUseCount()); }
         event.setDeviceId(command.getScannerId());
         event.setDeviceName(command.getScannerName());
         event.setQrCode(cushionInfo == null ? command.getQrCode() : cushionInfo.getQrCode());

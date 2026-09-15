@@ -42,11 +42,13 @@ public class CushionInfoServiceImpl implements ICushionInfoService {
     private CushionDetailEntityMapper cushionDetailEntityMapper;
 
     @Override
+    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
     public ResultDTO<CushionInfoDTO> onQrCodeReceived(Long scannerId, Integer workLine, String scannerHost, String scannerName, String scannerPosition, Integer scannerSeq, String qrCode) {
         return onQrCodeReceived(null, scannerId, workLine, scannerHost, scannerName, scannerPosition, scannerSeq, qrCode);
     }
 
     @Override
+    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
     public ResultDTO<CushionInfoDTO> onQrCodeReceived(String operationId, Long scannerId, Integer workLine,
                                                       String scannerHost, String scannerName,
                                                       String scannerPosition, Integer scannerSeq, String qrCode) {
@@ -120,6 +122,7 @@ public class CushionInfoServiceImpl implements ICushionInfoService {
     }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional
     public boolean modifyOpenCountByQrCode(String qrCode, Short openCount) {
         if (openCount == null) return false;
 
@@ -135,6 +138,9 @@ public class CushionInfoServiceImpl implements ICushionInfoService {
             modifyDetailResult = cushionDetailEntityMapper.modifyOpenCountByQrCode(cushionDetail) > 0;
         }
 
+        if (modifyInfoResult && !modifyDetailResult) {
+            throw new IllegalStateException("缓冲垫使用明细不存在，开口数保存已回滚");
+        }
         return modifyInfoResult && modifyDetailResult;
     }
 

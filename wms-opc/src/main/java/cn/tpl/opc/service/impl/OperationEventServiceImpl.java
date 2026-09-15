@@ -28,10 +28,12 @@ public class OperationEventServiceImpl implements IOperationEventService {
     private OperationEventEntityMapper operationEventEntityMapper;
     @Resource
     private ISseService sseService;
+    @Resource
+    private cn.tpl.opc.application.scan.ScanOperationLogService scanOperationLogs;
 
     @Override
     public OperationEventDTO publish(OperationEventDTO event) {
-        if (event == null || event.getWorkLine() == null) return event;
+        if (event == null) return null;
 
         OperationEventDTO prepared = prepare(event);
         if (TransactionSynchronizationManager.isActualTransactionActive()
@@ -83,6 +85,9 @@ public class OperationEventServiceImpl implements IOperationEventService {
     }
 
     private void persistAndSend(OperationEventDTO event) {
+        try {scanOperationLogs.accept(event);}
+        catch(Exception e){log.error("Could not update scan operation summary, operationId={}",event.getOperationId(),e);}
+        if(event.getWorkLine()==null) return;
         try {
             OperationEventEntity entity = new OperationEventEntity();
             BeanUtil.copyProperties(event, entity);

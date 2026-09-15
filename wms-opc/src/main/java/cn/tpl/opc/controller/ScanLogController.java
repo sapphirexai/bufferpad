@@ -2,6 +2,7 @@ package cn.tpl.opc.controller;
 
 import cn.tpl.opc.commons.dto.ResultDTO;
 import cn.tpl.opc.commons.dto.result.ScanLogDTO;
+import cn.tpl.opc.commons.dto.result.PageData;
 import cn.tpl.opc.commons.scheme.request.QueryScanLogScheme;
 import cn.tpl.opc.service.IScanLogService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -13,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
-import java.util.List;
 
 /**
  * Author: Luo GuoWen
@@ -28,14 +28,14 @@ public class ScanLogController {
     @Resource
     private IScanLogService scanLogService;
 
-    @Operation(summary = "按协议查询所有日志")
+    @Operation(summary = "分页查询日志，默认每页20条，最多200条")
     @GetMapping
-    public ResultDTO<List<ScanLogDTO>> listAllByScheme(
+    public ResultDTO<PageData<ScanLogDTO>> listByPage(
             @Parameter(description = "详情查看<a href=\"#model-QueryScanLogScheme\"> QueryScanLogScheme")
             QueryScanLogScheme scheme) {
         try {
             log.debug("scanLogs，scheme：{}", scheme);
-            return ResultDTO.success(scanLogService.listAllByScheme(scheme));
+            return ResultDTO.success(scanLogService.listByPage(scheme));
         } catch (Exception e) {
             return ResultDTO.exception(e);
         }
