@@ -1,5 +1,5 @@
 <template>
-  <div class="page">
+  <div class="page logs-page">
     <el-form ref="form" class="search" :inline="true" label-position="left" :model="searchFormData">
       <el-form-item label="缓冲垫编号">
         <el-input v-model="searchFormData.qrCode" style="width: 200px;" placeholder="请输入缓冲垫编号" clearable></el-input>
@@ -7,7 +7,7 @@
       <el-form-item label="日志类型">
         <el-select v-model="searchFormData.msgType" style="width: 200px;" placeholder="请选择日志类型" clearable>
           <el-option :value="0" label="普通" />
-          <el-option :value="1" label="异常" />
+          <el-option :value="1" label="异常 / 提示" />
         </el-select>
       </el-form-item>
       <el-form-item label="日志内容">
@@ -51,18 +51,19 @@
       height="600"
       element-loading-text="数据玩命加载中"
       :cell-style="rowStyle"
-      :cell-class-name="isCheckCell"
       :header-cell-style="rowStyle"
     >
       <el-table-column prop="msgType" label="日志类型" width="100">
         <template slot-scope="scope">
-          <i v-if="scope.row.msgType === 1" class="el-icon-warning" style="color: #F56C6C;"></i>
-          <span :class="showCodeClass(scope.row.msgType)">{{ showCodeName(scope.row.msgType) }}</span>
+          <span :class="logTone(scope.row)">
+            <i v-if="logTone(scope.row)" class="el-icon-warning"></i>
+            {{ logTypeLabel(scope.row) }}
+          </span>
         </template>
       </el-table-column>
       <el-table-column prop="qrCode" width="180" label="缓冲垫编号"></el-table-column>
       <el-table-column label="操作结果" width="110">
-        <template slot-scope="scope">{{ resultLabel(scope.row.status) }}</template>
+        <template slot-scope="scope"><span :class="logTone(scope.row)">{{ resultLabel(scope.row.status) }}</span></template>
       </el-table-column>
       <el-table-column prop="scannerSnapshot" label="扫码器" width="210" show-overflow-tooltip />
       <el-table-column prop="plcSnapshot" label="PLC" width="210" show-overflow-tooltip />
@@ -145,28 +146,20 @@ export default {
   },
   methods: {
     resultLabel(status) { const item = this.resultOptions.find(item => item.value === status); return item ? item.label : '历史日志' },
-    isCheckCell({row, column, rowIndex, columnIndex}) {
-      if (row.msgType === 1) {
-        return 'isCheckCell'
-      } else {
-        return ''
-      }
+    logTone(row) {
+      if (row.status === 'WARNING' || row.status === 'UNKNOWN') return 'scan-log-warning'
+      if (row.status === 'FAILED') return 'scan-log-error'
+      if (row.status === 'SUCCESS' || row.status === 'PROCESSING') return ''
+      return row.msgType === 1 ? 'scan-log-error' : ''
     },
-    tableRowClassName({ row, rowIndex }) {
-      if (row.usedCount >= row.maxUseCount) {
-        return 'warning-row';
-      } else {
-        return '';
-      }
+    tableRowClassName({ row }) {
+      const tone = this.logTone(row)
+      return tone ? `${tone}-row` : ''
     },
-
-    showCodeName(value) {
-      const name = value === 0 ? '普通' : '异常'
-      return name
-    },
-    showCodeClass(value) {
-      const className = value === 0 ? '' : 'error'
-      return className
+    logTypeLabel(row) {
+      if (row.status === 'WARNING') return '提示'
+      if (row.status === 'UNKNOWN') return '待核实'
+      return this.logTone(row) === 'scan-log-error' ? '异常' : '普通'
     },
 
     formatDate(row, column, cellValue, index) {
@@ -235,15 +228,17 @@ export default {
   display: flex;
   flex-direction: column;
 }
-.el-table .warning-row {
-  background: rgb(255, 0, 0);
+.logs-page .scan-log-warning {
+  color: #B7791F;
 }
-
-.el-table .success-row {
-  background: #f0f9eb;
-}
-.error {
+.logs-page .scan-log-error {
   color: #F56C6C;
+}
+.logs-page .el-table .scan-log-warning-row > td {
+  background-color: #FDF6EC;
+}
+.logs-page .el-table .scan-log-error-row > td {
+  background-color: #FEF0F0;
 }
 
 .search {
@@ -256,19 +251,4 @@ export default {
   }
 }
 
-.success {
-  color: #67C23A;
-}
-
-.warning {
-  color: #E6A23C;
-}
-
-.info {
-  color: #909399;
-}
-
-.isCheckCell {
-  background-color: rgba(245, 108, 108, 0.5);
-}
 </style>
