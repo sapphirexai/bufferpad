@@ -120,7 +120,10 @@ def scan_check(qr,write,read=None,manual=False,used=1,status='SUCCESS',result='S
     cushion=sql('SELECT * FROM cushion_info WHERE qr_code=%s',(qr,))[0]
     assert cushion['used_count']==used,cushion
     assert len(summaries(qr))==1
-    assert 'mock-scanner' in row['msg'] and 'mock-plc' in row['msg'] and '127.0.0.1' in row['msg'],row['msg']
+    assert row['qr_code']==qr
+    assert 'mock-scanner' in row['scanner_snapshot'] and '127.0.0.1' in row['scanner_snapshot'],row
+    assert 'mock-plc' in row['plc_snapshot'] and '127.0.0.1' in row['plc_snapshot'],row
+    assert all(identity not in row['msg'] for identity in ('二维码=', '扫码器=', 'PLC=', 'mock-scanner', 'mock-plc')),row['msg']
     if read is not None and read_code in (None,'PLC_READ_SUCCEEDED'):
         assert cushion['open_count']==plc.value,cushion
         assert sql('SELECT open_count FROM cushion_detail WHERE qr_code=%s ORDER BY id DESC LIMIT 1',(qr,))[0]['open_count']==plc.value

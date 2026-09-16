@@ -24,14 +24,47 @@ public class ScanOperationLogServiceTest {
     private void begin(String id){assertTrue(logs.begin(new ScanCommand(id,1L,1,"192.0.2.22","Scanner","上",1,"QR")));}
     private OperationEventDTO event(String id,OperationEventCode code){var e=OperationEventDTO.of(code,1);e.setOperationId(id);e.setScannerId(1L);e.setPlcId(3L);e.setQrCode("QR");return e;}
     private Map<String,Object> row(String id){return db.queryForMap("SELECT * FROM scan_log WHERE operation_id=?",id);}
+    private void assertSeparateIdentities(String id) {
+        Map<String,Object> record=row(id);
+        assertEquals("QR",record.get("qr_code"));
+        assertEquals(1L,((Number)record.get("scanner_id")).longValue());
+        assertEquals(3L,((Number)record.get("plc_id")).longValue());
+        assertTrue(record.get("scanner_snapshot").toString().contains("Scanner[ID=1"));
+        assertTrue(record.get("scanner_snapshot").toString().contains("192.0.2.22:15000"));
+        assertTrue(record.get("plc_snapshot").toString().contains("PLC_Up[ID=3"));
+        assertTrue(record.get("plc_snapshot").toString().contains("192.0.2.23:502"));
+        String msg=record.get("msg").toString();
+        for(String identity:List.of("二维码=","扫码器=","PLC=","QR","Scanner","PLC_Up","192.168.20.","ID=3"))
+            assertFalse("Summary repeats identity: "+identity,msg.contains(identity));
+    }
     @Test public void oneRowIncludesDeviceSnapshotsAndWaitsForRead() {
         begin("a");var scan=event("a",OperationEventCode.SCAN_COUNTED);scan.setUsedCount(20);scan.setMaxUseCount(100);logs.accept(scan);
         var plc=event("a",OperationEventCode.PLC_NOTIFY_SUCCEEDED);plc.setReadExpected(true);plc.setAddress("D100");plc.setWriteValue((short)1);logs.accept(plc);
         assertEquals("PROCESSING",row("a").get("status"));logs.accept(event("a",OperationEventCode.PLC_READ_SUCCEEDED));
         assertEquals("SUCCESS",row("a").get("status"));String msg=(String)row("a").get("msg");
-        assertTrue(msg.contains("当前次数=20"));assertTrue(msg.contains("192.0.2.23:502"));assertTrue(msg.contains("ID=3"));assertTrue(msg.contains("D100"));
+        assertTrue(msg.contains("当前次数=20"));assertTrue(msg.contains("寿命上限=100"));assertTrue(msg.contains("D100"));
+        assertSeparateIdentities("a");
         assertFalse(logs.begin(new ScanCommand("a",1L,1,"","","",1,"QR")));
         logs.accept(plc);assertEquals(1,db.queryForObject("SELECT COUNT(*) FROM scan_log",Integer.class).intValue());
+    }
+    @Test public void manualScanKeepsFailureDiagnosticsWithoutRepeatingIdentities() {
+        assertTrue(logs.begin(new ScanCommand("manual",null,1,"","","",null,"QR")));
+        logs.accept(event("manual",OperationEventCode.SCAN_REPEATED));
+        var failure=event("manual",OperationEventCode.PLC_WRITE_FAILED);
+        failure.setAddress("D100");failure.setTechnicalDetail("连接已断开");logs.accept(failure);
+        assertSeparateIdentities("manual");
+        String msg=row("manual").get("msg").toString();
+        assertTrue(msg.contains("手动扫码"));assertTrue(msg.contains("操作用户="));
+        assertTrue(msg.contains("本次未增加使用次数"));assertTrue(msg.contains("原因=连接已断开"));
+        assertTrue(msg.contains("地址=D100"));assertEquals("FAILED",row("manual").get("status"));
+    }
+    @Test public void standalonePlcReadKeepsResultAndDeviceColumns() {
+        var read=event("standalone",OperationEventCode.PLC_READ_SUCCEEDED);
+        read.setAddress("D200");read.setMessage("回读成功，开口数=42，已保存");logs.accept(read);
+        assertSeparateIdentities("standalone");
+        String msg=row("standalone").get("msg").toString();
+        assertTrue(msg.contains("独立PLC操作"));assertTrue(msg.contains("开口数=42"));assertTrue(msg.contains("地址=D200"));
+        assertEquals("SUCCESS",row("standalone").get("status"));
     }
     @Test public void outOfOrderAndLatePendingCannotHideReadFailure() {
         begin("b");logs.accept(event("b",OperationEventCode.PLC_READ_FAILED));

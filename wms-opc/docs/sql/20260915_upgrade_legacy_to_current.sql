@@ -1,4 +1,4 @@
--- BufferPad 旧库 -> 当前版本，2026-09-15 修订 3（含日志汇总/清理索引/内置账户会话）；MySQL 8.0.20+。
+-- BufferPad 旧库 -> 当前版本，2026-09-16 修订 5（兼容 Workbench 安全更新模式）；MySQL 8.0.20+。
 -- 在已选中的旧库或其完整恢复副本执行；不是跨服务器合并/覆盖脚本。
 -- 先停止旧、新后端写入并备份。DDL 会隐式提交，不能依靠 ROLLBACK 撤销整个升级。
 -- mysql --default-character-set=utf8mb4 -h HOST -P 3306 -u root -p wms_opc < 本文件
@@ -12,6 +12,7 @@
 -- 已有新版字段/索引保留；不写入superadmin用户或密码。完整成功只在末尾输出UPGRADE_OK。
 -- 日志表重建需要停写、可恢复备份和充足磁盘空间；不在SQL中触发三个月清理。
 -- 可在执行前 SET @bp_upgrade_detail_batch_size=1000; 允许 100~20000，默认 5000。
+-- 过程仅在数据回填期间临时关闭当前会话 SQL_SAFE_UPDATES，成功/异常均恢复；不改全局设置。
 SET NAMES utf8mb4;
 SET @bp_upgrade_original_sql_mode = @@SESSION.sql_mode;
 SET @bp_upgrade_original_lock_wait = @@SESSION.lock_wait_timeout;
@@ -210,6 +211,7 @@ BEGIN
 END$$
 CREATE PROCEDURE bp_upgrade_20260914()
 BEGIN
+    DECLARE v_original_safe_updates BOOLEAN DEFAULT @@SESSION.sql_safe_updates;
     DECLARE v_lock INT DEFAULT 0;
     DECLARE v_lock_name VARCHAR(64);
     DECLARE v_has_seq INT DEFAULT 0;
@@ -229,6 +231,7 @@ BEGIN
     DECLARE v_detail_batch_unknown INT DEFAULT 0;
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
     BEGIN
+        SET SESSION sql_safe_updates = v_original_safe_updates;
         ROLLBACK;
         DROP TEMPORARY TABLE IF EXISTS bp_upgrade_scanner_map;
         IF v_lock = 1 THEN DO RELEASE_LOCK(v_lock_name); END IF;
@@ -436,6 +439,9 @@ BEGIN
     SELECT 1,500 WHERE NOT EXISTS (SELECT 1 FROM opc_config);
 
     -- Suppress ON UPDATE timestamps while backfilling derived fields.
+    -- Workbench enables safe updates; derived-field backfills legitimately use non-key filters.
+    -- Keep this change inside the procedure so both success and handled failure restore it.
+    SET SESSION sql_safe_updates = 0;
     UPDATE device_info d JOIN device_install_position p ON p.id=d.install_seq
     SET d.position=p.name,d.modified_date=d.modified_date WHERE d.position IS NULL OR d.position='';
     UPDATE cushion_info c JOIN device_info s ON s.type=0 AND s.work_line=c.work_line AND s.install_seq=c.scanner_seq
@@ -515,10 +521,11 @@ BEGIN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Business row counts changed; keep services stopped and inspect concurrent writers';
     END IF;
     COMMIT;
+    SET SESSION sql_safe_updates = v_original_safe_updates;
     DROP TEMPORARY TABLE bp_upgrade_scanner_map;
     DO RELEASE_LOCK(v_lock_name);
     SET v_lock=0;
-    SELECT 'UPGRADE_OK' AS result,'20260915-r3' AS revision,DATABASE() AS upgraded_database,VERSION() AS mysql_version;
+    SELECT 'UPGRADE_OK' AS result,'20260916-r5' AS revision,DATABASE() AS upgraded_database,VERSION() AS mysql_version;
     SELECT 'cushion_info' AS table_name,COUNT(*) AS row_count FROM cushion_info
     UNION ALL SELECT 'cushion_detail (rows checked in batches)',v_detail
     UNION ALL SELECT 'device_info',COUNT(*) FROM device_info

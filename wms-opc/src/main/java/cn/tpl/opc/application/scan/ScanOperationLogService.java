@@ -175,14 +175,13 @@ public class ScanOperationLogService {
         String type=Objects.toString(row.get("operation_type"),"");
         String source=type.equals("MANUAL_SCAN")?"手动扫码":type.equals("AUTO_SCAN")?"自动扫码":"独立PLC操作";
         String msg=source+"｜操作="+row.get("operation_id")+"｜状态="+label(state)
-                +"｜二维码="+nonempty(row.get("qr_code"),"未识别")+"｜产线="+nonempty(row.get("work_line"),"未确定");
+                +"｜产线="+nonempty(row.get("work_line"),"未确定");
         if(type.equals("MANUAL_SCAN"))msg+="｜操作用户="+nonempty(row.get("operator_name"),"未记录");
         msg+="｜扫码/计数="+detail.path("scanMessage").asText();
         if(detail.has("usedCount"))msg+="，当前次数="+detail.path("usedCount").asText();
         if(detail.has("maxUseCount"))msg+="，寿命上限="+detail.path("maxUseCount").asText();
-        msg+="｜"+(type.equals("MANUAL_SCAN")?"关联扫码器":"扫码器")+"="+nonempty(row.get("scanner_snapshot"),"未关联")
-                +"｜PLC="+nonempty(row.get("plc_snapshot"),"未确定或未配置")
-                +"｜PLC通知="+detail.path("plcMessage").asText()+"｜开口数="+detail.path("readMessage").asText();
+        // QR code and device identities are stored in dedicated columns, not repeated in the summary.
+        msg+="｜PLC通知="+detail.path("plcMessage").asText()+"｜开口数="+detail.path("readMessage").asText();
         if(detail.has("uncertain"))msg+="｜"+detail.path("uncertain").asText();
         String result=scan.equals("NOT_APPLICABLE")?(read.equals("SKIPPED")?plc:read):scan;
         jdbc.update("UPDATE scan_log SET msg=?,msg_type=?,status=?,result_code=?,scanner_id=?,plc_id=?,scanner_snapshot=?,plc_snapshot=?,work_line=?,detail_json=?,updated_date=CURRENT_TIMESTAMP(3) WHERE id=?",
