@@ -10,6 +10,8 @@ Issue 请包含使用的提交或版本、操作系统、组件、预期与实�
 
 建议先 Fork、创建工作分支，再向 `main` 提交 PR。参考自动填入的 PR 模板；[三个 CI 检查](docs/ci.md)通过后由维护者审阅。后端变更需要维护者用本地 HSL 依赖执行 Java 测试，CI 成功不代表后端已测试。
 
+main 已保护，禁止强推和删除；要求 PR、分支同步及三个指定检查通过。当前单维护者流程不强制另一位维护者批准。首次参与可参考[路线图中的入门任务](ROADMAP.md)，维护细节见[维护流程](docs/maintaining.md)。
+
 Bug reports and pull requests are welcome in Chinese or English. Use the issue forms, describe reproduction steps and validation scope, and submit changes against `main`. Backend tests require a separately obtained HSL dependency. Do not include credentials or deployment artifacts.
 
 源码按现有三个组件维护，数据库变更附升级 SQL 和兼容说明。前端 `build/` 是构建脚本源码，安装程序 `app/db/` 是数据库源码，需要保留。安装包、HSL JAR、编译产物、日志及 PDF 不提交到仓库。
