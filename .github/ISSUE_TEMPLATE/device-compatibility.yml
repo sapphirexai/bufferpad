@@ -1,0 +1,43 @@
+name: 设备兼容反馈 / Device compatibility
+description: 提供实际测试证据或请求支持 / Share test evidence or request support
+title: '[Device] '
+body:
+  - type: markdown
+    attributes:
+      value: '请先在隔离环境测试。反馈将作为兼容性调查线索，不自动成为官方认证。 / Test in isolation; a report is not a compatibility certification.'
+  - type: input
+    id: version
+    attributes:
+      label: BufferPad 版本或提交 / Version or commit
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: 厂商、型号与固件 / Vendor, model, firmware
+    validations:
+      required: true
+  - type: input
+    id: protocol
+    attributes:
+      label: 协议及模式 / Protocol and mode
+      description: For example Modbus TCP, S7, or MC/SLMP. Do not include actual IP addresses.
+    validations:
+      required: true
+  - type: dropdown
+    id: validation
+    attributes:
+      label: 验证环境 / Validation environment
+      options:
+        - Physical device in isolated test environment / 隔离环境实物设备
+        - Simulator or loopback / 模拟器或回环
+        - Not tested; requesting support / 未测试，仅请求支持
+    validations:
+      required: true
+  - type: textarea
+    id: results
+    attributes:
+      label: 操作、结果与复现 / Operations, results, reproduction
+      description: Separate TCP connection, protocol read/write, and application behavior. Include sanitized evidence or state what remains untested.
+    validations:
+      required: true

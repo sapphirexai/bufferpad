@@ -1,0 +1,45 @@
+name: Bug 报告 / Bug report
+description: 报告可复现的软件问题 / Report a reproducible problem
+title: '[Bug] '
+body:
+  - type: markdown
+    attributes:
+      value: '安全漏洞请使用 Security → Report a vulnerability。不要上传密码、完整数据库或现场地址。 / Use private reporting for security issues; sanitize all shared data.'
+  - type: input
+    id: version
+    attributes:
+      label: 版本或提交 / Version or commit
+      placeholder: v0.1.0 or commit SHA
+    validations:
+      required: true
+  - type: dropdown
+    id: component
+    attributes:
+      label: 组件 / Component
+      options:
+        - Frontend / 前端
+        - Backend / 后端
+        - Installer / 安装程序
+        - Documentation / 文档
+        - Unsure / 不确定
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: 环境 / Environment
+      description: OS, browser, Java/Node/MySQL versions as relevant. / 填写相关环境版本。
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: 复现步骤 / Steps to reproduce
+      description: Provide the smallest example, expected behavior, and actual behavior. / 最小复现、预期与实际结果。
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: 脱敏日志或截图 / Sanitized evidence
+      description: Optional. Remove credentials, production addresses, and customer identifiers. / 可选，先遮盖敏感信息。
