@@ -218,6 +218,22 @@ function Write-BackendManagementScripts {
 
 try {
     $config = Read-InstallConfig -InstallerHome $installerHome -InstallRootOverride $InstallRoot
+    foreach ($credentialKey in @('InitialAdminPassword', 'MysqlRootPassword', 'MysqlPassword')) {
+        $credential = [string]$config[$credentialKey]
+        if ([string]::IsNullOrWhiteSpace($credential) -or $credential -like 'CHANGE_ME*' -or $credential -eq 'example-admin-password') {
+            if ($DryRun) {
+                $config[$credentialKey] = 'dry-run-only-password'
+                Write-Warn "DryRun uses a placeholder for $credentialKey. Set the documented environment variables before installation."
+            } else {
+                Fail "Set $credentialKey using config/install.config.ps1 or the environment variables documented in README.md."
+            }
+        }
+        if ([string]$config[$credentialKey] -match '[\r\n]') { Fail "$credentialKey must not contain line breaks." }
+    }
+    $initialPassword = [string]$config['InitialAdminPassword']
+    if ($initialPassword.Length -lt 8 -or $initialPassword.Length -gt 64 -or [Text.Encoding]::UTF8.GetByteCount($initialPassword) -gt 72) {
+        Fail 'InitialAdminPassword must be 8-64 characters and at most 72 UTF-8 bytes.'
+    }
     if ($PSBoundParameters.ContainsKey('FrontendPort')) { $config['FrontendPort'] = $FrontendPort }
     if ($PSBoundParameters.ContainsKey('BackendPort')) { $config['BackendPort'] = $BackendPort }
     if ($PSBoundParameters.ContainsKey('MysqlPort')) { $config['MysqlPort'] = $MysqlPort }
@@ -365,7 +381,7 @@ try {
             MYSQL_PORT = $mysqlPort
             DB_NAME = [string]$config['DatabaseName']
             DB_USER = [string]$config['MysqlUser']
-            DB_PASSWORD = [string]$config['MysqlPassword']
+            DB_PASSWORD = ([string]$config['MysqlPassword']).Replace("'", "''")
             BACKEND_LOG_FILE = Convert-ToConfigPath (Join-Path $paths.BackendLog 'wms-opc-prod.log')
             MYSQL_BASE_DIR = Convert-ToConfigPath $paths.Mysql
             MYSQL_DATA_DIR = Convert-ToConfigPath $paths.MysqlData
@@ -453,7 +469,7 @@ try {
         MYSQL_PORT = $mysqlPort
         DB_NAME = [string]$config['DatabaseName']
         DB_USER = [string]$config['MysqlUser']
-        DB_PASSWORD = [string]$config['MysqlPassword']
+        DB_PASSWORD = ([string]$config['MysqlPassword']).Replace("'", "''")
         BACKEND_LOG_FILE = Convert-ToConfigPath (Join-Path $paths.BackendLog 'wms-opc-prod.log')
         MYSQL_BASE_DIR = Convert-ToConfigPath $paths.Mysql
         MYSQL_DATA_DIR = Convert-ToConfigPath $paths.MysqlData

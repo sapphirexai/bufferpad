@@ -1,8 +1,8 @@
 -- BufferPad current database initializer; MySQL 8.0.20+; updated 2026-09-15.
 -- Run only in a new empty database. Existing installations use app/db/migrations.
 -- Contains schema and base settings only; no site devices, business data, users or sessions.
--- The backend bootstraps admin/example-admin-password (or the configured initial credential) on first startup.
--- The built-in superadmin identity and password remain in the backend, never in SQL.
+-- The backend requires BUFFERPAD_ADMIN_PASSWORD to initialize an empty account table.
+-- Maintenance login is disabled unless the deployment supplies its own BCrypt hash.
 SET NAMES utf8mb4;
 
 -- cushion_detail

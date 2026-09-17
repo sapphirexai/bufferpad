@@ -8,7 +8,7 @@
     <artifactId>opc</artifactId>
     <version>0.0.1.-SNAPSHOT</version>
     <name>opc</name>
-    <description>托璞勒缓冲垫计数</description>
+    <description>BufferPad industrial cushion lifecycle tracking</description>
 
     <properties>
         <java.version>17</java.version>
@@ -228,23 +228,6 @@
             </plugin>
         </plugins>
     </build>
-
-    <!-- 构件执行deploy命令时，发布到的目的库,根据版本号是否以-SNAPSHOT结束来判断 -->
-    <distributionManagement>
-        <!-- 项目正式库 -->
-        <repository>
-            <id>maven-releases</id>
-            <name>nexus-releases</name>
-            <url>http://192.0.2.6:9966/repository/maven-releases/</url>
-        </repository>
-
-        <!-- 代码快照版本库（版本号以SNAPSHOT结尾的构件） -->
-        <snapshotRepository>
-            <id>maven-snapshots</id>
-            <name>nexus-snapshots</name>
-            <url>http://192.0.2.6:9966/repository/maven-snapshots/</url>
-        </snapshotRepository>
-    </distributionManagement>
 
     <profiles>
         <profile>

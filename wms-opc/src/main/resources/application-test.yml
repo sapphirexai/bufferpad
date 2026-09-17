@@ -5,6 +5,6 @@ logging:
 spring:
   datasource:
     druid:
-      url: jdbc:mysql://192.0.2.4:3306/wms_opc?useUnicode=true&characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true
-      username: root
-      password: CHANGE_ME_DATABASE_PASSWORD
+      url: ${BUFFERPAD_DB_URL:jdbc:mysql://127.0.0.1:3306/wms_opc?useUnicode=true&characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai}
+      username: ${BUFFERPAD_DB_USERNAME:bufferpad}
+      password: ${BUFFERPAD_DB_PASSWORD:}

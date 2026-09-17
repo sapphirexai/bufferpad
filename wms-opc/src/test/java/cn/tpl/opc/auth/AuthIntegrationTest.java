@@ -26,6 +26,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes=AuthIntegrationTest.TestApp.class, properties={
+        "auth.bootstrap.password=example-admin-password",
         "spring.datasource.url=jdbc:h2:mem:auth_test;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1",
         "spring.datasource.username=sa", "spring.datasource.password=",
         "spring.datasource.driver-class-name=org.h2.Driver",
@@ -50,10 +51,14 @@ public class AuthIntegrationTest {
     @Autowired private LoginAttempts attempts;
     @Autowired private SseServiceImpl sse;
     private final ObjectMapper json = new ObjectMapper();
+    private static final String MAINTENANCE_HASH = new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder(4)
+            .encode("example-maintenance-password-1");
     private Cookie csrf;
     private String csrfValue;
 
     @Before public void setup() throws Exception {
+        org.springframework.test.util.ReflectionTestUtils.setField(service, "maintenancePasswordHash", MAINTENANCE_HASH);
+        org.springframework.test.util.ReflectionTestUtils.setField(service, "bootstrapPassword", "example-admin-password");
         jdbc.update("DELETE FROM sys_user_session");
         jdbc.update("DELETE FROM sys_builtin_session");
         attempts.succeeded(BuiltInAdministrator.USERNAME);
@@ -87,6 +92,46 @@ public class AuthIntegrationTest {
         Cookie first = login("admin", "example-admin-password");
         assertEquals(200, send("POST", "/auth/password", first, Map.of("oldPassword", "example-admin-password", "newPassword", "Admin-test-123"), true).getResponse().getStatus());
         return login("admin", "Admin-test-123");
+    }
+
+    @Test public void maintenanceDisabledRejectsLoginAndPreviouslyIssuedSessions() throws Exception {
+        Cookie session = login("superadmin", "example-maintenance-password-1");
+        AuthPrincipal principal = service.authenticate(session.getValue());
+        assertNotNull(principal);
+        org.springframework.test.util.ReflectionTestUtils.setField(service, "maintenancePasswordHash", "");
+        assertNull(service.authenticate(session.getValue()));
+        assertFalse(service.isSessionValid(principal.getSessionHash()));
+        assertEquals(401, send("POST", "/auth/login", null,
+                Map.of("username", "superadmin", "password", "example-maintenance-password-1"), true).getResponse().getStatus());
+    }
+
+    @Test public void maintenanceCredentialRotationRevokesOldSessions() throws Exception {
+        Cookie session = login("superadmin", "example-maintenance-password-1");
+        String rotatedHash = new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder(4).encode("new-maintenance-password");
+        org.springframework.test.util.ReflectionTestUtils.setField(service, "maintenancePasswordHash", rotatedHash);
+        assertNull(service.authenticate(session.getValue()));
+        assertNotNull(login("superadmin", "new-maintenance-password"));
+    }
+
+    @Test public void emptyDatabaseRequiresExplicitInitialPassword() {
+        jdbc.update("DELETE FROM sys_user_session");
+        jdbc.update("DELETE FROM sys_user");
+        org.springframework.test.util.ReflectionTestUtils.setField(service, "bootstrapPassword", "");
+        try { service.initialize(); fail("Missing initial password accepted"); }
+        catch (IllegalStateException expected) { assertTrue(expected.getMessage().contains("BUFFERPAD_ADMIN_PASSWORD")); }
+        assertEquals(0L, (long) jdbc.queryForObject("SELECT COUNT(*) FROM sys_user", Long.class));
+    }
+
+    @Test public void existingUsersDoNotRequireBootstrapPasswordOnRestart() {
+        org.springframework.test.util.ReflectionTestUtils.setField(service, "bootstrapPassword", "");
+        service.initialize();
+        assertEquals(1L, (long) jdbc.queryForObject("SELECT COUNT(*) FROM sys_user WHERE username='admin'", Long.class));
+    }
+
+    @Test public void malformedMaintenanceHashFailsInitialization() {
+        org.springframework.test.util.ReflectionTestUtils.setField(service, "maintenancePasswordHash", "invalid-hash");
+        try { service.initialize(); fail("Malformed maintenance hash accepted"); }
+        catch (IllegalStateException expected) { assertTrue(expected.getMessage().contains("BUFFERPAD_MAINTENANCE_PASSWORD_HASH")); }
     }
     private long userId(String name) { return jdbc.queryForObject("SELECT id FROM sys_user WHERE username=?", Long.class, name); }
     private Cookie reader(Cookie admin) throws Exception {

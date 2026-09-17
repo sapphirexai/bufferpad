@@ -10,6 +10,10 @@ $backendRoot = Join-Path $repoRoot 'wms-opc'
 $frontendRoot = Join-Path $repoRoot 'bufferpad'
 
 if ($Build) {
+    $hslPath = Join-Path $backendRoot 'src\main\resources\lib\HslCommunication-3.4.0.jar'
+    if (-not (Test-Path -LiteralPath $hslPath)) {
+        Fail 'HSL JAR is not included. Follow wms-opc/src/main/resources/lib/README.md before building.'
+    }
     Write-Step "Building backend jar"
     Push-Location $backendRoot
     try {

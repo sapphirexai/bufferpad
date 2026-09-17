@@ -1,6 +1,6 @@
 spring:
   profiles:
-    active: test
+    active: ${SPRING_PROFILES_ACTIVE:dev}
   application:
     name: wms-opc
   cloud:
@@ -29,11 +29,9 @@ spring:
         url-pattern: /*
         exclusions: .js,*.gif,*.jpg,*.bmp,*.png,*.css,*.ico,/druid/*
       stat-view-servlet:
-        enabled: true
+        enabled: false
         url-pattern: /druid/*
         reset-enable: false
-        login-username: root
-        login-password: CHANGE_ME_DB_PASSWORD
 
 server:
   port: 9001
@@ -70,7 +68,9 @@ operation-event:
 auth:
   bootstrap:
     username: ${BUFFERPAD_ADMIN_USERNAME:admin}
-    password: ${BUFFERPAD_ADMIN_PASSWORD:example-admin-password}
+    password: ${BUFFERPAD_ADMIN_PASSWORD:}
+  maintenance:
+    password-hash: ${BUFFERPAD_MAINTENANCE_PASSWORD_HASH:}
   cookie-secure: ${BUFFERPAD_COOKIE_SECURE:false}
   allowed-origins: ${BUFFERPAD_ALLOWED_ORIGINS:http://localhost:8081,http://127.0.0.1:8081}
 

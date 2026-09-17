@@ -134,14 +134,14 @@ function Read-InstallConfig {
     $defaults = @{
         InstallRoot = 'C:\bufferpad'
         AdminUsername = 'admin'
-        InitialAdminPassword = 'example-admin-password'
+        InitialAdminPassword = $env:BUFFERPAD_ADMIN_PASSWORD
         FrontendPort = 18088
         BackendPort = 9001
         MysqlPort = 3306
         DatabaseName = 'wms_opc'
-        MysqlRootPassword = 'CHANGE_ME_DB_PASSWORD'
+        MysqlRootPassword = $env:BUFFERPAD_MYSQL_ROOT_PASSWORD
         MysqlUser = 'root'
-        MysqlPassword = 'CHANGE_ME_DB_PASSWORD'
+        MysqlPassword = $env:BUFFERPAD_DB_PASSWORD
         MysqlServiceName = 'BufferPadMySQL'
         BackendServiceName = 'BufferPadBackend'
         NginxServiceName = 'BufferPadNginx'

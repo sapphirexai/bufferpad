@@ -503,14 +503,9 @@ BEGIN
     -- No scan_log INSERT/UPDATE/DELETE: the ALTER preserves legacy content and existing summaries.
     CALL bp_upgrade_scan_log_20260915(TRUE);
 
-    -- A genuinely empty auth database gets the agreed bootstrap admin.
-    -- BCrypt cost 12, admin / example-admin-password, no forced initial password change.
-    -- Existing users, password hashes, roles, flags, sessions and audit rows are untouched.
+    -- Preserve existing accounts. An empty account table is initialized by the
+    -- backend using BUFFERPAD_ADMIN_PASSWORD supplied by the deployment.
     ALTER TABLE sys_user ALTER COLUMN must_change_password SET DEFAULT FALSE;
-    IF NOT EXISTS (SELECT 1 FROM sys_user) THEN
-        INSERT INTO sys_user(username,password_hash,role,enabled,must_change_password) VALUES('admin','REMOVED_SHARED_PASSWORD_HASH','ADMIN',TRUE,FALSE);
-        INSERT INTO sys_auth_audit(actor,action,target_username) VALUES('system','INITIALIZE_ADMIN','admin');
-    END IF;
     IF v_has_seq > 0 THEN ALTER TABLE plc_addr DROP COLUMN scanner_seq; END IF;
     IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='plc_addr' AND column_name='install_position_id') THEN
         ALTER TABLE plc_addr DROP COLUMN install_position_id;

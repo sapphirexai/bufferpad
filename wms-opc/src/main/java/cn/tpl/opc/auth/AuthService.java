@@ -24,7 +24,8 @@ public class AuthService {
     private final SecureRandom random = new SecureRandom();
     private final String dummyHash = passwords.encode("invalid-account-password");
     @Value("${auth.bootstrap.username:admin}") private String bootstrapUsername;
-    @Value("${auth.bootstrap.password:example-admin-password}") private String bootstrapPassword;
+    @Value("${auth.bootstrap.password:}") private String bootstrapPassword;
+    @Value("${auth.maintenance.password-hash:}") private String maintenancePasswordHash;
 
     public AuthService(JdbcTemplate jdbc, TransactionTemplate transactions,
                        ApplicationEventPublisher events, LoginAttempts attempts) {
@@ -36,9 +37,16 @@ public class AuthService {
 
     @PostConstruct
     public void initialize() {
+        if (maintenancePasswordHash != null && !maintenancePasswordHash.isBlank()
+                && !BuiltInAdministrator.isConfigured(maintenancePasswordHash)) {
+            throw new IllegalStateException("BUFFERPAD_MAINTENANCE_PASSWORD_HASH must be a valid BCrypt hash, or empty to disable maintenance login");
+        }
         new ResourceDatabasePopulator(new ClassPathResource("db/auth-schema.sql"),
                 new ClassPathResource("db/auth-first-login-policy.sql")).execute(Objects.requireNonNull(jdbc.getDataSource()));
         if (jdbc.queryForObject("SELECT COUNT(*) FROM sys_user", Long.class) == 0) {
+            if (bootstrapPassword == null || bootstrapPassword.isBlank()) {
+                throw new IllegalStateException("Set BUFFERPAD_ADMIN_PASSWORD before initializing an empty database");
+            }
             validateUsername(bootstrapUsername);
             rejectReservedUsername(bootstrapUsername);
             validatePassword(bootstrapPassword);
@@ -58,7 +66,7 @@ public class AuthService {
         // password reset or disable cannot race a successful login into a valid session.
         String token = transactions.execute(status -> {
             if (BuiltInAdministrator.USERNAME.equals(normalized)) {
-                if (!BuiltInAdministrator.matches(password, passwords)) return null;
+                if (!BuiltInAdministrator.matches(password, passwords, maintenancePasswordHash)) return null;
                 String issued = randomToken();
                 jdbc.update("INSERT INTO sys_builtin_session(token_hash) VALUES(?)", builtInSessionHash(hash(issued)));
                 audit(normalized, "LOGIN", normalized);
@@ -96,13 +104,14 @@ public class AuthService {
         return jdbc.queryForObject("SELECT COUNT(*) FROM sys_user_session s JOIN sys_user u ON u.id=s.user_id WHERE s.token_hash=? AND u.enabled=TRUE AND u.id>0 AND u.username<>?", Long.class, digest, BuiltInAdministrator.USERNAME) > 0 || isBuiltInSession(digest);
     }
 
-    // Namespace the credential generation: pre-rename cookies must never gain the new identity.
+    // Bind sessions to the configured credential: rotation invalidates old maintenance cookies.
     private String builtInSessionHash(String digest) {
-        return hash("builtin:superadmin:v1:" + digest);
+        return hash("builtin:superadmin:v2:" + maintenancePasswordHash + ":" + digest);
     }
 
     private boolean isBuiltInSession(String digest) {
-        return jdbc.queryForObject("SELECT COUNT(*) FROM sys_builtin_session WHERE token_hash=?", Long.class, digest) > 0;
+        return BuiltInAdministrator.isConfigured(maintenancePasswordHash)
+                && jdbc.queryForObject("SELECT COUNT(*) FROM sys_builtin_session WHERE token_hash=?", Long.class, digest) > 0;
     }
 
     public void logout(AuthPrincipal principal) {

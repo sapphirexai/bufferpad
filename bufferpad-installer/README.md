@@ -1,8 +1,10 @@
 # 缓冲垫项目 Windows 离线安装包
 
+> 开源迁移说明：先阅读[项目首页](../README.md)和[构建与打包](../docs/build-and-package.md)。本文保留历史工程说明，脱敏地址仅作示例；历史部署记录不代表当前版本的验收结果。当前版本没有通用初始密码，维护账号默认关闭。
+
 `bufferpad-installer` 用于在新的 Windows 10/11 机器上一键安装、启动、卸载缓冲垫项目运行环境。
 
-系统现已支持登录和普通用户/管理员权限。新装默认管理员为 `admin / example-admin-password`，首次登录可直接使用。安装、升级、登录保持及忘记密码处理见[用户登录说明](用户登录说明.md)。
+系统现已支持登录和普通用户/管理员权限。新装管理员用户名默认为 `admin`，初始密码通过 `BUFFERPAD_ADMIN_PASSWORD` 自行设置，首次登录可直接使用。安装、升级、登录保持及忘记密码处理见[用户登录说明](用户登录说明.md)。
 
 安装内容包括：
 
@@ -230,9 +232,9 @@ BackendPort  = 9001
 MysqlPort    = 3306
 
 DatabaseName      = 'wms_opc'
-MysqlRootPassword = 'CHANGE_ME_DB_PASSWORD'
+MysqlRootPassword = $env:BUFFERPAD_MYSQL_ROOT_PASSWORD
 MysqlUser         = 'root'
-MysqlPassword     = 'CHANGE_ME_DB_PASSWORD'
+MysqlPassword     = $env:BUFFERPAD_DB_PASSWORD
 
 MysqlServiceName   = 'BufferPadMySQL'
 BackendServiceName = 'BufferPadBackend'
