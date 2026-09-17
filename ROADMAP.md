@@ -20,6 +20,7 @@ This roadmap describes priorities, not promised delivery dates or hardware certi
 - [ ] 整理项目版本和包元信息，减少历史名称造成的混淆 / Align versioning and package metadata without breaking deployment paths.
 - [ ] 建立有证据的设备兼容表，分别标注实物、模拟和未验证状态 / Publish an evidence-based device matrix separating hardware, simulator, and untested results.
 - [ ] 在隔离 Windows/MySQL 环境执行完整安装、升级与卸载回归 / Validate installation, database upgrades, and uninstall in isolated environments.
+- [ ] 验证 Windows PowerShell 5.1 下无 BOM 中文脚本的执行编码，明确安装器支持的运行时 / Resolve BOM-less UTF-8 execution compatibility in Windows PowerShell 5.1 and define supported installer runtimes.
 
 ## 后续评估 / Under consideration
 
