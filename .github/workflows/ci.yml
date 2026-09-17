@@ -64,6 +64,9 @@ jobs:
       - name: Parse tracked PowerShell files
         shell: pwsh
         run: ./scripts/check-powershell.ps1
+      - name: Parse UTF-8 source with Windows PowerShell 5.1
+        shell: powershell
+        run: ./scripts/check-powershell.ps1
       - name: Verify missing-HSL guidance in a clean checkout
         shell: pwsh
         run: |

@@ -6,6 +6,12 @@ This log describes public releases. Earlier development history is retained in G
 
 No additional changes recorded yet.
 
+## 0.1.1 — 2026-09-17
+
+- Fix the new PowerShell syntax checker to read source as UTF-8 explicitly; Windows PowerShell 5.1 otherwise misinterprets some BOM-less Chinese scripts.
+- Verify the checker under Windows PowerShell 5.1 and PowerShell 7, and document the separate, unverified installer runtime compatibility.
+- No business logic or installer source changes; the v0.1.0 tag remains unchanged.
+
 ## 0.1.0 — 2026-09-17
 
 First public source preview / 首个公开源码预览版。

@@ -44,6 +44,8 @@ Without HSL, the current backend cannot compile completely. HSL, runtime install
 
 ## Local setup (PowerShell)
 
+Script validation uses PowerShell 7 (`pwsh`). Windows PowerShell 5.1 may misread BOM-less UTF-8 installer scripts; production installation under that runtime is not validated. The CI syntax checker handles UTF-8 explicitly, but does not execute the installer.
+
 Clone the repository and run commands from its root:
 
 ```powershell
