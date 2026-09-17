@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>wms-opc 项目交接报告</title>
+  <style>
+    :root {
+      --bg: #f0f2f5;
+      --bg-card: #ffffff;
+      --text: #1c2433;
+      --text-soft: #3d4f66;
+      --muted: #6b7c93;
+      --border: #d8dee9;
+      --accent: #1565c0;
+      --accent-soft: #e3f2fd;
+      --accent2: #00796b;
+      --accent2-soft: #e0f2f1;
+      --warn-bg: #fff8e6;
+      --warn-border: #e8c547;
+      --shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 20px rgba(0,0,0,.06);
+      --radius: 12px;
+      --font: "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+      --mono: "Cascadia Code", "Consolas", "Sarasa Mono SC", monospace;
+      --max: 920px;
+      --toc-width: 220px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 17px;
+      line-height: 1.75;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* 顶栏：一句话说清项目 */
+    .hero {
+      background: linear-gradient(160deg, #0d47a1 0%, #1565c0 42%, #1976d2 100%);
+      color: #fff;
+      padding: 2.25rem 1.5rem 2.75rem;
+      position: relative;
+    }
+    .hero-inner { max-width: var(--max); margin: 0 auto; }
+    .hero .badge {
+      display: inline-block;
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      opacity: 0.9;
+      margin-bottom: 0.75rem;
+    }
+    .hero h1 {
+      margin: 0 0 0.65rem;
+      font-size: clamp(1.5rem, 3.5vw, 1.95rem);
+      font-weight: 700;
+      line-height: 1.25;
+      letter-spacing: -0.02em;
+    }
+    .hero .subtitle {
+      margin: 0;
+      font-size: 1.05rem;
+      line-height: 1.65;
+      opacity: 0.92;
+      max-width: 38em;
+    }
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem 1.5rem;
+      margin-top: 1.35rem;
+      font-size: 0.9rem;
+      opacity: 0.88;
+    }
+    .hero-meta code {
+      background: rgba(255,255,255,.2);
+      padding: 0.15em 0.45em;
+      border-radius: 4px;
+      font-size: 0.88em;
+    }
+
+    /* 布局：正文 + 可选侧栏目录（宽屏） */
+    .layout {
+      max-width: calc(var(--max) + var(--toc-width) + 2rem);
+      margin: 0 auto;
+      padding: 0 1.25rem 3rem;
+      display: grid;
+      gap: 1.5rem;
+    }
+    @media (min-width: 1024px) {
+      .layout {
+        grid-template-columns: var(--toc-width) 1fr;
+        align-items: start;
+        padding-top: 1.5rem;
+      }
+      .toc-sticky { position: sticky; top: 1rem; }
+    }
+
+    .toc-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.1rem;
+      box-shadow: var(--shadow);
+    }
+    .toc-panel h2 {
+      margin: 0 0 0.65rem;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .toc-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      font-size: 0.9rem;
+    }
+    .toc-list li { margin: 0 0 0.35rem; }
+    .toc-list a {
+      color: var(--accent);
+      text-decoration: none;
+      display: block;
+      padding: 0.35rem 0.25rem;
+      border-radius: 6px;
+      line-height: 1.4;
+    }
+    .toc-list a:hover { background: var(--accent-soft); }
+
+    .content { min-width: 0; }
+
+    /* 卡片 */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem 1.65rem;
+      margin-bottom: 1.25rem;
+      box-shadow: var(--shadow);
+    }
+    .card > h2 {
+      margin: 0 0 1rem;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--text);
+      padding-bottom: 0.65rem;
+      border-bottom: 2px solid var(--accent-soft);
+    }
+    h3 {
+      margin: 1.5rem 0 0.65rem;
+      font-size: 1.05rem;
+      font-weight: 650;
+      color: var(--text);
+    }
+    h3:first-of-type { margin-top: 0.25rem; }
+    p { margin: 0 0 0.9rem; color: var(--text-soft); }
+    ul, ol { margin: 0 0 0.9rem; color: var(--text-soft); padding-left: 1.35rem; }
+    li { margin-bottom: 0.4rem; }
+    li::marker { color: var(--muted); }
+
+    /* 快速读懂 */
+    .callout {
+      border-radius: var(--radius);
+      padding: 1.1rem 1.25rem;
+      margin: 0 0 1.25rem;
+      border: 1px solid var(--border);
+    }
+    .callout--teal {
+      background: var(--accent2-soft);
+      border-color: #b2dfdb;
+    }
+    .callout--teal h2 {
+      margin: 0 0 0.75rem;
+      font-size: 1.05rem;
+      border: none;
+                     padding: 0;
+      color: var(--accent2);
+    }
+    .callout--teal ul { margin-bottom: 0; }
+
+    .human-hint {
+      font-size: 0.95rem;
+      color: var(--muted);
+      padding: 0.65rem 0.85rem;
+      background: #f8fafc;
+      border-left: 4px solid var(--accent);
+      border-radius: 0 8px 8px 0;
+      margin: 0.75rem 0 1rem;
+    }
+
+    code {
+      font-family: var(--mono);
+      font-size: 0.86em;
+      background: #eef2f7;
+      color: #0d47a1;
+      padding: 0.15em 0.4em;
+      border-radius: 4px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+      margin: 0.85rem 0 1rem;
+      line-height: 1.55;
+    }
+    th, td {
+      text-align: left;
+      padding: 0.75rem 0.85rem;
+      border: 1px solid var(--border);
+      vertical-align: top;
+    }
+    th {
+      background: #f4f6f9;
+      color: var(--text);
+      font-weight: 600;
+    }
+    tbody tr:nth-child(even) td { background: #fafbfc; }
+    .td-title { font-weight: 600; color: var(--text); }
+    .td-sub { display: block; margin-top: 0.35rem; font-size: 0.88rem; color: var(--muted); font-weight: 400; }
+
+    .flow {
+      background: #1e293b;
+      color: #e2e8f0;
+      border-radius: 10px;
+      padding: 1rem 1.15rem;
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      line-height: 1.5;
+      overflow-x: auto;
+      white-space: pre;
+      margin: 0.75rem 0;
+      border: 1px solid #334155;
+    }
+    .flow-caption {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-bottom: 0.35rem;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0.85rem 1.25rem;
+    }
+    .mini-card {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.85rem 1rem;
+    }
+    .mini-card h3 { margin: 0 0 0.5rem; font-size: 0.95rem; }
+    .mini-card ul { margin: 0; padding-left: 1.1rem; font-size: 0.9rem; }
+
+    .pill {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.2rem 0.45rem;
+      border-radius: 5px;
+      margin-right: 0.4rem;
+      vertical-align: middle;
+    }
+    .pill-get { background: #e8f5e9; color: #2e7d32; }
+    .pill-post { background: #e3f2fd; color: #1565c0; }
+    .pill-del { background: #ffebee; color: #c62828; }
+
+    /* 接口块 */
+    details.api-group {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 1rem;
+      background: var(--bg-card);
+      overflow: hidden;
+    }
+    details.api-group > summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 0.9rem 1.1rem;
+      font-weight: 650;
+      background: linear-gradient(180deg, #fafbfc, #f4f6f9);
+      border-bottom: 1px solid var(--border);
+      user-select: none;
+    }
+    details.api-group > summary::-webkit-details-marker { display: none; }
+    details.api-group > summary::before {
+      content: "▸ ";
+      color: var(--accent);
+    }
+    details.api-group[open] > summary::before { content: "▾ "; }
+    details.api-group .api-group-body { padding: 0.5rem 1rem 1rem; }
+
+    .api {
+      border: 1px solid #e8ecf1;
+      border-radius: 10px;
+      padding: 1rem 1.1rem;
+      margin: 0.85rem 0;
+      background: #fcfdfe;
+    }
+    .api-line {
+      font-family: var(--mono);
+      font-size: 0.84rem;
+      color: #0d47a1;
+      margin-bottom: 0.45rem;
+      word-break: break-all;
+      line-height: 1.45;
+    }
+    .api .one-liner {
+      font-size: 0.98rem;
+      color: var(--text);
+      font-weight: 600;
+      margin: 0 0 0.35rem;
+    }
+    .api .biz {
+      font-size: 0.95rem;
+      color: var(--text-soft);
+      margin: 0 0 0.65rem;
+    }
+    .chain-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin: 0.5rem 0 0.25rem;
+    }
+    .chain {
+      margin: 0;
+      padding-left: 1.2rem;
+      font-size: 0.9rem;
+      color: var(--text-soft);
+    }
+    .chain li { margin-bottom: 0.3rem; }
+    .note {
+      font-size: 0.88rem;
+      color: var(--muted);
+      margin: 0.65rem 0 0;
+      padding: 0.55rem 0.65rem;
+      background: var(--warn-bg);
+      border-radius: 6px;
+      border: 1px solid rgba(232, 197, 71, 0.35);
+    }
+
+    .footnote {
+      font-size: 0.88rem;
+      color: var(--muted);
+      margin-top: 1.25rem;
+      padding-top: 1rem;
+      border-top: 1px dashed var(--border);
+    }
+
+    @media print {
+      body { background: #fff; font-size: 11pt; }
+      .hero { background: #1565c0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .layout { display: block; max-width: 100%; }
+      .toc-panel { display: none; }
+      .card, details.api-group { box-shadow: none; break-inside: avoid; }
+      details.api-group { border: 1px solid #ccc; }
+      details.api-group .api-group-body { display: block !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="badge">项目交接文档</div>
+      <h1>wms-opc：缓冲垫扫码计数与 PLC 联动服务</h1>
+      <p class="subtitle">面向交接与运维：先把业务「讲人话」，再分层说明技术怎么跑。下文中的<strong>一句话</strong>帮助快速抓住接口用途；<strong>调用链</strong>便于对照代码排障。</p>
+      <div class="hero-meta">
+        <span>入口类 <code>cn.tpl.opc.OpcApplication</code></span>
+        <span>文档更新 · 2026-04-01</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="toc-sticky">
+      <nav class="toc-panel" aria-label="文档目录">
+        <h2>目录</h2>
+        <ul class="toc-list">
+          <li><a href="#quick">快速读懂</a></li>
+          <li><a href="#s1">一、业务逻辑</a></li>
+          <li><a href="#s2">二、技术栈</a></li>
+          <li><a href="#s3">三、调用链路</a></li>
+          <li><a href="#s4">四、模块结构</a></li>
+          <li><a href="#s5">五、接口说明</a></li>
+          <li><a href="#s6">六、数据表</a></li>
+          <li><a href="#s7">七、部署注意</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <div class="content">
+      <section class="card" id="quick">
+        <h2>快速读懂（约 1 分钟）</h2>
+        <div class="callout callout--teal">
+          <h2>这个系统是做什么的？</h2>
+          <ul>
+            <li>产线上用<strong>扫码枪</strong>扫缓冲垫上的二维码，系统<strong>记次数</strong>（用了多少次），快到上限时<strong>提醒现场并告诉 PLC</strong>。</li>
+            <li>也可以<strong>在电脑上手工补一条码</strong>（补码），规则和扫码类似。</li>
+            <li>大屏/前端可以通过<strong>长连接（SSE）</strong>收到「设备连上/断开」和「扫码结果」。</li>
+          </ul>
+        </div>
+        <p><strong>记三个数字就够：</strong></p>
+        <ul>
+          <li><strong>2 小时</strong>：同一张码若 2 小时内又扫一次，算「无效」，不加次数（防误扫）。</li>
+          <li><strong>最大次数</strong>：可从数据库配置；超过后会给 PLC 发「超限」信号并推告警。</li>
+          <li><strong>产线号 workLine</strong>：设备和推送都按产线区分，前端 SSE 的 <code>clientId</code> 要跟产线号一致才能收到该线消息。</li>
+        </ul>
+      </section>
+
+      <section class="card" id="s1">
+        <h2>一、业务逻辑（先看场景，再看表）</h2>
+        <p class="human-hint">所有「扫到一个码」最终都会进同一把总阀门：<code>CushionInfoServiceImpl.onQrCodeReceived</code>。无论是扫码枪发来的，还是网页上手动补的。</p>
+
+        <h3>1.1 扫到一个码之后，系统怎么想？</h3>
+        <p>每进来一次，会先记一条<strong>扫码日志</strong>（方便以后查「当时是谁、手动还是枪扫」）。然后按下面三种情况分流：</p>
+        <table>
+          <thead>
+            <tr>
+              <th style="width:22%">情况</th>
+              <th style="width:22%">用一句话说</th>
+              <th>接着会发生什么（方便和现场对照）</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="td-title">库里第一次见这个码<span class="td-sub">缓冲垫主表里还没有这条二维码</span></td>
+              <td><strong>新缓冲垫建档</strong></td>
+              <td>写明「已用 1 次」、最大次数从配置读（没有配置则用默认 500）；记一条明细；告诉 PLC「成功」一类信号；有时还会从 PLC 再<strong>读开口数</strong>写回数据库。</td>
+            </tr>
+            <tr>
+              <td class="td-title">老码，但离上次扫不到 2 小时<span class="td-sub">看字段 lastScanDate</span></td>
+              <td><strong>无效扫码</strong></td>
+              <td><strong>不加次数</strong>；通知前端（失败提示）；按规则点亮 PLC 对应位；记成异常类日志。</td>
+            </tr>
+            <tr>
+              <td class="td-title">老码，且隔了至少 2 小时</td>
+              <td><strong>正常再用一次</strong></td>
+              <td>已用次数 +1；更新时间、哪把枪扫的；记明细；告诉 PLC；若已到上限再发「超限」。成功时也可能读 PLC 开口数写回库。</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>1.2 人工补码和「多工位一起通知 PLC」</h3>
+        <ul>
+          <li>补码时没有扫码枪序号（程序里 <code>scannerSeq</code> 为空），位置会记成<strong>「手动」</strong>。</li>
+          <li>有些情况下 PLC 要通知、但说不清是哪一个工位，就会<strong>把所有扫码器工位各通知一遍</strong>（代码里遍历 type=扫码器）。</li>
+          <li>若已经知道工位序号，才会在成功后去<strong>读开口数</strong>；没有工位序号则跳过去读。</li>
+        </ul>
+
+        <h3>1.3 枪说「没扫到」（NoRead）</h3>
+        <p>会记失败日志、给 PLC 发「失败」类型（若表里有配置地址）、并给前端推一条「失败/无码」相关的消息。</p>
+
+        <h3>1.4 扫码枪发来的数据长什么样？（现场沟通用）</h3>
+        <ul>
+          <li>带 <code>HeartBeat</code> → 只是<strong>保活</strong>，不当成正式条码。</li>
+          <li>以特殊开头字符（如 STX）包住 → 剥掉头尾后剩下字符串就是码。</li>
+          <li>矽瞻设备用 <code>[TPL_STX]</code> / <code>[TPL_ETX]</code> 包住 → 同样剥掉再取内容。</li>
+        </ul>
+
+        <h3>1.5 开口数从哪里来的？</h3>
+        <p>PLC 某寄存器里有一个整型（16 位），系统读出来后，会同时更新缓冲垫<strong>主表</strong>和<strong>最新相关明细</strong>里的开口数字段。</p>
+      </section>
+
+      <section class="card" id="s2">
+        <h2>二、技术栈（知道用啥即可）</h2>
+        <div class="grid-2">
+          <div class="mini-card">
+            <h3>运行与框架</h3>
+            <ul>
+              <li>Java 17、Spring Boot 2.7</li>
+              <li>可按环境接 Nacos / Sentinel</li>
+            </ul>
+          </div>
+          <div class="mini-card">
+            <h3>数据</h3>
+            <ul>
+              <li>MySQL + MyBatis-Plus</li>
+              <li>Druid 连接池（带监控页）</li>
+            </ul>
+          </div>
+          <div class="mini-card">
+            <h3>和设备说话</h3>
+            <ul>
+              <li>Netty：连扫码枪（TCP）</li>
+              <li>HslCommunication：连三菱 / 汇川 PLC</li>
+              <li>EventBus：扫码与 PLC 指令在模块间传消息</li>
+              <li>SSE：推给浏览器/大屏</li>
+            </ul>
+          </div>
+          <div class="mini-card">
+            <h3>其它</h3>
+            <ul>
+              <li>Swagger 文档、Excel 导出、Actuator 监控</li>
+              <li>生产环境建议收紧测试接口与监控入口</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" id="s3">
+        <h2>三、技术调用链路（从「谁触发」到「谁干活」）</h2>
+        <p class="human-hint">看不懂下面代码块也没关系：只要记住 —— <strong>扫码枪线程只负责把「有条码」丢进总线；缓冲垫服务决定怎么记账；PLC 连接对象专门负责读写寄存器。</strong></p>
+
+        <h3>3.1 谁在什么时候跑？</h3>
+        <table>
+          <thead>
+            <tr><th>谁起的头</th><th>程序里典型位置</th><th>大白话</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>服务启动</td>
+              <td><code>Connector</code> 初始化</td>
+              <td>定时<strong>尝试重连</strong>断开的设备；定时给 PLC <strong>写心跳</strong>。</td>
+            </tr>
+            <tr>
+              <td>扫码枪发来字节</td>
+              <td><code>MsgHandler</code></td>
+              <td>认出条码后，往 EventBus 上扔「有条码了」这条消息。</td>
+            </tr>
+            <tr>
+              <td>长时间没往枪那边写数据</td>
+              <td>空闲检测 + <code>HeartbeatHandler</code></td>
+              <td>主动给枪发一个心跳包，<strong>防止被对端踢下线</strong>。</td>
+            </tr>
+            <tr>
+              <td>总线上有「条码消息」</td>
+              <td><code>CushionInfoServiceImpl</code></td>
+              <td>走上一节的业务分支：记账、推 SSE、准备通知 PLC。</td>
+            </tr>
+            <tr>
+              <td>总线上有「写 PLC / 读 PLC」</td>
+              <td>已连上的 <code>Connection</code>（PLC）</td>
+              <td>先对一下是不是<strong>同一条产线</strong>，再真正读写寄存器。</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>3.2 连接建立与总线注册（工程师速查）</h3>
+        <p class="flow-caption">下面展示「调连接接口后」在代码里的简化顺序：</p>
+        <div class="flow">接口请求（如连接某产线设备）
+  → Connector.connect
+    → 往 ConnectionMgr 登记
+    → 若是扫码枪：搭 Netty 管道（编码、空闲、收消息、心跳）
+    → 若是 PLC：用 HSL 连上 → Connection 注册到 EventBus（之后才能收发 PLC 指令）
+
+缓冲垫服务在启动时也会注册到 EventBus，专门消费「扫码」消息。
+
+Connection 断开时会从总线注销，并关掉网络。</div>
+
+        <h3>3.3 多产线怎么不串？</h3>
+        <p>每条写 PLC、读 PLC 的消息都带<strong>产线号</strong>；只有产线对得上的那条 PLC 连接才会执行，避免 A 线动作误写到 B 线。</p>
+        <p><strong>注意：</strong>PLC 地址配置里「类型 + 工位号」缺任一都会在代码里查不到地址，结果就是<strong>不发 PLC</strong>——排障时先查表是否配全。</p>
+
+        <h3>3.4 前端 SSE 怎么订阅？</h3>
+        <p>连接时传的 <code>clientId</code> 建议等于<strong>产线编号字符串</strong>。推送时会比对产线，对不上就不发，避免一条线刷屏到另一条线。</p>
+      </section>
+
+      <section class="card" id="s4">
+        <h2>四、代码模块一览</h2>
+        <table>
+          <thead><tr><th>目录（包）</th><th>可以把它理解成</th></tr></thead>
+          <tbody>
+            <tr><td><code>controller</code></td><td>对外 HTTP 接口（人点的、大屏调的）</td></tr>
+            <tr><td><code>service</code></td><td>业务规则、查库、准备推 SSE</td></tr>
+            <tr><td><code>netty</code></td><td>连扫码枪、维护连接、管道里的解析与心跳</td></tr>
+            <tr><td><code>mapper</code></td><td>和数据库表打交道</td></tr>
+            <tr><td><code>ApplicationContextAwareImpl</code></td><td>给「不是 Spring 管的」连接对象，塞一个取 Bean 的旁门（读写 PLC 时要打日志、改缓冲垫）</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="card" id="s5">
+        <h2>五、接口说明（按业务分组，可折叠）</h2>
+        <p>根地址示例：<code>http://服务器:9001</code>。返回一般是统一的 <code>ResultDTO</code> 包一层（成功 / 失败 / 异常）。</p>
+        <p class="human-hint">每个接口块里：<strong>一句话</strong> = 给产品/运维；<strong>做什么</strong> = 稍具体一点；<strong>调用链</strong> = 开发对照类名与方法。</p>
+
+        <details class="api-group" open>
+          <summary>设备 <code>/device</code> · 共 7 个接口</summary>
+          <div class="api-group-body">
+            <div class="api">
+              <div class="api-line"><span class="pill pill-post">POST</span><code>/device</code></div>
+              <p class="one-liner">在数据库里登记一台设备（枪或 PLC）。</p>
+              <p class="biz"><strong>做什么：</strong>不会自动连线；只是建档。必填：类型、IP、端口、安装顺序。</p>
+              <div class="chain-label">调用链</div>
+              <ol class="chain">
+                <li>校验入参 → <code>DeviceInfoServiceImpl.save</code> → 插入 <code>device_info</code></li>
+              </ol>
+              <p class="note">交接提示：当前保存协议里没有产线字段时，若表里 <code>work_line</code> 不能为空，需与库表约束或接口对一下。</p>
+            </div>
+            <div class="api">
+              <div class="api-line"><span class="pill pill-get">GET</span><code>/device/devicesPage</code></div>
+              <p class="one-liner">分页看设备列表（配置用）。</p>
+              <p class="biz"><strong>做什么：</strong>纯查库，不带实时在线状态。</p>
+              <div class="chain-label">调用链</div>
+              <ol class="chain"><li><code>DeviceInfoServiceImpl.listByPage</code></li></ol>
+            </div>
+            <div class="api">
+              <div class="api-line"><span class="pill pill-get">GET</span><code>/device/deviceConnections/{workLine}</code></div>
+              <p class="one-liner">按产线把库里的设备<strong>真的连上</strong>（枪走 Netty，PLC 走 HSL）。</p>
+              <p class="biz"><strong>做什么：</strong><code>workLine=0</code> 表示不按产线过滤，会把库里设备都尝试连一遍。连上/断开会推 SSE。</p>
+              <div class="chain-label">调用链</div>
+              <ol class="chain">
+                <li><code>NettyServiceImpl.connectDevices</code> → 查库 → 每个设备 <code>Connector.connect</code></li>
+                <li>内部：ping 通则连；扫码枪建 Netty；PLC 建 HSL 并在成功后注册 EventBus</li>
+              </ol>
+            </div>
+            <div class="api">
+              <div class="api-line"><span class="pill pill-get">GET</span><code>/device/devicesStatus/{workLine}</code></div>
+              <p class="one-liner">看一眼<strong>内存里</strong>当前连线状态，不重新拨号。</p>
+              <p class="biz"><strong>做什么：</strong><code>workLine=0</code> 看全部已登记连接。</p>
+              <div class="chain-label">调用链</div>
+              <ol class="chain"><li><code>ConnectionMgr</code> 取连接 → 转成 DTO</li></ol>
+            </div>
+            <div class="api">
+              <div class="api-line"><span class="pill pill-get">GET</span><code>/device/scannerConnections</code></div>
+              <p class="one-liner">只连所有扫码枪，不动 PLC。</p>
+              <div class="chain-label">调用链</div>
+              <ol class="chain"><li>筛选 type=扫码器 → 逐个 <code>Connector.connect</code></li></ol>
+            </div>
+            <div class="api">
+              <div class="api-line"><span class="pill pill-del">DELETE</span><code>/device/connection/{id}</code></div>
+              <p class="one-liner">把内存里的连接拆掉，<strong>不动数据库</strong>。</p>
+              <div class="chain-label">调用链</div>
+              <ol class="chain"><li><code>ConnectionMgr.removeConnection</code></li></ol>
+            </div>
+            <div class="api">
+              <div class="api-line"><span class="pill pill-del">DELETE</span><code>/device/{id}</code></div>
+              <p class="one-liner">库表里删设备，并顺便拆掉内存连接。</p>
+              <div class="chain-label">调用链</div>
+              <ol class="chain"><li>删库 → <code>removeConnection</code></li></ol>
+            </div>
+          </div>
+        </details>
+
+        <details class="api-group" open>
+          <summary>缓冲垫 <code>/cushion</code> · 共 7 个接口</summary>
+          <div class="api-group-body">
+            <div class="api">
+              <div class="api-line"><span class="pill pill-get">GET</span><code>/cushion/cushionsPage</code></div>
+              <p class="one-liner">分页查缓冲垫主表。</p>
+              <p class="biz">可按二维码等条件筛选（见 Mapper）。</p>
+              <div class="chain-label">调用链</div>
+              <ol class="chain"><li><code>CushionInfoServiceImpl.listByPage</code></li></ol>
+            </div>
+            <div class="api">
+              <div class="api-line"><span class="pill pill-get">GET</span><code>/cushion/cushions/{qrCode}</code></div>
+              <p class="one-liner">按码<strong>模糊查</strong>一批缓冲垫。</p>
+              <div class="chain-label">调用链</div>
+              <ol class="chain"><li><code>listByQrCode</code></li></ol>
+            </div>
+            <div class="api">
+              <div class="api-line"><span class="pill pill-get">GET</span><code>/cushion/detailsPage</code></div>
+              <p class="one-liner">分页查每次扫码留下的明细。</p>
+              <p class="biz">支持时间范围（格式见接口定义）。</p>
+              <div class="chain-label">调用链</div>
+              <ol class="chain"><li><code>listDetailsByPage</code></li></ol>
+            </div>
+            <div class="api">
+              <div class="api-line"><span class="pill pill-post">POST</span><code>/cushion/manualCushionInfo/{workLine}/{qrCode}</code></div>
+              <p class="one-liner">人在页面里<strong>手工补一条码</strong>，规则和枪扫走同一套业务。</p>
+              <div class="chain-label">调用链</div>
+              <ol class="chain">
+                <li><code>onQrCodeReceived(..., 位置=手动, scannerSeq=null, ...)</code></li>
+                <li>成功会按产线推 SSE</li>
+              </ol>
+            </div>
+            <div class="api">
+              <div class="api-line"><span class="pill pill-post">POST</span><code>/cushion/cushions</code></div>
+              <p class="one-liner">批量改「最大使用次数」。</p>
+              <div class="chain-label">调用链</div>
+              <ol class="chain"><li>校验 ID 列表与次数 → <code>modifyMaxUseCountByIds</code></li></ol>
+            </div>
+            <div class="api">
+              <div class="api-line"><span class="pill pill-post">POST</span><code>/cushion/cushions/excel</code></div>
+              <p class="one-liner">勾选若干缓冲垫，导出 Excel。</p>
+              <div class="chain-label">调用链</div>
+              <ol class="chain"><li>按 ID 查 → 转导出 DTO → <code>EasyExcelUtils.export</code></li></ol>
+            </div>
+            <div class="api">
+              <div class="api-line"><span class="pill pill-get">GET</span><code>/cushion/details/excel</code></div>
+              <p class="one-liner">按<strong>日期区间</strong>导出明细 Excel。</p>
+              <p class="biz">日期参数格式为 <code>yyyyMMdd</code>。</p>
+              <div class="chain-label">调用链</div>
+              <ol class="chain"><li>条件查询明细表 → 导出</li></ol>
+            </div>
+          </div>
+        </details>
+
+        <details class="api-group">
+          <summary>扫码日志 <code>/scanLogs</code> · SSE · 测试接口</summary>
+          <div class="api-group-body">
+            <div class="api">
+              <div class="api-line"><span class="pill pill-get">GET</span><code>/scanLogs</code></div>
+              <p class="one-liner">按条件拉日志列表（不分页，一次一批）。</p>
+              <div class="chain-label">调用链</div>
+              <ol class="chain"><li><code>ScanLogServiceImpl.listAllByScheme</code></li></ol>
+            </div>
+            <div class="api">
+              <div class="api-line"><span class="pill pill-get">GET</span><code>/sse/devicesStatus/{clientId}</code>（SSE）</div>
+              <p class="one-liner">浏览器<strong>挂一条长连接</strong>，收设备状态和缓冲垫消息。</p>
+              <p class="biz"><code>clientId</code> 请用产线号；同账号重复连会覆盖旧的 emitter。</p>
+              <div class="chain-label">调用链</div>
+              <ol class="chain"><li><code>SseServiceImpl.subscribeDevicesStatus</code>；推送时按产线过滤</li></ol>
+            </div>
+            <div class="api">
+              <div class="api-line"><span class="pill pill-get">GET</span><code>/test/testPLCAddr</code>、<code>/test/testStr</code>、<code>/test/druidStat</code></div>
+              <p class="one-liner">开发/运维辅助，生产建议限制访问。</p>
+            </div>
+          </div>
+        </details>
+      </section>
+
+      <section class="card" id="s6">
+        <h2>六、数据表在业务里扮演什么角色</h2>
+        <table>
+          <thead><tr><th>表</th><th>可以把它记成</th></tr></thead>
+          <tbody>
+            <tr><td><code>device_info</code></td><td>现场有哪几台枪、哪几条线的 PLC，IP 和工位号是多少。</td></tr>
+            <tr><td><code>plc_addr</code></td><td>「某种信号 + 第几号工位」对应 PLC 上哪一个寄存器地址。</td></tr>
+            <tr><td><code>cushion_info</code></td><td>每个缓冲垫码的累计使用、上限、最近扫码时间等总账。</td></tr>
+            <tr><td><code>cushion_detail</code></td><td>每一次有效操作的快照流水。</td></tr>
+            <tr><td><code>scan_log</code></td><td>给人看的文字日志，排障先用它。</td></tr>
+            <tr><td><code>opc_config</code></td><td>全局默认值（例如默认最大次数），代码里常按 id=1 取。</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="card" id="s7">
+        <h2>七、部署与现场容易踩的坑</h2>
+        <ul>
+          <li>各环境数据库、Nacos 等以实际 <code>application-*.yml</code> 为准。</li>
+          <li>PLC 通信依赖自带的 HSL 的 jar，路径别丢。</li>
+          <li>连设备前会 ping：若现场禁 ICMP，可能出现「永远连不上」的假象。</li>
+          <li>Druid 控制台、Actuator、<code>/test</code> 等对外暴露时要有权限或网络隔离。</li>
+        </ul>
+        <p class="footnote">若线上行为与本文不一致，以实际运行配置与数据库为准。</p>
+      </section>
+    </div>
+  </div>
+</body>
+</html>

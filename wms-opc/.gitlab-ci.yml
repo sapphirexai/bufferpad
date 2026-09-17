@@ -1,0 +1,33 @@
+stages:
+  - build
+  - deploy
+variables:
+  APP: "opc"
+  APP_VERSION: "-0.0.1.-SNAPSHOT"
+  APP_PATH: "target/$APP$APP_VERSION.jar"
+  DEPLOY_PATH: "/home/gitlab-runner/application/wms-opc/"
+  DEPLOY_APP_PATH: "$DEPLOY_PATH$APP$APP_VERSION.jar"
+  BASH: "reboot_app.sh "
+  ENV: "test"
+#build过程
+build:
+  stage: build
+  tags:
+    - $ENV
+  script:
+    - echo "======== Build ========="
+    - mvn clean deploy -U -P $ENV -DskipTests=true
+    - cp $APP_PATH $DEPLOY_APP_PATH
+  #分支
+  only:
+    - main
+#发布过程
+deploy:
+  stage: deploy
+  tags:
+    - $ENV
+  script:
+    - echo "======== Deploy ========="
+    - bash $BASH$APP$APP_VERSION
+  dependencies:
+    - build

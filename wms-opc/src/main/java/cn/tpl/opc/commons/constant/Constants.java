@@ -1,0 +1,193 @@
+package cn.tpl.opc.commons.constant;
+
+import cn.tpl.opc.commons.dto.enums.PlcAddrTypeEnum;
+
+/**
+ * Author: Luo GuoWen
+ * Email: luoguowen123@qq.com
+ * Time: 2023/4/11
+ * 普通常量管理
+ */
+@SuppressWarnings("unused")
+public final class Constants {
+    private Constants() {
+    }
+
+    /**
+     * 扫码器位置
+     * SCANNER_POSITION_MANUAL 手动
+     */
+    public static final String SCANNER_POSITION_MANUAL = "手动";
+
+    /**
+     * 扫码日志信息
+     */
+    public static final String
+            SCAN_LOG_MSG_PREFIX_CURRENT_COUNT = "当前次数：",
+            SCAN_LOG_MSG_SUFFIX_MAX_COUNT = "，最大次数：",
+            SCAN_LOG_MSG_SUFFIX_SCANNER_NUM = "扫码器：",
+            SCAN_LOG_MSG_SUFFIX_MANUAL = "，手动",
+            SCAN_LOG_MSG_SUFFIX_NEW = "，新增",
+            SCAN_LOG_MSG_FAILED = "扫码失败",
+            SCAN_LOG_MSG_SUCCESS = "扫码成功",
+            SCAN_LOG_MSG_INVALID = "扫码无效，间隔不足2小时",
+            SCAN_LOG_MSG_OVER_MAXIMUM = "使用次数已达到最大次数，",
+            SCAN_LOG_MSG_NOTIFY_PLC_SUCCESS = "通知PLC成功，地址：",
+            SCAN_LOG_MSG_NOTIFY_PLC_FAILED = "通知PLC失败，地址：",
+            SCAN_LOG_MSG_NOTIFY_PLC_SKIPPED = "PLC未连接或网络不可达，地址：",
+            SCAN_LOG_MSG_PLC_ADDR_NOT_CONFIGURED = "未配置PLC地址，操作类型：",
+            SCAN_LOG_MSG_READ_OPEN_COUNT_FAILED = "读取PLC开口数失败，地址：",
+            SCAN_LOG_MSG_SUFFIX_NOTIFY_PLC_CMD = "，写入值：",
+            SCAN_LOG_MSG_SUCCESS_DATA_FORM_SCANNER = SCAN_LOG_MSG_SUCCESS + SCAN_LOG_MSG_SUFFIX_SCANNER_NUM,
+            SCAN_LOG_MSG_SUCCESS_DATA_FORM_MANUAL_NEW = SCAN_LOG_MSG_SUCCESS + SCAN_LOG_MSG_SUFFIX_NEW,
+            SCAN_LOG_MSG_SUCCESS_DATA_FORM_MANUAL_WITH_SCANNER = SCAN_LOG_MSG_SUCCESS + SCAN_LOG_MSG_SUFFIX_MANUAL + SCAN_LOG_MSG_SUFFIX_SCANNER_NUM,
+            SCAN_LOG_MSG_INVALID_DATA_FORM_SCANNER = SCAN_LOG_MSG_INVALID + SCAN_LOG_MSG_SUFFIX_SCANNER_NUM,
+            SCAN_LOG_MSG_OVER_MAXIMUM_FORM_SCANNER = SCAN_LOG_MSG_OVER_MAXIMUM + SCAN_LOG_MSG_SUFFIX_SCANNER_NUM;
+
+    /**
+     * 扫码日志类型
+     * SCAN_LOG_TYPE_INFO 普通
+     * SCAN_LOG_TYPE_ERROR 异常
+     */
+    public static final short
+            SCAN_LOG_TYPE_INFO = 0,
+            SCAN_LOG_TYPE_ERROR = 1;
+
+    /**
+     * 汇川PLC默认站号
+     */
+    public static final byte DEFAULT_STATION_HC_PLC_ = 1;
+
+    /**
+     * 配置表的默认ID
+     */
+    public static final long OPC_CONFIG_ID = 1L;
+
+    /**
+     * NETTY连接超时时间，单位：毫秒
+     */
+    public static final int NETTY_CONNECT_TIMEOUT_MILLIS = 3000;
+
+    /**
+     * 产线，全部
+     */
+    public static final int WORK_LINE_ALL = 0;
+
+    /**
+     * HEARTBEAT_2_PLC_VAL 给PLC的心跳值
+     * DEFAULT_2_PLC_VAL 默认写入值PLC的值
+     */
+    public static final short
+            HEARTBEAT_2_PLC_VAL = 0,
+            DEFAULT_2_PLC_VAL = 1;
+
+    /**
+     * PLC地址类型
+     * PLC_ADDR_TYPE_SCAN_FAILED 扫码失败
+     * PLC_ADDR_TYPE_SCAN_OVER_MAXIMUM 扫码超过最大次数
+     * PLC_ADDR_TYPE_SCAN_SUCCESS 扫码成功
+     * PLC_ADDR_TYPE_RE_SCAN_OVER_MAXIMUM 重新扫码超过最大次数
+     * PLC_ADDR_TYPE_RE_SCAN_SUCCESS 重新扫码成功
+     * PLC_ADDR_TYPE_HEART_BEAT 心跳
+     * PLC_ADDR_TYPE_SCAN_SUCCESS_OPEN_COUNT_UP 上缓冲垫扫码成功开口数
+     * PLC_ADDR_TYPE_RE_SCAN_SUCCESS_OPEN_COUNT_UP 上缓冲垫重新扫码成功开口数
+     * PLC_ADDR_TYPE_SCAN_SUCCESS_OPEN_COUNT_DOWN 下缓冲垫扫码成功开口数
+     * PLC_ADDR_TYPE_RE_SCAN_SUCCESS_OPEN_COUNT_DOWN 下缓冲垫重新扫码成功开口数
+     * PLC_ADDR_TYPE_SCAN_SUCCESS_OPEN_COUNT_MID_1 间层1缓冲垫扫码成功开口数
+     * PLC_ADDR_TYPE_RE_SCAN_SUCCESS_OPEN_COUNT_MID_1 间层1缓冲垫重新扫码成功开口数
+     * PLC_ADDR_TYPE_SCAN_SUCCESS_OPEN_COUNT_MID_2 间层2缓冲垫扫码成功开口数
+     * PLC_ADDR_TYPE_RE_SCAN_SUCCESS_OPEN_COUNT_MID_2 间层2缓冲垫重新扫码成功开口数
+     */
+    public static final int
+            PLC_ADDR_TYPE_SCAN_FAILED = PlcAddrTypeEnum.SCAN_FAILED.getCode(),
+            PLC_ADDR_TYPE_SCAN_OVER_MAXIMUM = PlcAddrTypeEnum.SCAN_OVER_MAXIMUM.getCode(),
+            PLC_ADDR_TYPE_SCAN_SUCCESS = PlcAddrTypeEnum.SCAN_SUCCESS.getCode(),
+            PLC_ADDR_TYPE_RE_SCAN_OVER_MAXIMUM = PlcAddrTypeEnum.RE_SCAN_OVER_MAXIMUM.getCode(),
+            PLC_ADDR_TYPE_RE_SCAN_SUCCESS = PlcAddrTypeEnum.RE_SCAN_SUCCESS.getCode(),
+            PLC_ADDR_TYPE_HEART_BEAT = PlcAddrTypeEnum.HEART_BEAT.getCode(),
+            PLC_ADDR_TYPE_SCAN_SUCCESS_OPEN_COUNT = PlcAddrTypeEnum.SCAN_SUCCESS_OPEN_COUNT.getCode(),
+            PLC_ADDR_TYPE_RE_SCAN_SUCCESS_OPEN_COUNT = PlcAddrTypeEnum.RE_SCAN_SUCCESS_OPEN_COUNT.getCode(),
+            PLC_ADDR_TYPE_SCAN_SUCCESS_OPEN_COUNT_UP = PLC_ADDR_TYPE_SCAN_SUCCESS_OPEN_COUNT,
+            PLC_ADDR_TYPE_RE_SCAN_SUCCESS_OPEN_COUNT_UP = PLC_ADDR_TYPE_RE_SCAN_SUCCESS_OPEN_COUNT,
+            PLC_ADDR_TYPE_SCAN_SUCCESS_OPEN_COUNT_DOWN = PLC_ADDR_TYPE_SCAN_SUCCESS_OPEN_COUNT,
+            PLC_ADDR_TYPE_RE_SCAN_SUCCESS_OPEN_COUNT_DOWN = PLC_ADDR_TYPE_RE_SCAN_SUCCESS_OPEN_COUNT,
+            PLC_ADDR_TYPE_SCAN_SUCCESS_OPEN_COUNT_MID_1 = PLC_ADDR_TYPE_SCAN_SUCCESS_OPEN_COUNT,
+            PLC_ADDR_TYPE_RE_SCAN_SUCCESS_OPEN_COUNT_MID_1 = PLC_ADDR_TYPE_RE_SCAN_SUCCESS_OPEN_COUNT,
+            PLC_ADDR_TYPE_SCAN_SUCCESS_OPEN_COUNT_MID_2 = PLC_ADDR_TYPE_SCAN_SUCCESS_OPEN_COUNT,
+            PLC_ADDR_TYPE_RE_SCAN_SUCCESS_OPEN_COUNT_MID_2 = PLC_ADDR_TYPE_RE_SCAN_SUCCESS_OPEN_COUNT;
+
+    /**
+     * 缓冲垫默认最大使用次数
+     * 宁波甬强默认600次
+     * 汕头超声默认500次
+     * CUSHION_DEFAULT_MAX_USE_CONT 通用最大次数
+     */
+    public static final int
+            CUSHION_DEFAULT_MAX_USE_CONT = 500;
+
+    /**
+     * 新增缓冲垫时默认已使用次数
+     */
+    public static final int CUSHION_ADD_DEFAULT_USED_COUNT = 1;
+
+    /**
+     * 扫码器有效扫码间隔
+     */
+    public static final int SCANNER_EFFECTIVE_INTERVAL_MILLIS = 2 * 60 * 60 * 1000;
+
+    /**
+     * 扫码器数据
+     * SCANNER_DATA_STX 帧头
+     * SCANNER_DATA_ETX 帧尾
+     */
+    public static final char SCANNER_MSG_STX = 0x02, SCANNER_MSG_ETX = 0x03;
+
+    public static final String SCANNER_XZ_STX = "[TPL_STX]", SCANNER_XZ_ETX = "[TPL_ETX]";
+    /**
+     * 扫码器消息
+     * SCANNER_MSG_HEART_BEAT 心跳包
+     * SCANNER_MSG_NO_READ 未读到数据
+     */
+    public static final String
+            SCANNER_MSG_HEART_BEAT = "HeartBeat",
+            SCANNER_MSG_NO_READ = "NoRead";
+
+    /**
+     * Netty连接重置间隔时间，单位：秒
+     */
+    public static final long NETTY_CONNECTION_RESET_INTERVAL_SEC = 100L;
+
+    /**
+     * Sse消息主题
+     * SSE_MSG_TOPIC_DEVICE_STATUS 设备状态
+     * SSE_MSG_TOPIC_CUSHION_INFO 缓冲垫数据
+     */
+    public static final String
+            SSE_MSG_TOPIC_DEVICE_STATUS = "deviceStatus",
+            SSE_MSG_TOPIC_CUSHION_INFO = "cushionInfo",
+            SSE_MSG_TOPIC_OPERATION_EVENT = "operationEvent";
+
+    /**
+     * 接口请求结果消息
+     * RESULT_MSG_PARAMS_ERROR 参数异常
+     * RESULT_MSG_DEVICE_NO_TYPE 设备无类型
+     * RESULT_MSG_DEVICE_NO_IP 设备无IP
+     * RESULT_MSG_DEVICE_NO_PORT 设备无端口
+     * RESULT_MSG_DEVICE_NO_INSTALL_SEQ 设备无安装顺序
+     * RESULT_MSG_CUSHION_ADD_FAILED 新增缓冲垫失败
+     * RESULT_MSG_CUSHION_ADD_USED_COUNT_FAILED 增加缓冲垫使用次数失败
+     * RESULT_MSG_CUSHION_USED_COUNT_REACHED_MAX 使用次数达到最大值
+     * RESULT_MSG_CUSHION_INVALID_SCAN 缓冲垫无效扫码
+     */
+    public static final String
+            RESULT_MSG_PARAMS_ERROR = "参数异常！",
+            RESULT_MSG_DEVICE_NO_TYPE = "设备类型不能为空！",
+            RESULT_MSG_DEVICE_NO_IP = "设备IP不能为空！",
+            RESULT_MSG_DEVICE_NO_PORT = "设备端口不能为空！",
+            RESULT_MSG_DEVICE_NO_INSTALL_SEQ = "设备安装顺序不能为空！",
+            RESULT_MSG_CUSHION_ADD_FAILED = "新增缓冲垫失败！",
+            RESULT_MSG_CUSHION_ADD_USED_COUNT_FAILED = "增加缓冲垫使用次数失败！",
+            RESULT_MSG_CUSHION_USED_COUNT_REACHED_MAX = "使用次数已达到最大次数！",
+            RESULT_MSG_CUSHION_INVALID_SCAN = "扫码无效，间隔不足2小时！";
+
+}

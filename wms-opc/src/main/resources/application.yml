@@ -1,0 +1,81 @@
+spring:
+  profiles:
+    active: test
+  application:
+    name: wms-opc
+  cloud:
+    nacos:
+      discovery:
+        enabled: false
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    druid:
+      filters: stat,wall,slf4j,config
+      initial-size: 5
+      min-idle: 5
+      max-active: 20
+      max-wait: 60000
+      time-between-eviction-runs-millis: 60000
+      min-evictable-idle-time-millis: 300000
+      validation-query: select 'x'
+      test-while-idle: true
+      test-on-borrow: false
+      test-on-return: false
+      pool-prepared-statements: true
+      max-pool-prepared-statement-per-connection-size: 20
+      connection-properties: druid.stat.mergeSql\=true;druid.stat.slowSqlMillis\=5000
+      web-stat-filter:
+        enabled: true
+        url-pattern: /*
+        exclusions: .js,*.gif,*.jpg,*.bmp,*.png,*.css,*.ico,/druid/*
+      stat-view-servlet:
+        enabled: true
+        url-pattern: /druid/*
+        reset-enable: false
+        login-username: root
+        login-password: CHANGE_ME_DB_PASSWORD
+
+server:
+  port: 9001
+
+mybatis-plus:
+  mapper-locations: classpath*:mapper/**/*Mapper.xml
+  configuration:
+    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
+
+management:
+  endpoint:
+    health:
+      show-details: never
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+scan-log:
+  retention:
+    enabled: ${SCAN_LOG_RETENTION_ENABLED:true}
+    months: ${SCAN_LOG_RETENTION_MONTHS:3}
+    zone: ${SCAN_LOG_RETENTION_ZONE:Asia/Shanghai}
+    cleanup-cron: "${SCAN_LOG_CLEANUP_CRON:0 0 3 * * ?}"
+    batch-size: ${SCAN_LOG_CLEANUP_BATCH_SIZE:1000}
+    max-seconds: ${SCAN_LOG_CLEANUP_MAX_SECONDS:300}
+    pause-millis: ${SCAN_LOG_CLEANUP_PAUSE_MILLIS:100}
+
+operation-event:
+  retention:
+    days: 30
+    cleanup-cron: "0 15 2 * * ?"
+
+auth:
+  bootstrap:
+    username: ${BUFFERPAD_ADMIN_USERNAME:admin}
+    password: ${BUFFERPAD_ADMIN_PASSWORD:example-admin-password}
+  cookie-secure: ${BUFFERPAD_COOKIE_SECURE:false}
+  allowed-origins: ${BUFFERPAD_ALLOWED_ORIGINS:http://localhost:8081,http://127.0.0.1:8081}
+
+# Explicit per-device protocol detection only. Empty maps send no extra requests.
+device-health:
+  failure-threshold: 3
+  scanner-heartbeats: {}
+  plc-probes: {}

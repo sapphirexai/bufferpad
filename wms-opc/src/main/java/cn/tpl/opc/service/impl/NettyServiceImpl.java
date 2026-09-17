@@ -1,0 +1,93 @@
+package cn.tpl.opc.service.impl;
+
+import cn.hutool.core.bean.BeanUtil;
+import cn.tpl.opc.commons.constant.Constants;
+import cn.tpl.opc.commons.dto.ResultDTO;
+import cn.tpl.opc.commons.dto.enums.DeviceTypeEnum;
+import cn.tpl.opc.commons.dto.result.DeviceInfoDTO;
+import cn.tpl.opc.entity.DeviceInfoEntity;
+import cn.tpl.opc.netty.Connection;
+import cn.tpl.opc.netty.ConnectionMgr;
+import cn.tpl.opc.netty.Connector;
+import cn.tpl.opc.service.IDeviceInfoService;
+import cn.tpl.opc.service.INettyService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
+
+import javax.annotation.Resource;
+import java.util.List;
+import java.util.stream.Collectors;
+
+/**
+ * Author: Luo GuoWen
+ * Email: luoguowen123@qq.com
+ * Time: 2023/4/6
+ * Netty服务
+ */
+@Slf4j
+@Service("nettyService")
+public class NettyServiceImpl implements INettyService {
+    @Resource
+    private IDeviceInfoService deviceService;
+    @Resource
+    private Connector connector;
+    @Resource
+    private ConnectionMgr connectionMgr;
+
+    @Override
+    public ResultDTO<List<DeviceInfoDTO>> connectDevices(Integer workLine) {
+        List<DeviceInfoEntity> deviceInfoEntities = deviceService.listByWorkLine(workLine);
+        if (CollectionUtils.isEmpty(deviceInfoEntities))
+            return ResultDTO.failure("无设备");
+        return ResultDTO.success(deviceInfoEntities.stream().map(this::device2DTO).collect(Collectors.toList()));
+    }
+
+    @Override
+    public ResultDTO<List<DeviceInfoDTO>> connectScanners() {
+        List<DeviceInfoEntity> deviceInfoEntities = deviceService.listDeviceInfoByType(0);
+        if (CollectionUtils.isEmpty(deviceInfoEntities))
+            return ResultDTO.failure("无扫码器");
+
+        return ResultDTO.success(deviceInfoEntities.stream().map(this::device2DTO).collect(Collectors.toList()));
+    }
+
+    @Override
+    public List<DeviceInfoDTO> getDevicesStatus(Integer workLine) {
+        if (null == workLine || Constants.WORK_LINE_ALL == workLine)
+            return connectionMgr.getConnections().values().stream().map(this::connection2DeviceDTO).collect(Collectors.toList());
+        return connectionMgr.getConnectionsByWorkLine(workLine).stream().map(this::connection2DeviceDTO).collect(Collectors.toList());
+    }
+
+    private DeviceInfoDTO device2DTO(DeviceInfoEntity deviceInfo) {
+        DeviceInfoDTO deviceInfoDTO = new DeviceInfoDTO();
+        Connection connection = new Connection();
+        BeanUtil.copyProperties(deviceInfo, connection);
+        // Persisted configuration cannot prove a live transport.
+        connection.setStatus(0);
+        BeanUtil.copyProperties(deviceInfo, deviceInfoDTO);
+        applyTypeName(deviceInfoDTO);
+        connector.connect(connection);
+        Connection managedConnection = connectionMgr.getConnection(connection.getId());
+        if (managedConnection != null) synchronized (managedConnection) {
+            BeanUtil.copyProperties(managedConnection, deviceInfoDTO);
+            deviceInfoDTO.setTransportState(managedConnection.getTransportState());
+        }
+        return deviceInfoDTO;
+    }
+
+    private DeviceInfoDTO connection2DeviceDTO(Connection connection) {
+        DeviceInfoDTO deviceInfoDTO = new DeviceInfoDTO();
+        synchronized (connection) {
+            BeanUtil.copyProperties(connection, deviceInfoDTO);
+            deviceInfoDTO.setTransportState(connection.getTransportState());
+        }
+        applyTypeName(deviceInfoDTO);
+        return deviceInfoDTO;
+    }
+
+    private void applyTypeName(DeviceInfoDTO deviceInfoDTO) {
+        DeviceTypeEnum type = DeviceTypeEnum.of(deviceInfoDTO.getType());
+        deviceInfoDTO.setTypeName(type == null ? "" : type.getLabel());
+    }
+}

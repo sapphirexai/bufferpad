@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.tpl.opc.mapper.OperationEventEntityMapper">
+    <resultMap id="BaseResultMap" type="cn.tpl.opc.entity.OperationEventEntity">
+        <id column="id" property="id"/>
+        <result column="event_id" property="eventId"/>
+        <result column="operation_id" property="operationId"/>
+        <result column="code" property="code"/>
+        <result column="severity" property="severity"/>
+        <result column="title" property="title"/>
+        <result column="message" property="message"/>
+        <result column="suggestion" property="suggestion"/>
+        <result column="work_line" property="workLine"/>
+        <result column="scanner_id" property="scannerId"/>
+        <result column="scanner_seq" property="scannerSeq"/>
+        <result column="scanner_name" property="scannerName"/>
+        <result column="scanner_ip" property="scannerIp"/>
+        <result column="plc_id" property="plcId"/>
+        <result column="plc_name" property="plcName"/>
+        <result column="plc_ip" property="plcIp"/>
+        <result column="device_id" property="deviceId"/>
+        <result column="device_name" property="deviceName"/>
+        <result column="qr_code" property="qrCode"/>
+        <result column="address" property="address"/>
+        <result column="error_code" property="errorCode"/>
+        <result column="technical_detail" property="technicalDetail"/>
+        <result column="created_date" property="createdDate"/>
+    </resultMap>
+
+    <insert id="insertSelective" parameterType="cn.tpl.opc.entity.OperationEventEntity" useGeneratedKeys="true" keyProperty="id">
+        insert into operation_event
+        (event_id, operation_id, code, severity, title, message, suggestion, work_line, scanner_id, scanner_seq,
+         scanner_name, scanner_ip, plc_id, plc_name, plc_ip, device_id, device_name, qr_code, address, error_code,
+         technical_detail, created_date)
+        values
+        (#{eventId}, #{operationId}, #{code}, #{severity}, #{title}, #{message}, #{suggestion}, #{workLine}, #{scannerId},
+         #{scannerSeq}, #{scannerName}, #{scannerIp}, #{plcId}, #{plcName}, #{plcIp}, #{deviceId}, #{deviceName},
+         #{qrCode}, #{address}, #{errorCode}, #{technicalDetail}, #{createdDate})
+    </insert>
+
+    <select id="listRecent" resultMap="BaseResultMap">
+        select id, event_id, operation_id, code, severity, title, message, suggestion, work_line, scanner_id, scanner_seq,
+               scanner_name, scanner_ip, plc_id, plc_name, plc_ip, device_id, device_name, qr_code, address, error_code,
+               technical_detail, created_date
+        from operation_event
+        <where>
+            <if test="workLine != null and workLine != 0">
+                work_line = #{workLine}
+            </if>
+        </where>
+        order by id desc
+        limit #{limit}
+    </select>
+
+    <delete id="deleteBefore">
+        delete from operation_event
+        where created_date &lt; #{cutoff}
+        order by id
+        limit #{batchSize}
+    </delete>
+</mapper>

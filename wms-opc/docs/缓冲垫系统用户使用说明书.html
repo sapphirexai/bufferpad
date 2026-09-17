@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>缓冲垫系统用户使用说明书</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --panel: #ffffff;
+      --line: #d9e2ec;
+      --text: #1f2933;
+      --subtle: #52606d;
+      --primary: #2457c5;
+      --primary-soft: #e9f0ff;
+      --success: #1f9d55;
+      --warning: #d9822b;
+      --danger: #d64545;
+      --shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+      background: linear-gradient(180deg, #eef4ff 0%, var(--bg) 240px);
+      color: var(--text);
+      line-height: 1.7;
+    }
+
+    .page {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 40px 24px 64px;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #173a86 0%, #2457c5 55%, #4f7fe4 100%);
+      color: #fff;
+      border-radius: 28px;
+      padding: 40px 36px;
+      box-shadow: var(--shadow);
+    }
+
+    .hero h1 {
+      margin: 0 0 12px;
+      font-size: 36px;
+      line-height: 1.2;
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 820px;
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 16px;
+    }
+
+    .meta {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    .meta-card,
+    .section,
+    .tip,
+    .flow,
+    .faq,
+    .button-table,
+    .legend {
+      background: var(--panel);
+      border: 1px solid rgba(217, 226, 236, 0.9);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+    }
+
+    .meta-card {
+      padding: 18px 20px;
+    }
+
+    .meta-card strong {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--primary);
+      font-size: 14px;
+      letter-spacing: 0.04em;
+    }
+
+    .meta-card span {
+      font-size: 15px;
+      color: var(--text);
+    }
+
+    .toc {
+      margin-top: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .toc a {
+      text-decoration: none;
+      color: var(--primary);
+      background: var(--primary-soft);
+      border: 1px solid rgba(36, 87, 197, 0.16);
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 14px;
+    }
+
+    .section,
+    .flow,
+    .tip,
+    .faq,
+    .button-table,
+    .legend {
+      margin-top: 24px;
+      padding: 28px;
+    }
+
+    h2 {
+      margin: 0 0 16px;
+      font-size: 26px;
+      color: #102a43;
+    }
+
+    h3 {
+      margin: 24px 0 10px;
+      font-size: 20px;
+      color: #16315c;
+    }
+
+    h4 {
+      margin: 16px 0 8px;
+      font-size: 16px;
+      color: #243b53;
+    }
+
+    p {
+      margin: 0 0 12px;
+    }
+
+    ul,
+    ol {
+      margin: 0 0 12px 22px;
+      padding: 0;
+    }
+
+    li + li {
+      margin-top: 6px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 18px;
+    }
+
+    .card {
+      background: #fbfdff;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 18px;
+    }
+
+    .card h4 {
+      margin-top: 0;
+    }
+
+    .badge {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 2px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      vertical-align: middle;
+      margin-left: 6px;
+    }
+
+    .green {
+      background: #e7f7ee;
+      color: var(--success);
+    }
+
+    .orange {
+      background: #fff1df;
+      color: var(--warning);
+    }
+
+    .red {
+      background: #fde8e8;
+      color: var(--danger);
+    }
+
+    .blue {
+      background: #e8f0ff;
+      color: var(--primary);
+    }
+
+    .steps {
+      counter-reset: step;
+      list-style: none;
+      margin: 0;
+    }
+
+    .steps li {
+      position: relative;
+      padding-left: 54px;
+      min-height: 38px;
+    }
+
+    .steps li::before {
+      counter-increment: step;
+      content: counter(step);
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #fff;
+      text-align: center;
+      line-height: 34px;
+      font-weight: 700;
+    }
+
+    .steps li + li {
+      margin-top: 14px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 14px;
+      font-size: 14px;
+    }
+
+    th,
+    td {
+      border: 1px solid var(--line);
+      padding: 12px 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #f7faff;
+      color: #243b53;
+    }
+
+    code {
+      font-family: Consolas, "Courier New", monospace;
+      background: #eef2f7;
+      border-radius: 6px;
+      padding: 2px 6px;
+      color: #243b53;
+    }
+
+    .notice {
+      border-left: 4px solid var(--primary);
+      padding: 12px 14px;
+      background: #f5f9ff;
+      border-radius: 12px;
+      color: #334e68;
+      margin: 14px 0;
+    }
+
+    .footer {
+      margin-top: 28px;
+      text-align: center;
+      color: var(--subtle);
+      font-size: 13px;
+    }
+
+    @media (max-width: 720px) {
+      .page {
+        padding: 24px 14px 40px;
+      }
+
+      .hero {
+        padding: 28px 22px;
+      }
+
+      .hero h1 {
+        font-size: 28px;
+      }
+
+      .section,
+      .flow,
+      .tip,
+      .faq,
+      .button-table,
+      .legend {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <section class="hero">
+      <h1>缓冲垫系统用户使用说明书</h1>
+      <p>本说明书面向现场操作员、班组长和日常使用人员，帮助您快速了解缓冲垫扫码计数系统的页面用途、按钮功能、常见提示及标准操作流程。内容依据项目代码中的前端页面与后端业务规则整理，可直接作为日常使用参考。</p>
+      <div class="meta">
+        <div class="meta-card">
+          <strong>适用范围</strong>
+          <span>缓冲垫扫码、寿命查看、扫码记录查询、日志排查、导出与批量维护</span>
+        </div>
+        <div class="meta-card">
+          <strong>主要页面</strong>
+          <span><code>Running</code>、<code>Summary</code>、<code>Record</code>、明细页、日志查询页</span>
+        </div>
+        <div class="meta-card">
+          <strong>系统特点</strong>
+          <span>实时状态刷新、扫码计数、PLC 联动、2 小时有效扫码规则、异常日志查询</span>
+        </div>
+      </div>
+      <div class="toc">
+        <a href="#overview">系统概览</a>
+        <a href="#flow">快速操作流程</a>
+        <a href="#running">运行页</a>
+        <a href="#summary">汇总页</a>
+        <a href="#record">记录页</a>
+        <a href="#logs">日志页</a>
+        <a href="#buttons">按钮速查</a>
+        <a href="#faq">常见问题</a>
+      </div>
+    </section>
+
+    <section class="section" id="overview">
+      <h2>一、系统概览</h2>
+      <div class="grid-2">
+        <div class="card">
+          <h4>系统能做什么</h4>
+          <ul>
+            <li>接收扫码器上传的缓冲垫二维码，并自动登记使用次数。</li>
+            <li>显示当前缓冲垫、当前位置、使用次数、剩余次数、设备连接状态。</li>
+            <li>查询历史扫码记录、查看单个缓冲垫的明细记录、查看异常日志。</li>
+            <li>支持导出选中数据，以及批量调整缓冲垫的使用寿命。</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>系统自动判定规则</h4>
+          <ul>
+            <li>同一个缓冲垫在 2 小时内重复扫码，系统会视为无效扫码，不增加使用次数。</li>
+            <li>达到最大使用次数后，系统会提示已到上限，并向 PLC 发送对应信号。</li>
+            <li>扫码成功后，系统会尝试读取对应的开口数，并写入当前记录。</li>
+            <li>运行页会通过后台推送实时刷新，不需要手动反复刷新页面。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="notice">
+        建议把 <code>Running</code> 页作为现场主操作页面。<code>Summary</code>、<code>Record</code>、日志页更适合查询和复核，不建议代替运行页进行实时判断。
+      </div>
+    </section>
+
+    <section class="flow" id="flow">
+      <h2>二、快速操作流程</h2>
+      <ol class="steps">
+        <li>进入系统后，先在运行页选择当前产线，确认 <code>PLC状态</code> 和 <code>读码器状态</code> 为绿色。</li>
+        <li>正常情况下等待扫码器自动上传二维码，系统会自动更新当前缓冲垫、位置、使用次数和列表数据。</li>
+        <li>如果扫码失败或现场需要补录，点击 <code>手动输入</code>，输入二维码后再点击 <code>确定</code>。</li>
+        <li>如需查看某个缓冲垫的详细扫码历史，在表格中找到该条数据后点击 <code>明细</code>。</li>
+        <li>如需批量修改寿命或导出数据，先勾选表格行，再使用 <code>批量修改</code> 或 <code>导出</code>。</li>
+        <li>如需排查失败原因或确认系统提醒，点击 <code>日志查询</code> 查看普通/异常日志。</li>
+      </ol>
+    </section>
+
+    <section class="legend">
+      <h2>三、颜色与状态说明</h2>
+      <div class="grid-2">
+        <div class="card">
+          <h4>连接状态</h4>
+          <p><span class="badge green">绿色</span> 设备连接正常、处于活跃状态。</p>
+          <p><span class="badge red">红色闪烁</span> 设备未连接或连接异常，需要检查网络、设备或后台服务。</p>
+        </div>
+        <div class="card">
+          <h4>使用次数颜色</h4>
+          <p><span class="badge green">绿色</span> 使用次数仍处于安全范围内。</p>
+          <p><span class="badge orange">橙色</span> 已接近寿命预警阈值。</p>
+          <p><span class="badge red">红色背景/提示</span> 已达到或超过使用上限，应及时处理。</p>
+        </div>
+      </div>
+      <p>缓冲垫位置使用 <code>上</code>、<code>下</code>、<code>间层1</code>、<code>间层2</code> 标识。运行页中不同位置会使用不同颜色区分，便于现场快速识别。</p>
+    </section>
+
+    <section class="section" id="running">
+      <h2>四、Running 运行页</h2>
+      <p>运行页是系统的核心页面，负责现场实时监控和主要操作。左侧导航进入 <code>Running</code> 后，页面主要分为顶部状态区、当前缓冲垫信息区、操作区和数据表格区。</p>
+
+      <h3>1. 顶部状态区</h3>
+      <ul>
+        <li><strong>产线选择</strong>：可在 1 到 5 号产线之间切换。切换后，设备状态、当前信息和表格数据会一起刷新。</li>
+        <li><strong>PLC状态</strong>：显示当前产线 PLC 的连接情况。</li>
+        <li><strong>读码器状态</strong>：显示扫码器是否在线。</li>
+      </ul>
+
+      <h3>2. 当前缓冲垫信息区</h3>
+      <div class="grid-2">
+        <div class="card">
+          <h4>缓冲垫编号输入框</h4>
+          <ul>
+            <li>默认用于接收扫码结果，初始状态不可手动输入。</li>
+            <li>点击 <code>手动输入</code> 后输入框启用，按钮文字变为 <code>确定</code>。</li>
+            <li>输入二维码后，必须点击 <code>确定</code> 提交，回车键不会直接提交。</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>当前缓冲垫卡片</h4>
+          <ul>
+            <li><strong>当前缓冲垫</strong>：显示最近一次成功扫码或手动补录的二维码。</li>
+            <li><strong>位置</strong>：显示缓冲垫所在工位，如 <code>上</code>、<code>下</code>、<code>间层1</code>、<code>间层2</code>。</li>
+            <li><strong>使用次数</strong>：显示当前已计入的有效使用次数。</li>
+            <li><strong>剩余次数</strong>：按 <code>使用寿命 - 使用次数</code> 计算。</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>3. 运行页操作区</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>功能</th>
+            <th>作用</th>
+            <th>使用说明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>搜索缓冲垫</td>
+            <td>按编号筛选表格</td>
+            <td>输入缓冲垫编号后点击搜索图标或直接按查询逻辑刷新列表。</td>
+          </tr>
+          <tr>
+            <td>阈值设置</td>
+            <td>设置接近寿命时的预警比例</td>
+            <td>点击编辑图标后可设置 0 到 1 之间的数值，例如 <code>0.95</code> 代表达到寿命的 95% 时预警。该设置保存在当前浏览器中。</td>
+          </tr>
+          <tr>
+            <td>日志查询</td>
+            <td>跳转到日志页</td>
+            <td>用于查询普通日志和异常日志，适合排查扫码失败、设备问题等情况。</td>
+          </tr>
+          <tr>
+            <td>批量修改</td>
+            <td>批量修改使用寿命</td>
+            <td>必须先勾选至少一条数据，否则系统会提示“请选择修改数据”。</td>
+          </tr>
+          <tr>
+            <td>导出</td>
+            <td>导出选中缓冲垫信息到 Excel</td>
+            <td>必须先勾选数据，否则系统会提示“请选择导出数据”。导出后浏览器会自动下载文件。</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>4. 表格字段说明</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>字段</th>
+            <th>说明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>缓冲垫编号</td>
+            <td>缓冲垫二维码编号。</td>
+          </tr>
+          <tr>
+            <td>缓冲垫位置</td>
+            <td>当前扫码来源位置，优先显示明确的工位名称。</td>
+          </tr>
+          <tr>
+            <td>开口数</td>
+            <td>系统从 PLC 读取并记录的开口数值。</td>
+          </tr>
+          <tr>
+            <td>第一次使用时间</td>
+            <td>该缓冲垫第一次被系统记录为有效使用的时间。</td>
+          </tr>
+          <tr>
+            <td>最后一次使用时间</td>
+            <td>最近一次被系统认定为有效扫码的时间。</td>
+          </tr>
+          <tr>
+            <td>当前使用次数</td>
+            <td>已被系统计入的有效使用次数。</td>
+          </tr>
+          <tr>
+            <td>使用寿命</td>
+            <td>最大允许使用次数。可单条编辑，也可批量修改。</td>
+          </tr>
+          <tr>
+            <td>操作</td>
+            <td>点击 <code>明细</code> 可查看该缓冲垫的扫码明细。</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>5. 运行页常用操作</h3>
+      <div class="grid-2">
+        <div class="card">
+          <h4>手动补录二维码</h4>
+          <ol>
+            <li>点击 <code>手动输入</code>。</li>
+            <li>在输入框中输入二维码。</li>
+            <li>点击 <code>确定</code>。</li>
+            <li>系统提示成功后，当前缓冲垫和表格会自动刷新。</li>
+          </ol>
+        </div>
+        <div class="card">
+          <h4>修改单条使用寿命</h4>
+          <ol>
+            <li>在目标数据行的 <code>使用寿命</code> 列点击编辑图标。</li>
+            <li>输入新的使用寿命值。</li>
+            <li>点击列内 <code>确定</code>。</li>
+            <li>系统提示“修改完成”后，列表自动刷新。</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="notice">
+        如果运行页提示“扫码失败，请手动输入”，说明扫码器未成功识别本次二维码，您可以按手动补录流程继续操作。
+      </div>
+    </section>
+
+    <section class="section" id="summary">
+      <h2>五、Summary 汇总页</h2>
+      <p>汇总页主要用于快速浏览缓冲垫总体信息，适合作为辅助查询页面。该页面不提供编辑按钮，重点是看列表。</p>
+      <ul>
+        <li>页面字段包括：缓冲垫编号、缓冲垫位置、开口数、缓冲垫生产厂家、第一次使用时间、最后一次使用时间、当前使用次数、剩余次数。</li>
+        <li>支持分页浏览，可切换每页条数和页码。</li>
+        <li>若需要实时确认最新扫码结果或剩余寿命，建议以运行页显示为准。</li>
+      </ul>
+    </section>
+
+    <section class="section" id="record">
+      <h2>六、Record 记录页</h2>
+      <p>记录页用于查看历史扫码记录，适合按时间范围回溯现场操作。</p>
+      <h3>1. 页面功能</h3>
+      <ul>
+        <li>可选择开始时间和结束时间后点击 <code>查询</code>。</li>
+        <li>表格显示字段为：缓冲垫编号、开口数、缓冲垫位置、扫码时间。</li>
+        <li>支持分页浏览。</li>
+      </ul>
+      <h3>2. 使用场景</h3>
+      <ul>
+        <li>确认某一时间段内是否发生过扫码。</li>
+        <li>查看扫码发生的具体时间和位置。</li>
+        <li>配合运行页或日志页核对现场作业记录。</li>
+      </ul>
+    </section>
+
+    <section class="section">
+      <h2>七、缓冲垫明细页</h2>
+      <p>明细页不在左侧导航中，需要从运行页表格中点击某条数据的 <code>明细</code> 进入。该页面用于查看单个缓冲垫的历史扫码明细。</p>
+      <ul>
+        <li>页面字段包括：缓冲垫编号、开口数、缓冲垫位置、扫码时间。</li>
+        <li>默认按传入的缓冲垫编号查询。</li>
+        <li>支持分页切换，便于查看较长的历史记录。</li>
+      </ul>
+    </section>
+
+    <section class="section" id="logs">
+      <h2>八、日志查询页</h2>
+      <p>日志查询页用于查看系统运行日志，是排查异常最重要的辅助页面之一。该页面通常从运行页点击 <code>日志查询</code> 进入。</p>
+
+      <h3>1. 可筛选条件</h3>
+      <ul>
+        <li><strong>缓冲垫编号</strong>：查询指定编号相关日志。</li>
+        <li><strong>日志类型</strong>：可选 <code>普通</code> 或 <code>异常</code>。</li>
+        <li><strong>日志内容</strong>：按日志文字模糊查询。</li>
+        <li><strong>创建时间</strong>：默认查询当天，并支持快捷选择 <code>当天</code>、<code>最近三天</code>、<code>最近七天</code>。</li>
+      </ul>
+
+      <h3>2. 表格字段说明</h3>
+      <ul>
+        <li><strong>日志类型</strong>：普通日志显示为普通文本；异常日志会显示警告图标和红色样式。</li>
+        <li><strong>缓冲垫编号</strong>：与该条日志相关的二维码。</li>
+        <li><strong>日志内容</strong>：系统生成的说明文字。</li>
+        <li><strong>创建时间</strong>：日志生成时间。</li>
+      </ul>
+    </section>
+
+    <section class="button-table" id="buttons">
+      <h2>九、按钮功能速查表</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>所在页面</th>
+            <th>按钮/入口</th>
+            <th>功能说明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>运行页</td>
+            <td><code>手动输入</code></td>
+            <td>开启二维码手动录入模式。</td>
+          </tr>
+          <tr>
+            <td>运行页</td>
+            <td><code>确定</code>（手动录入）</td>
+            <td>提交当前输入的二维码并立即入库处理。</td>
+          </tr>
+          <tr>
+            <td>运行页</td>
+            <td>搜索图标</td>
+            <td>按缓冲垫编号筛选当前表格。</td>
+          </tr>
+          <tr>
+            <td>运行页</td>
+            <td>阈值编辑图标</td>
+            <td>修改当前浏览器中的寿命预警阈值。</td>
+          </tr>
+          <tr>
+            <td>运行页</td>
+            <td><code>日志查询</code></td>
+            <td>进入日志查询页。</td>
+          </tr>
+          <tr>
+            <td>运行页</td>
+            <td><code>批量修改</code></td>
+            <td>批量修改勾选数据的使用寿命。</td>
+          </tr>
+          <tr>
+            <td>运行页</td>
+            <td><code>导出</code></td>
+            <td>导出勾选缓冲垫信息为 Excel。</td>
+          </tr>
+          <tr>
+            <td>运行页</td>
+            <td><code>明细</code></td>
+            <td>进入该缓冲垫的历史明细页。</td>
+          </tr>
+          <tr>
+            <td>记录页 / 明细页 / 汇总页</td>
+            <td>分页组件</td>
+            <td>切换页码、每页数量，查看更多数据。</td>
+          </tr>
+          <tr>
+            <td>日志页 / 记录页</td>
+            <td><code>查询</code></td>
+            <td>按所选条件刷新查询结果。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="tip">
+      <h2>十、使用注意事项</h2>
+      <ul>
+        <li>开始作业前，请先确认 PLC 和读码器状态为绿色，否则扫码结果可能无法正常入库。</li>
+        <li>手动输入适用于补录场景，不建议代替正常扫码使用。</li>
+        <li>批量修改和导出前必须先勾选数据。</li>
+        <li>寿命预警阈值保存在当前浏览器本地，不同电脑或不同浏览器之间不会自动同步。</li>
+        <li>如果某个缓冲垫短时间内重复扫码但次数没有增加，通常是因为系统启用了 2 小时有效间隔规则。</li>
+        <li>如果网络异常或后台服务未启动，页面可能无法取到数据，此时应先检查网络、后台服务和设备连接。</li>
+      </ul>
+    </section>
+
+    <section class="faq" id="faq">
+      <h2>十一、常见问题</h2>
+      <h3>1. 为什么扫码成功了，但使用次数没有增加？</h3>
+      <p>系统存在 2 小时有效间隔规则。同一个缓冲垫在 2 小时内重复扫码，会被判定为无效扫码，因此不会增加使用次数。</p>
+
+      <h3>2. 为什么批量修改按钮点了没有反应？</h3>
+      <p>运行页中必须先勾选至少一条数据，未勾选时系统会提示“请选择修改数据”。</p>
+
+      <h3>3. 为什么导出按钮不能直接导出？</h3>
+      <p>导出功能只导出勾选的数据。请先勾选要导出的缓冲垫，再点击 <code>导出</code>。</p>
+
+      <h3>4. 为什么设备状态显示红色或闪烁？</h3>
+      <p>这通常表示 PLC 或读码器未连接、网络异常，或者后台服务未正常通讯。建议先检查设备供电、网络连通性及后台服务运行状态。</p>
+
+      <h3>5. 扫码失败后应该怎么做？</h3>
+      <p>先查看日志页是否有异常提示；如果现场需要继续作业，可在运行页点击 <code>手动输入</code> 进行补录。</p>
+    </section>
+
+    <p class="footer">文档生成位置：docs/缓冲垫系统用户使用说明书.html</p>
+  </div>
+</body>
+</html>
