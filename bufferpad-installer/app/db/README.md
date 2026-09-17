@@ -1,5 +1,7 @@
 # 数据库初始化说明
 
+**简体中文** · [English](README.en.md) · [文档目录](../../../docs/README.md)
+
 一键安装使用当前目录中的 `wms_opc.sql` 初始化全新的 MySQL 数据库：
 
 ```text

@@ -1,5 +1,7 @@
 # 第三方组件说明
 
+**简体中文** · [English](THIRD_PARTY_NOTICES.en.md) · [文档目录](docs/README.md)
+
 根目录 MIT LICENSE 适用于项目自有代码。依赖、第三方资源及运行时软件仍受各自许可证约束；以下是入口说明，不替代相应版本随附的完整许可证。
 
 - 前端依赖以 `bufferpad/package.json` 和 `package-lock.json` 为准，包含 Vue、Vue Router、Element UI、ECharts、Axios 等；第三方字体和图标应保留所属组件声明。

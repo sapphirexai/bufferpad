@@ -1,12 +1,15 @@
 # Local dependencies and generated application packages
 /packages/*
 !/packages/README.md
+!/packages/README.en.md
 !/packages/.gitkeep
 /app/backend/*
 !/app/backend/README.md
+!/app/backend/README.en.md
 !/app/backend/.gitkeep
 /app/frontend/*
 !/app/frontend/README.md
+!/app/frontend/README.en.md
 !/app/frontend/.gitkeep
 /logs/
 /.idea/

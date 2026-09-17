@@ -1,5 +1,7 @@
 # Roadmap / 维护路线图
 
+**简体中文** · [English](ROADMAP.en.md) · [文档目录](docs/README.md)
+
 [中文首页](README.md) · [English overview](README.en.md)
 
 此路线图用于说明维护方向，不是发布日期或硬件兼容承诺。优先级会根据真实反馈调整。建议通过 [Issue](https://github.com/sapphirexai/bufferpad/issues/new/choose)提供场景和验收标准。

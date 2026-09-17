@@ -1,5 +1,7 @@
 # BufferPad 图文导览
 
+**简体中文** · [English](product-tour.en.md) · [文档目录](README.md)
+
 [返回首页](../README.md) · [开始部署](getting-started.md)
 
 BufferPad 面向使用可重复利用缓冲垫的制造现场：扫描编号、记录使用次数、根据寿命阈值提示，并与已配置的 PLC 联动。下面展示运行监控与设备诊断界面，不需要先安装软件即可了解操作方式。

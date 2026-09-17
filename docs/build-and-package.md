@@ -1,5 +1,7 @@
 # 构建与本地打包
 
+**简体中文** · [English](build-and-package.en.md) · [文档目录](README.md)
+
 ## 1. 第三方依赖
 
 HSL JAR 放入 `wms-opc/src/main/resources/lib/HslCommunication-3.4.0.jar`。从作者或其他合法渠道取得适用版本和授权，详见[依赖说明](../wms-opc/src/main/resources/lib/README.md)。该文件、Maven target 和前端 dist 都被 Git 忽略。

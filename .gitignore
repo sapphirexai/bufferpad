@@ -21,12 +21,15 @@ Thumbs.db
 /wms-opc/src/main/resources/lib/*.jar
 /bufferpad-installer/packages/*
 !/bufferpad-installer/packages/README.md
+!/bufferpad-installer/packages/README.en.md
 !/bufferpad-installer/packages/.gitkeep
 /bufferpad-installer/app/backend/*
 !/bufferpad-installer/app/backend/README.md
+!/bufferpad-installer/app/backend/README.en.md
 !/bufferpad-installer/app/backend/.gitkeep
 /bufferpad-installer/app/frontend/*
 !/bufferpad-installer/app/frontend/README.md
+!/bufferpad-installer/app/frontend/README.en.md
 !/bufferpad-installer/app/frontend/.gitkeep
 /bufferpad-installer/config/install.local.ps1
 /wms-opc/config/

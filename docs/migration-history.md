@@ -1,5 +1,7 @@
 # 仓库迁移记录
 
+**简体中文** · [English](migration-history.en.md) · [文档目录](README.md)
+
 2026-09-17，BufferPad 将三个原本独立维护的 Git 仓库合并为一个项目：
 
 | 组件 | 导入分支 | 来源提交数 |

@@ -1,5 +1,7 @@
 # 本地运行时安装包
 
+**简体中文** · [English](README.en.md) · [文档目录](../../docs/README.md)
+
 源码仓库不包含这些第三方安装包。可运行 `scripts/download-packages.ps1` 从官方入口获取，或用 `scripts/collect-packages.ps1` 收集已有文件。
 
 | 组件 | 安装器识别模式 | 下载脚本当前目标 / 官方入口 |

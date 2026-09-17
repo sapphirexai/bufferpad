@@ -9,6 +9,7 @@
 - [ ] 已运行与改动相关的检查，并说明未验证项 / Relevant checks and untested scope documented
 - [ ] 未提交安装包、HSL JAR、日志或敏感现场信息 / No artifacts or sensitive deployment data
 - [ ] 涉及配置、数据库或使用方式时已更新说明 / Applicable documentation and migration steps updated
+- [ ] 文档变更已同步中英文版本及导航 / Documentation changes keep Chinese and English editions/navigation in sync
 
 ## 兼容性与部署影响 / Compatibility and deployment
 

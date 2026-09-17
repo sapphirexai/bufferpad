@@ -1,5 +1,7 @@
 # 自动化检查范围
 
+**简体中文** · [English](ci.en.md) · [文档目录](README.md)
+
 [CI 运行记录](https://github.com/sapphirexai/bufferpad/actions/workflows/ci.yml)
 
 推送 main、codex 工作分支、向 main 提交 PR 或手动触发时，运行三个检查：
@@ -7,7 +9,7 @@
 | 检查 | 范围 |
 |---|---|
 | Frontend | Node 18.19.0 下按锁文件安装、Jest 单元测试和生产构建 |
-| Repository checks | 已跟踪 Markdown 的本地链接目标、禁止提交的成品路径、大文件及部分凭据标记 |
+| Repository checks | 已跟踪 Markdown 的本地链接目标、中英文配对与导航、禁止提交的成品路径、大文件及部分凭据标记 |
 | PowerShell | 已跟踪脚本语法和全新克隆缺少 HSL 时的构建提示 |
 
 CI **不运行后端完整编译或 Java 测试**，因为公开仓库不包含 HSL JAR。后端变更需要维护者准备合规依赖，在本地运行 `scripts/build-backend.ps1 -PublicRepositories`，并在 PR 写明结果。缺依赖提示检查不是后端测试通过证明。

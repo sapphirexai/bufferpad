@@ -1,5 +1,7 @@
 # 安全说明与报告
 
+**简体中文** · [English](SECURITY.en.md) · [文档目录](docs/README.md)
+
 ## 私密报告 / Private reporting
 
 已开启 GitHub 私密漏洞报告。请使用 [Report a vulnerability](https://github.com/sapphirexai/bufferpad/security/advisories/new)，也可以从仓库 Security → Advisories 进入。此入口需要登录 GitHub；不要把漏洞利用细节转发到公开 Issue。
