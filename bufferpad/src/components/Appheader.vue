@@ -1,6 +1,6 @@
 <template>
   <header class="app-header">
-    <strong>TOPRO <span>缓冲垫管理系统</span></strong>
+    <strong>缓冲垫管理系统</strong>
     <div v-if="user" class="account-actions">
       <span>{{ user.username }}</span>
       <el-tag size="mini" :type="$isAdmin ? 'warning' : 'info'">{{ user.builtIn ? '超级管理员' : ($isAdmin ? '管理员' : '普通用户 · 只读') }}</el-tag>
@@ -33,7 +33,6 @@ export default {
 <style scoped>
 .app-header { position:absolute; top:0; left:0; right:0; height:50px; padding:0 20px; background:#2d3a4b; color:white; display:flex; align-items:center; justify-content:space-between; box-sizing:border-box; }
 .app-header strong { font-size:18px; letter-spacing:1px; }
-.app-header strong span { font-size:13px; font-weight:normal; margin-left:12px; color:#c6d2e1; }
 .account-actions { display:flex; align-items:center; gap:14px; font-size:14px; }
 .account-actions .el-button { color:#e2ebf7; margin-left:0; }
 </style>

@@ -4,7 +4,7 @@ This log describes public releases. Earlier development history is retained in G
 
 ## Unreleased
 
-No additional changes recorded yet.
+- Remove former company branding from the application header, authentication screens, and documentation screenshots. Business behavior is unchanged.
 
 ## 0.1.1 — 2026-09-17
 

@@ -18,7 +18,7 @@ The monitor brings device status, scan state, usage counts, and lifetime limits 
 |---|---|
 | ![PLC status with deployment addresses covered](docs/images/plc-status.png) | ![Scanner status with deployment addresses covered](docs/images/scanner-status.png) |
 
-These maintainer-supplied screenshots show recorded states, not a live demo. Deployment addresses are covered in the public copies. A connected TCP socket does not prove successful PLC operations; passive scanners can wait without incoming data. See the [illustrated tour (Chinese)](docs/product-tour.md).
+These maintainer-supplied screenshots show recorded states, not a live demo. Deployment addresses are covered and former company branding is removed in the public copies. A connected TCP socket does not prove successful PLC operations; passive scanners can wait without incoming data. See the [illustrated tour (Chinese)](docs/product-tour.md).
 
 ## Capabilities
 
