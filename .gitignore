@@ -33,3 +33,11 @@ Thumbs.db
 /output/
 /tmp/
 *.bundle
+# Deployment credentials must never enter public history.
+ssh_key
+ssh_key.pub
+id_rsa
+id_ed25519
+*.pem
+*.p12
+*.pfx
