@@ -1,5 +1,7 @@
 # HslCommunication 本地依赖
 
+**简体中文** · [English](README.en.md) · [文档目录](../../../../../docs/README.md)
+
 后端目前使用 `HslCommunication 3.4.0`，`pom.xml` 通过本地 `systemPath` 引用：
 
 ```text

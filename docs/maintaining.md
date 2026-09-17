@@ -1,5 +1,7 @@
 # 维护与发布流程
 
+**简体中文** · [English](maintaining.en.md) · [文档目录](README.md)
+
 [贡献指南](../CONTRIBUTING.md) · [CI 范围](ci.md) · [路线图](../ROADMAP.md)
 
 ## 日常修改

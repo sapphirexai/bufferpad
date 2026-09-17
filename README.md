@@ -1,12 +1,12 @@
 # BufferPad
 
-**简体中文** · [English](README.en.md)
+**简体中文** · [English](README.en.md) · [文档目录](docs/README.md)
 
 [![CI](https://github.com/sapphirexai/bufferpad/actions/workflows/ci.yml/badge.svg)](https://github.com/sapphirexai/bufferpad/actions/workflows/ci.yml)
 
 **面向制造现场的缓冲垫寿命追踪与 PLC 联动系统。**
 
-BufferPad tracks reusable industrial cushion usage through barcode scans, prevents duplicate counting, and reports lifetime thresholds to PLCs. This repository contains the web frontend, Java backend, and Windows deployment scripts.
+BufferPad 通过条码扫描追踪可重复使用的工业缓冲垫，处理重复计数，并向配置的 PLC 通知寿命阈值状态。本仓库包含 Web 前端、Java 后端和 Windows 部署脚本。
 
 项目提供扫码计数、防重复计数、寿命预警、使用记录、运行事件和本地部署。它从三个内部 Git 仓库迁移而来，保留了开发历史；文件清理和历史编号变化见[迁移记录](docs/migration-history.md)。
 
@@ -33,6 +33,8 @@ BufferPad tracks reusable industrial cushion usage through barcode scans, preven
 后端目录沿用历史名称 `wms-opc`，当前项目不提供通用 OPC UA 服务。真实 PLC 接入前请阅读[设备配置说明](bufferpad-installer/设备配置说明.md)。
 
 ## 开始使用
+
+中文与英文文档均已覆盖部署、开发、设备配置和历史验收；点击顶部语言链接切换首页，或进入[完整文档目录](docs/README.md)选择对应主题。各文档顶部也可切换语言。软件界面目前仍为中文。
 
 1. 克隆仓库，阅读[快速开始](docs/getting-started.md)。
 2. 自行准备 **HslCommunication 3.4.0** 的适用授权及 JAR，放到[依赖说明](wms-opc/src/main/resources/lib/README.md)指定的位置。
@@ -68,7 +70,7 @@ GitHub Actions 自动检查前端测试与构建、脚本语法及仓库文件�
 
 请在 Issue 中描述版本、复现步骤和脱敏日志，不上传数据库备份、实际凭据或现场设备连接信息。贡献流程见 [CONTRIBUTING.md](CONTRIBUTING.md)，安全问题见 [SECURITY.md](SECURITY.md)。
 
-后续方向见[维护路线图](ROADMAP.md)，公开版本见[更新日志](CHANGELOG.md)和 [Releases](https://github.com/sapphirexai/bufferpad/releases)。维护者的 PR 与发布流程见[维护说明](docs/maintaining.md)。
+后续方向见[维护路线图](ROADMAP.md)，公开版本见[更新日志](CHANGELOG.zh-CN.md)和 [Releases](https://github.com/sapphirexai/bufferpad/releases)。维护者的 PR 与发布流程见[维护说明](docs/maintaining.md)。
 
 ## 许可证
 

@@ -1,5 +1,7 @@
 # 参与贡献
 
+**简体中文** · [English](CONTRIBUTING.en.md) · [文档目录](docs/README.md)
+
 欢迎提交可复现的问题、文档改进和代码贡献。请先阅读[快速开始](docs/getting-started.md)及[构建说明](docs/build-and-package.md)。
 
 从 [Issue 选择器](https://github.com/sapphirexai/bufferpad/issues/new/choose)选择 Bug、功能建议或设备兼容反馈。中文和英文均可；安全漏洞请使用 [私密报告](https://github.com/sapphirexai/bufferpad/security/advisories/new)。
@@ -17,3 +19,5 @@ Bug reports and pull requests are welcome in Chinese or English. Use the issue f
 源码按现有三个组件维护，数据库变更附升级 SQL 和兼容说明。前端 `build/` 是构建脚本源码，安装程序 `app/db/` 是数据库源码，需要保留。安装包、HSL JAR、编译产物、日志及 PDF 不提交到仓库。
 
 保留原有作者署名和第三方许可。新增依赖应说明用途、版本、来源和许可证。
+
+修改文档时同步更新中英文版本及导航。[文档目录](docs/README.md)列出全部语言配对。命令、接口名、配置键、SQL 文件名及历史测试结果应保持一致；历史验收不能描述成当前版本新执行的测试。

@@ -1,9 +1,12 @@
 # Changelog
 
-This log describes public releases. Earlier development history is retained in Git; see [migration history](docs/migration-history.md).
+[简体中文](CHANGELOG.zh-CN.md) · **English** · [All documentation](docs/README.en.md)
+
+This log describes public releases. Earlier development history is retained in Git; see [migration history](docs/migration-history.en.md).
 
 ## Unreleased
 
+- Add English documentation throughout the project, reciprocal language links, complete documentation indexes, and checks for language pairing/navigation.
 - Remove former company branding from the application header, authentication screens, and documentation screenshots. Business behavior is unchanged.
 
 ## 0.1.1 — 2026-09-17
@@ -33,4 +36,4 @@ First public source preview / 首个公开源码预览版。
 - Complete backend builds and tests require the local HSL dependency. Public CI does not execute those tests.
 - Physical PLC validation, live MySQL upgrades, production service installation, and browser E2E are not certified by this preview.
 
-See [build instructions](docs/build-and-package.md), [migration validation](docs/migration-validation.md), and [current CI scope](docs/ci.md).
+See [build instructions](docs/build-and-package.en.md), [migration validation](docs/migration-validation.en.md), and [current CI scope](docs/ci.en.md).

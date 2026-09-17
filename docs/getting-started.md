@@ -1,5 +1,7 @@
 # 快速开始
 
+**简体中文** · [English](getting-started.en.md) · [文档目录](README.md)
+
 从仓库根目录执行命令。前端可单独构建；完整功能需要 Java 后端、MySQL 及 HSL 本地依赖。
 
 ## 环境

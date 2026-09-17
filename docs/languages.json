@@ -1,0 +1,167 @@
+{
+  "pairs": [
+    {
+      "zh": "CONTRIBUTING.md",
+      "en": "CONTRIBUTING.en.md"
+    },
+    {
+      "zh": "README.md",
+      "en": "README.en.md"
+    },
+    {
+      "zh": "ROADMAP.md",
+      "en": "ROADMAP.en.md"
+    },
+    {
+      "zh": "SECURITY.md",
+      "en": "SECURITY.en.md"
+    },
+    {
+      "zh": "THIRD_PARTY_NOTICES.md",
+      "en": "THIRD_PARTY_NOTICES.en.md"
+    },
+    {
+      "zh": "bufferpad-installer/PLC推荐配置.md",
+      "en": "bufferpad-installer/plc-recommended-configuration.en.md"
+    },
+    {
+      "zh": "bufferpad-installer/README.md",
+      "en": "bufferpad-installer/README.en.md"
+    },
+    {
+      "zh": "bufferpad-installer/app/backend/README.md",
+      "en": "bufferpad-installer/app/backend/README.en.md"
+    },
+    {
+      "zh": "bufferpad-installer/app/db/README.md",
+      "en": "bufferpad-installer/app/db/README.en.md"
+    },
+    {
+      "zh": "bufferpad-installer/app/frontend/README.md",
+      "en": "bufferpad-installer/app/frontend/README.en.md"
+    },
+    {
+      "zh": "bufferpad-installer/packages/README.md",
+      "en": "bufferpad-installer/packages/README.en.md"
+    },
+    {
+      "zh": "bufferpad-installer/用户登录说明.md",
+      "en": "bufferpad-installer/user-login.en.md"
+    },
+    {
+      "zh": "bufferpad-installer/缓冲垫现场配置简明说明.md",
+      "en": "bufferpad-installer/site-configuration.en.md"
+    },
+    {
+      "zh": "bufferpad-installer/设备配置说明.md",
+      "en": "bufferpad-installer/device-configuration.en.md"
+    },
+    {
+      "zh": "bufferpad/README.md",
+      "en": "bufferpad/README.en.md"
+    },
+    {
+      "zh": "docs/build-and-package.md",
+      "en": "docs/build-and-package.en.md"
+    },
+    {
+      "zh": "docs/ci.md",
+      "en": "docs/ci.en.md"
+    },
+    {
+      "zh": "docs/getting-started.md",
+      "en": "docs/getting-started.en.md"
+    },
+    {
+      "zh": "docs/maintaining.md",
+      "en": "docs/maintaining.en.md"
+    },
+    {
+      "zh": "docs/migration-history.md",
+      "en": "docs/migration-history.en.md"
+    },
+    {
+      "zh": "docs/migration-validation.md",
+      "en": "docs/migration-validation.en.md"
+    },
+    {
+      "zh": "docs/product-tour.md",
+      "en": "docs/product-tour.en.md"
+    },
+    {
+      "zh": "docs/releases/v0.1.0.md",
+      "en": "docs/releases/v0.1.0.en.md"
+    },
+    {
+      "zh": "docs/releases/v0.1.1.md",
+      "en": "docs/releases/v0.1.1.en.md"
+    },
+    {
+      "zh": "wms-opc/README.md",
+      "en": "wms-opc/README.en.md"
+    },
+    {
+      "zh": "wms-opc/docs/sql/20260914_旧库升级说明.md",
+      "en": "wms-opc/docs/sql/20260914-legacy-upgrade.en.md"
+    },
+    {
+      "zh": "wms-opc/docs/sql/20260914_旧库升级验收.md",
+      "en": "wms-opc/docs/sql/20260914-legacy-upgrade-acceptance.en.md"
+    },
+    {
+      "zh": "wms-opc/docs/sql/20260915_旧库升级说明.md",
+      "en": "wms-opc/docs/sql/20260915-legacy-upgrade.en.md"
+    },
+    {
+      "zh": "wms-opc/docs/sql/20260915_旧库升级验收.md",
+      "en": "wms-opc/docs/sql/20260915-legacy-upgrade-acceptance.en.md"
+    },
+    {
+      "zh": "wms-opc/docs/八类PLC操作链路测试验收.md",
+      "en": "wms-opc/docs/plc-operation-acceptance.en.md"
+    },
+    {
+      "zh": "wms-opc/docs/扫码操作日志维护说明.md",
+      "en": "wms-opc/docs/scan-operation-logs.en.md"
+    },
+    {
+      "zh": "wms-opc/docs/日志分页查询.md",
+      "en": "wms-opc/docs/log-pagination.en.md"
+    },
+    {
+      "zh": "wms-opc/docs/日志清理与时间段导出.md",
+      "en": "wms-opc/docs/log-retention-export.en.md"
+    },
+    {
+      "zh": "wms-opc/docs/用户登录与权限.md",
+      "en": "wms-opc/docs/authentication.en.md"
+    },
+    {
+      "zh": "wms-opc/docs/设备状态与超级管理员更正验收.md",
+      "en": "wms-opc/docs/device-state-admin-acceptance.en.md"
+    },
+    {
+      "zh": "wms-opc/docs/设备连接与通信验证分离方案.md",
+      "en": "wms-opc/docs/device-communication-design.en.md"
+    },
+    {
+      "zh": "wms-opc/docs/设备连接与通信验证分离验收.md",
+      "en": "wms-opc/docs/device-communication-acceptance.en.md"
+    },
+    {
+      "zh": "wms-opc/src/main/resources/lib/README.md",
+      "en": "wms-opc/src/main/resources/lib/README.en.md"
+    },
+    {
+      "zh": "CHANGELOG.zh-CN.md",
+      "en": "CHANGELOG.md"
+    },
+    {
+      "zh": "docs/README.md",
+      "en": "docs/README.en.md"
+    }
+  ],
+  "bilingual": [
+    ".github/pull_request_template.md"
+  ]
+}

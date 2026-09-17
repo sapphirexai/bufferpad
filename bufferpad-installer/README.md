@@ -1,5 +1,7 @@
 # 缓冲垫项目 Windows 离线安装包
 
+**简体中文** · [English](README.en.md) · [文档目录](../docs/README.md)
+
 > 开源迁移说明：先阅读[项目首页](../README.md)和[构建与打包](../docs/build-and-package.md)。本文保留历史工程说明，脱敏地址仅作示例；历史部署记录不代表当前版本的验收结果。当前版本没有通用初始密码，维护账号默认关闭。
 
 `bufferpad-installer` 用于在新的 Windows 10/11 机器上一键安装、启动、卸载缓冲垫项目运行环境。
