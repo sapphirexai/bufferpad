@@ -18,6 +18,7 @@ First public source preview / 首个公开源码预览版。
 - Environment-configured deployment credentials; maintenance login disabled by default.
 - Illustrated product tour, build instructions, and contribution/security guidance.
 - GitHub CI for frontend unit tests and build, repository checks, and PowerShell syntax.
+- Bilingual project overview and roadmap, issue/PR templates, private vulnerability reporting, and a protected-main maintenance workflow.
 
 ### Requirements and limits
 

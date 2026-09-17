@@ -1,5 +1,7 @@
 # BufferPad
 
+**简体中文** · [English](README.en.md)
+
 [![CI](https://github.com/sapphirexai/bufferpad/actions/workflows/ci.yml/badge.svg)](https://github.com/sapphirexai/bufferpad/actions/workflows/ci.yml)
 
 **面向制造现场的缓冲垫寿命追踪与 PLC 联动系统。**
@@ -65,6 +67,8 @@ BufferPad tracks reusable industrial cushion usage through barcode scans, preven
 GitHub Actions 自动检查前端测试与构建、脚本语法及仓库文件；后端完整测试需要本地 HSL 依赖。[查看 CI 范围和复现命令](docs/ci.md)。
 
 请在 Issue 中描述版本、复现步骤和脱敏日志，不上传数据库备份、实际凭据或现场设备连接信息。贡献流程见 [CONTRIBUTING.md](CONTRIBUTING.md)，安全问题见 [SECURITY.md](SECURITY.md)。
+
+后续方向见[维护路线图](ROADMAP.md)，公开版本见[更新日志](CHANGELOG.md)和 [Releases](https://github.com/sapphirexai/bufferpad/releases)。维护者的 PR 与发布流程见[维护说明](docs/maintaining.md)。
 
 ## 许可证
 
