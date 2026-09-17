@@ -1,0 +1,29 @@
+# Changelog
+
+This log describes public releases. Earlier development history is retained in Git; see [migration history](docs/migration-history.md).
+
+## Unreleased
+
+No additional changes recorded yet.
+
+## 0.1.0 — 2026-09-17
+
+First public source preview / 首个公开源码预览版。
+
+### Included
+
+- Barcode-based cushion usage tracking, duplicate-scan handling, lifetime thresholds, event history, and PLC communication adapters.
+- Vue frontend, Java backend, Windows installation and maintenance scripts in one repository.
+- All 304 source development commits retained through documented history cleanup.
+- Environment-configured deployment credentials; maintenance login disabled by default.
+- Illustrated product tour, build instructions, and contribution/security guidance.
+- GitHub CI for frontend unit tests and build, repository checks, and PowerShell syntax.
+
+### Requirements and limits
+
+- HslCommunication Java 3.4.0 must be obtained separately with appropriate authorization. Its JAR is not distributed here.
+- Runtime installers, frontend/backend binaries, logs, and PDF documents are excluded. GitHub's source downloads are not an offline installer.
+- Complete backend builds and tests require the local HSL dependency. Public CI does not execute those tests.
+- Physical PLC validation, live MySQL upgrades, production service installation, and browser E2E are not certified by this preview.
+
+See [build instructions](docs/build-and-package.md), [migration validation](docs/migration-validation.md), and [current CI scope](docs/ci.md).
