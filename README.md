@@ -1,5 +1,7 @@
 # BufferPad
 
+[![CI](https://github.com/sapphirexai/bufferpad/actions/workflows/ci.yml/badge.svg)](https://github.com/sapphirexai/bufferpad/actions/workflows/ci.yml)
+
 **面向制造现场的缓冲垫寿命追踪与 PLC 联动系统。**
 
 BufferPad tracks reusable industrial cushion usage through barcode scans, prevents duplicate counting, and reports lifetime thresholds to PLCs. This repository contains the web frontend, Java backend, and Windows deployment scripts.
@@ -59,6 +61,8 @@ BufferPad tracks reusable industrial cushion usage through barcode scans, preven
 ## 测试与贡献
 
 前端包含 Jest 单元测试；后端包含业务单元测试、H2 认证集成测试和本地协议回环测试。此次迁移的[验证结果](docs/migration-validation.md)记录了检查范围。回环测试不能代替真实设备验收。当前技术栈包含旧版依赖，版本升级应单独验证。
+
+GitHub Actions 自动检查前端测试与构建、脚本语法及仓库文件；后端完整测试需要本地 HSL 依赖。[查看 CI 范围和复现命令](docs/ci.md)。
 
 请在 Issue 中描述版本、复现步骤和脱敏日志，不上传数据库备份、实际凭据或现场设备连接信息。贡献流程见 [CONTRIBUTING.md](CONTRIBUTING.md)，安全问题见 [SECURITY.md](SECURITY.md)。
 
