@@ -1,0 +1,9 @@
+.auth-screen { min-height:100vh; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#edf3f8,#e7edf5); color:#24364c; padding:24px; box-sizing:border-box; font-family:"Microsoft YaHei",sans-serif; }
+.auth-card { width:420px; padding:38px; border-radius:12px; background:white; box-shadow:0 12px 50px #24364c14; }
+.auth-card .brand { font-size:12px; font-weight:bold; letter-spacing:2px; color:#54769b; }
+.auth-card h1 { font-size:25px; margin:20px 0 12px; }
+.auth-card .subtitle { font-size:14px; color:#718094; line-height:1.7; margin-bottom:24px; }
+.auth-card .submit { width:100%; margin:22px 0 10px; }
+.auth-card .footnote { font-size:12px; line-height:1.8; color:#8491a1; margin:12px 0 0; }
+.auth-card .el-alert { margin-top:12px; }
+@media(max-width:600px) { .auth-card { padding:24px; width:100%; } }
