@@ -1,0 +1,43 @@
+param(
+    [string]$ServiceName = '{{BACKEND_SERVICE_NAME}}',
+    [string]$NginxServiceName = '{{NGINX_SERVICE_NAME}}',
+    [int]$TimeoutSeconds = 60
+)
+
+$ErrorActionPreference = 'Stop'
+
+$service = Get-Service -Name $ServiceName -ErrorAction Stop
+if ($service.Status -ne 'Running') {
+    Start-Service -Name $ServiceName -ErrorAction Stop
+}
+
+$deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+while ((Get-Date) -lt $deadline) {
+    $service = Get-Service -Name $ServiceName -ErrorAction Stop
+    if ($service.Status -eq 'Running') {
+        Write-Host "Backend prod service is running: $ServiceName"
+        break
+    }
+    Start-Sleep -Seconds 2
+}
+
+if ((Get-Service -Name $ServiceName -ErrorAction Stop).Status -ne 'Running') {
+    throw "Backend prod service did not become Running within $TimeoutSeconds seconds: $ServiceName"
+}
+
+$nginxService = Get-Service -Name $NginxServiceName -ErrorAction SilentlyContinue
+if ($null -ne $nginxService -and $nginxService.Status -ne 'Running') {
+    Start-Service -Name $NginxServiceName -ErrorAction Stop
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    while ((Get-Date) -lt $deadline) {
+        $nginxService = Get-Service -Name $NginxServiceName -ErrorAction Stop
+        if ($nginxService.Status -eq 'Running') {
+            Write-Host "nginx frontend service is running: $NginxServiceName"
+            exit 0
+        }
+        Start-Sleep -Seconds 2
+    }
+    throw "nginx frontend service did not become Running within $TimeoutSeconds seconds: $NginxServiceName"
+}
+
+exit 0

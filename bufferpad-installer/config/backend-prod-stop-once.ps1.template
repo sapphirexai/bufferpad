@@ -1,0 +1,24 @@
+param(
+    [string]$ServiceName = '{{BACKEND_SERVICE_NAME}}',
+    [int]$TimeoutSeconds = 60
+)
+
+$ErrorActionPreference = 'Stop'
+
+Write-Warning 'If backend prod monitor is running, it may restart this service. Run backend-prod-monitor-stop.ps1 first when you need it to stay stopped.'
+$service = Get-Service -Name $ServiceName -ErrorAction Stop
+if ($service.Status -ne 'Stopped') {
+    Stop-Service -Name $ServiceName -Force -ErrorAction Stop
+}
+
+$deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+while ((Get-Date) -lt $deadline) {
+    $service = Get-Service -Name $ServiceName -ErrorAction Stop
+    if ($service.Status -eq 'Stopped') {
+        Write-Host "Backend prod service is stopped: $ServiceName"
+        exit 0
+    }
+    Start-Sleep -Seconds 2
+}
+
+throw "Backend prod service did not become Stopped within $TimeoutSeconds seconds: $ServiceName"

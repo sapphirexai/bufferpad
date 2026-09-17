@@ -1,0 +1,49 @@
+param(
+    [string]$TaskName = '{{BACKEND_MONITOR_TASK_NAME}}',
+    [string]$MonitorScript = '{{BACKEND_MONITOR_SCRIPT}}',
+    [string]$StopFile = '{{BACKEND_MONITOR_STOP_FILE}}'
+)
+
+$ErrorActionPreference = 'Stop'
+
+function Test-IsAdmin {
+    $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $principal = New-Object Security.Principal.WindowsPrincipal($identity)
+    return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+}
+
+if (-not (Test-IsAdmin)) {
+    throw 'Please run this script as Administrator.'
+}
+
+New-Item -ItemType Directory -Path (Split-Path -Parent $StopFile) -Force | Out-Null
+Set-Content -LiteralPath $StopFile -Value (Get-Date).ToString('s') -Encoding ASCII
+
+$task = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
+if ($null -ne $task) {
+    Stop-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
+    Unregister-ScheduledTask -TaskName $TaskName -Confirm:$false
+    Write-Host "Backend prod monitor task removed: $TaskName"
+} else {
+    Write-Host "Backend prod monitor task is not registered: $TaskName"
+}
+
+Start-Sleep -Seconds 1
+$monitorScriptFull = [IO.Path]::GetFullPath($MonitorScript)
+$processes = @(Get-CimInstance Win32_Process -ErrorAction SilentlyContinue |
+    Where-Object {
+        $name = [string]$_.Name
+        $cmd = [string]$_.CommandLine
+        $name -in @('powershell.exe', 'pwsh.exe') -and
+        -not [string]::IsNullOrWhiteSpace($cmd) -and
+        $cmd.IndexOf('backend-prod-monitor.ps1', [StringComparison]::OrdinalIgnoreCase) -ge 0 -and
+        $cmd.IndexOf($monitorScriptFull, [StringComparison]::OrdinalIgnoreCase) -ge 0
+    })
+
+foreach ($process in $processes) {
+    Stop-Process -Id $process.ProcessId -Force -ErrorAction SilentlyContinue
+    Write-Host "Stopped backend prod monitor process PID $($process.ProcessId)."
+}
+
+Remove-Item -LiteralPath $StopFile -Force -ErrorAction SilentlyContinue
+Write-Host 'Backend prod monitor stopped.'

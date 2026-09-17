@@ -1,0 +1,4 @@
+@echo off
+setlocal
+"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -File "%~dp0backend-script-wrapper.ps1" -ScriptPath "%~dp0backend-prod-stop-once.ps1" -Action StopOnce
+endlocal

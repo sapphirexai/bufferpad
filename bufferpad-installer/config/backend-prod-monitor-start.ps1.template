@@ -1,0 +1,42 @@
+param(
+    [string]$TaskName = '{{BACKEND_MONITOR_TASK_NAME}}',
+    [string]$MonitorScript = '{{BACKEND_MONITOR_SCRIPT}}',
+    [string]$StopFile = '{{BACKEND_MONITOR_STOP_FILE}}'
+)
+
+$ErrorActionPreference = 'Stop'
+
+function Test-IsAdmin {
+    $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $principal = New-Object Security.Principal.WindowsPrincipal($identity)
+    return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+}
+
+if (-not (Test-IsAdmin)) {
+    throw 'Please run this script as Administrator.'
+}
+
+if (-not (Test-Path -LiteralPath $MonitorScript)) {
+    throw "Monitor script not found: $MonitorScript"
+}
+
+if (Test-Path -LiteralPath $StopFile) {
+    Remove-Item -LiteralPath $StopFile -Force -ErrorAction SilentlyContinue
+}
+
+$powershellExe = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
+$argument = "-NoProfile -ExecutionPolicy Bypass -File `"$MonitorScript`""
+$action = New-ScheduledTaskAction -Execute $powershellExe -Argument $argument
+$trigger = New-ScheduledTaskTrigger -AtStartup
+$principal = New-ScheduledTaskPrincipal -UserId 'SYSTEM' -RunLevel Highest
+$settings = New-ScheduledTaskSettingsSet `
+    -AllowStartIfOnBatteries `
+    -DontStopIfGoingOnBatteries `
+    -ExecutionTimeLimit (New-TimeSpan -Days 3650) `
+    -MultipleInstances IgnoreNew `
+    -RestartCount 3 `
+    -RestartInterval (New-TimeSpan -Minutes 1)
+
+Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Force | Out-Null
+Start-ScheduledTask -TaskName $TaskName
+Write-Host "Backend prod monitor task is registered and started: $TaskName"
