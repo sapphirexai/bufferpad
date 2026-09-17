@@ -1,6 +1,6 @@
 <template>
   <main class="auth-screen"><section class="auth-card">
-    <div class="brand">TOPRO / 账户设置</div><h1>修改密码</h1>
+    <div class="brand">BUFFERPAD / 账户设置</div><h1>修改密码</h1>
     <p class="subtitle">{{ forced ? '密码已被重置，请设置新密码后使用系统。' : '修改后，所有设备上的登录都会失效，请使用新密码重新登录。' }}</p>
     <el-form ref="form" :model="form" :rules="rules" label-position="top" @submit.native.prevent="submit">
       <el-form-item label="原密码" prop="oldPassword"><el-input v-model="form.oldPassword" type="password" show-password autocomplete="current-password" maxlength="64" /></el-form-item>

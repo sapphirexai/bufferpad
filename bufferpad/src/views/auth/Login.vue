@@ -1,6 +1,6 @@
 <template>
   <main class="auth-screen"><section class="auth-card">
-    <div class="brand">TOPRO / BUFFERPAD</div><h1>登录缓冲垫管理系统</h1>
+    <div class="brand">BUFFERPAD</div><h1>登录缓冲垫管理系统</h1>
     <p class="subtitle">查看产线运行状态，管理缓冲垫使用与设备配置。</p>
     <el-form ref="form" :model="form" :rules="rules" label-position="top" @submit.native.prevent="submit">
       <el-form-item label="用户名" prop="username"><el-input v-model="form.username" autocomplete="username" maxlength="32" placeholder="请输入用户名" autofocus /></el-form-item>
