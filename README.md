@@ -6,6 +6,14 @@ BufferPad tracks reusable industrial cushion usage through barcode scans, preven
 
 项目提供扫码计数、防重复计数、寿命预警、使用记录、运行事件和本地部署。它从三个内部 Git 仓库迁移而来，保留了开发历史；文件清理和历史编号变化见[迁移记录](docs/migration-history.md)。
 
+## 界面预览
+
+![BufferPad 运行监控：产线设备状态、扫码输入和缓冲垫寿命列表](docs/images/runtime-monitor.png)
+
+在一个页面查看产线连接状态、等待扫码提示、使用次数与寿命阈值。设备抽屉进一步区分 TCP 连接、通信验证和超时故障。
+
+[查看三张截图与操作流程说明](docs/product-tour.md)。截图为维护者提供的界面记录，展示数据和设备状态不代表你的部署；公开副本中的现场地址已遮盖。
+
 ## 功能
 
 | 能力 | 说明 |
